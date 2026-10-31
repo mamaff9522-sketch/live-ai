@@ -5,3 +5,4 @@ remember.json 200
 recall.json 200
 other_user.json 200
 code.json 200
+growth.json 200

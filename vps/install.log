@@ -1,47 +1,44 @@
 
 [1mดึงโปรแกรม Live AI รุ่นล่าสุด…[0m
 latest: Pulling from mamaff9522-sketch/live-ai
-689c87189da9: Pulling fs layer
-a5e52e6fc17f: Pulling fs layer
-a072104ed0f0: Pulling fs layer
-b310969c3354: Pulling fs layer
-3eb771151506: Pulling fs layer
+1d0712f66dab: Pulling fs layer
+e5424a91a7fb: Pulling fs layer
 6fc242d221a6: Pulling fs layer
-a7c168c1df46: Pulling fs layer
-586b9d956ca3: Pulling fs layer
-34a75d6b714f: Pulling fs layer
+3eb771151506: Pulling fs layer
 f574edac59d9: Pulling fs layer
 acca7542dfc7: Pulling fs layer
-3eb771151506: Already exists
-acca7542dfc7: Already exists
+c20ce747ceb3: Pulling fs layer
+046abbdabfe0: Pulling fs layer
+7400e8f79830: Pulling fs layer
+4f3aac5313fe: Pulling fs layer
+166cc8bb2ca6: Pulling fs layer
 6fc242d221a6: Already exists
+3eb771151506: Already exists
 f574edac59d9: Already exists
-689c87189da9: Download complete
-b310969c3354: Download complete
-a072104ed0f0: Download complete
-586b9d956ca3: Download complete
-34a75d6b714f: Download complete
-106c220b12a0: Download complete
-a7c168c1df46: Download complete
-a5e52e6fc17f: Download complete
-a5e52e6fc17f: Pull complete
-a7c168c1df46: Pull complete
-689c87189da9: Pull complete
-b310969c3354: Pull complete
-a072104ed0f0: Pull complete
-689c87189da9: Pull complete
-b310969c3354: Pull complete
-a072104ed0f0: Pull complete
-586b9d956ca3: Pull complete
-34a75d6b714f: Pull complete
-Digest: sha256:fa18e60ced373ba7cf8e9807ea8f4766a34538f0bbb798e5e2e2b6425b20e84e
+acca7542dfc7: Already exists
+1d0712f66dab: Download complete
+c20ce747ceb3: Download complete
+166cc8bb2ca6: Download complete
+4f3aac5313fe: Download complete
+7400e8f79830: Download complete
+99db44c3140d: Download complete
+046abbdabfe0: Download complete
+e5424a91a7fb: Download complete
+e5424a91a7fb: Pull complete
+1d0712f66dab: Pull complete
+c20ce747ceb3: Pull complete
+166cc8bb2ca6: Pull complete
+4f3aac5313fe: Pull complete
+7400e8f79830: Pull complete
+046abbdabfe0: Pull complete
+Digest: sha256:e47df459723547ade809b3c0e6ebb6854d5538a3a8a26f467f4f35fba1c880da
 Status: Downloaded newer image for ghcr.io/mamaff9522-sketch/live-ai:latest
 ghcr.io/mamaff9522-sketch/live-ai:latest
 
 [1mเริ่มระบบ…[0m
 
 [1mรอโมเดลโหลด (ครั้งแรกต้องดาวน์โหลด ~1.3 GB อาจใช้ 2–10 นาที)…[0m
-{"ok": true, "model": {"state": "ready", "restarts": 0, "error": "", "vision": true, "model": "Qwen3.5-2B-Q4_K_M.gguf", "pid": 13}, "uptime_s": 9, "threads": 4, "ctx": 4096, "ram_mb": {"model": 2520.3, "app": 37.9, "total": 3911, "available": 1996}, "cpu_percent": {"model": null, "cores": 4}, "disk_free_mb": 64655}
+{"ok": true, "model": {"state": "ready", "restarts": 0, "error": "", "vision": true, "model": "Qwen3.5-2B-Q4_K_M.gguf", "pid": 14}, "uptime_s": 9, "threads": 4, "ctx": 4096, "ram_mb": {"model": 2476.6, "app": 37.4, "total": 3911, "available": 2011}, "cpu_percent": {"model": null, "cores": 4}, "disk_free_mb": 63974}
 
 [1mเปิดลิงก์ HTTPS ฟรี…[0m
 รอลิงก์…
@@ -50,7 +47,7 @@ ghcr.io/mamaff9522-sketch/live-ai:latest
 
 [1mเสร็จแล้ว[0m
 ลิงก์ถาวร:    https://45-141-26-136.sslip.io   (สตูดิโอ: https://45-141-26-136.sslip.io/studio)
-ลิงก์ใช้งาน:  https://girls-beast-contributed-complete.trycloudflare.com
-สตูดิโอตัดต่อ: https://girls-beast-contributed-complete.trycloudflare.com/studio
+ลิงก์ใช้งาน:  https://formats-laughing-than-fool.trycloudflare.com
+สตูดิโอตัดต่อ: https://formats-laughing-than-fool.trycloudflare.com/studio
 รหัสผู้ดูแล (สำรองข้อมูล): เก็บไว้ที่ /root/.live-ai-admin-key
 หมายเหตุ: ลิงก์ trycloudflare จะเปลี่ยนเมื่อเครื่องรีสตาร์ต — ดูลิงก์ใหม่ด้วย:  docker logs live-ai-link 2>&1 | grep trycloudflare
