@@ -1,5 +1,5 @@
-hello_seconds 6.957863356
-code_seconds 13.826419015
+hello_seconds 7.086897788
+code_seconds 12.136381700
 studio_page 200
 growth_page 200
 privacy_page 200
