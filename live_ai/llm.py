@@ -90,6 +90,8 @@ def ensure_mmproj(s: Settings) -> Path | None:
     if os.environ.get("LIVEAI_MMPROJ_PATH"):
         p = Path(os.environ["LIVEAI_MMPROJ_PATH"])
         return p if p.is_file() else None
+    if s.model_path:      # a model file chosen by hand: only use a projector that was also given by hand
+        return None
     repo = getattr(s, "model_repo", None)
     if not repo:
         from . import modelsource
