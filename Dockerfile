@@ -17,7 +17,7 @@ RUN cmake -S /src -B /src/build -DCMAKE_BUILD_TYPE=Release -DGGML_NATIVE=OFF \
     && mkdir -p /out && cp -a /src/build/bin/llama-server /src/build/bin/*.so* /out/ && /out/llama-server --version
 
 FROM python:3.12-slim
-RUN apt-get update && apt-get install -y --no-install-recommends libgomp1 ca-certificates \
+RUN apt-get update && apt-get install -y --no-install-recommends libgomp1 ca-certificates ffmpeg fonts-tlwg-loma-otf \
     && rm -rf /var/lib/apt/lists/* && useradd -m -u 1000 user
 COPY --from=build /out/ /opt/llama/
 ENV LD_LIBRARY_PATH=/opt/llama \

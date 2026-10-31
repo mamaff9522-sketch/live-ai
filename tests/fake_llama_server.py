@@ -42,6 +42,24 @@ class H(BaseHTTPRequestHandler):
             with open(LOG, "a", encoding="utf-8") as f:
                 f.write(json.dumps(body, ensure_ascii=False) + "\n")
         last = body["messages"][-1]["content"]
+        if "response_format" in body:
+            plan = os.environ.get("FAKE_PLAN") or json.dumps({
+                "clips": [{"file": 1, "start": 0, "end": 2, "speed": 1, "mute": False},
+                          {"file": 2, "start": 0, "end": -1, "speed": 1, "mute": False}],
+                "aspect": "9:16", "fit": "blur",
+                "texts": [{"text": "ทดสอบภาษาไทย", "start": 0, "end": -1, "position": "bottom", "size": "medium"}],
+                "music_file": 3, "music_volume": 0.3, "original_volume": 1, "transition": "fade", "fade_in": 0, "fade_out": 0})
+            if "เปลี่ยนเป็นแนวนอน" in last:
+                prev = json.loads(last.split("แผนเดิม:\n", 1)[1].split("\n\n", 1)[0])
+                prev["aspect"] = "16:9"
+                plan = json.dumps(prev)
+            b = json.dumps({"choices": [{"message": {"role": "assistant", "content": plan}}]}).encode()
+            self.send_response(200)
+            self.send_header("Content-Type", "application/json")
+            self.send_header("Content-Length", str(len(b)))
+            self.end_headers()
+            self.wfile.write(b)
+            return
         if "TOO_LONG" in last and len(body["messages"]) > 2:
             b = b'{"error":{"message":"the request exceeds the available context size"}}'
             self.send_response(400)

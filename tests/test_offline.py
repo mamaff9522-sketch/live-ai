@@ -13,6 +13,7 @@ import threading
 import time
 import unittest
 import urllib.error
+import urllib.parse
 import urllib.request
 from pathlib import Path
 
@@ -239,6 +240,87 @@ class Live(unittest.TestCase):
         with self.assertRaises(urllib.error.HTTPError) as cm:
             urllib.request.urlopen(req)
         self.assertEqual(cm.exception.code, 400)
+
+    # video editor ------------------------------------------------------------
+    def _make_media(self):
+        import subprocess
+        d = self.tmp / "src"
+        d.mkdir(exist_ok=True)
+        subprocess.run(["ffmpeg", "-loglevel", "error", "-y", "-f", "lavfi", "-i", "testsrc2=size=1280x720:rate=30:duration=3",
+                        "-f", "lavfi", "-i", "sine=frequency=440:duration=3", "-c:v", "libx264", "-preset", "ultrafast",
+                        "-c:a", "aac", "-shortest", str(d / "a.mp4")], check=True)
+        subprocess.run(["ffmpeg", "-loglevel", "error", "-y", "-f", "lavfi", "-i", "testsrc=size=640x480:rate=25:duration=2",
+                        "-c:v", "libx264", "-preset", "ultrafast", str(d / "b.mp4")], check=True)
+        subprocess.run(["ffmpeg", "-loglevel", "error", "-y", "-f", "lavfi", "-i", "sine=frequency=220:duration=8",
+                        "-c:a", "aac", str(d / "m.m4a")], check=True)
+        return d
+
+    def upload(self, token, path, ctype):
+        data = Path(path).read_bytes()
+        req = urllib.request.Request(self.base + "/api/media", data=data, method="POST",
+                                     headers={"Content-Type": ctype, "X-Filename": urllib.parse.quote(Path(path).name),
+                                              "Authorization": f"Bearer {token}"})
+        try:
+            with urllib.request.urlopen(req, timeout=60) as r:
+                return r.status, json.loads(r.read())
+        except urllib.error.HTTPError as e:
+            return e.code, json.loads(e.read() or b"{}")
+
+    def wait_edit(self, token, eid, timeout=120):
+        end = time.time() + timeout
+        while time.time() < end:
+            code, e = self.call("GET", f"/api/edits/{eid}", token=token)
+            if e.get("status") in ("done", "failed"):
+                return e
+            time.sleep(0.5)
+        self.fail("edit did not finish")
+
+    def test_16_upload_and_edit(self):
+        from live_ai.media import probe
+        d = self._make_media()
+        t, other = self.user(), self.user()
+        ids = [self.upload(t, d / "a.mp4", "video/mp4"), self.upload(t, d / "b.mp4", "video/mp4"), self.upload(t, d / "m.m4a", "audio/mp4")]
+        for code, m in ids:
+            self.assertEqual(code, 201, m)
+        self.assertEqual(ids[0][1]["kind"], "video")
+        self.assertEqual(ids[2][1]["kind"], "audio")
+        # bad file type / fake content
+        bad = self.tmp / "x.mp4"
+        bad.write_bytes(b"not a video at all" * 100)
+        self.assertEqual(self.upload(t, bad, "video/mp4")[0], 400)
+        self.assertEqual(self.upload(t, bad, "application/zip")[0], 400)
+        code, e = self.call("POST", "/api/edits", {"instruction": "ต่อคลิป 1 กับ 2 ทำแนวตั้ง ใส่ข้อความ ทดสอบภาษาไทย และใส่เพลง",
+                                                    "media_ids": [m["id"] for _, m in ids]}, t)
+        self.assertEqual(code, 201, e)
+        # other user can't see the edit or use the files
+        self.assertEqual(self.call("GET", f"/api/edits/{e['id']}", token=other)[0], 404)
+        self.assertEqual(self.call("POST", "/api/edits", {"instruction": "x", "media_ids": [ids[0][1]["id"]]}, other)[0], 404)
+        done = self.wait_edit(t, e["id"])
+        self.assertEqual(done["status"], "done", done)
+        out = done["output"]
+        self.assertEqual((out["width"], out["height"]), (720, 1280))
+        self.assertAlmostEqual(out["duration"], 4.0, delta=0.15)
+        self.assertTrue(out["has_audio"])
+        self.assertIn("แนวตั้ง 9:16", done["summary"])
+        # the signed link plays (with Range) and a forged one doesn't
+        with urllib.request.urlopen(urllib.request.Request(self.base + out["url"], headers={"Range": "bytes=0-99"})) as r:
+            self.assertEqual(r.status, 206)
+            self.assertEqual(len(r.read()), 100)
+        with self.assertRaises(urllib.error.HTTPError):
+            urllib.request.urlopen(self.base + out["url"].replace("sig=", "sig=0"))
+        # history has the result
+        msgs = self.call("GET", f"/api/conversations/{done['conversation_id']}/messages", token=t)[1]
+        self.assertIn(f"[[video:{out['id']}]]", msgs[-1]["content"])
+        # refine: keep the plan, change one thing
+        code, e2 = self.call("POST", "/api/edits", {"instruction": "เปลี่ยนเป็นแนวนอน", "base_edit": done["id"]}, t)
+        self.assertEqual(code, 201, e2)
+        done2 = self.wait_edit(t, e2["id"])
+        self.assertEqual(done2["status"], "done", done2)
+        self.assertEqual((done2["output"]["width"], done2["output"]["height"]), (1280, 720))
+        self.assertEqual(done2["plan"]["texts"][0]["text"], "ทดสอบภาษาไทย")
+        self.assertEqual(done2["conversation_id"], done["conversation_id"])
+        # media list is per user
+        self.assertEqual(self.call("GET", "/api/media", token=other)[1], [])
 
 
 class RestoreTest(unittest.TestCase):

@@ -19,8 +19,12 @@ from http import HTTPStatus
 from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
 from pathlib import Path
 
+from urllib.parse import parse_qs, unquote, urlparse
+
 from . import backup, logs, sysinfo
 from .assistant import Assistant
+from .editor import EditError, Editor
+from .media import MediaError, MediaStore
 from .config import Settings
 from .llm import LlamaServer
 from .store import NotFound, Store
@@ -37,6 +41,11 @@ class App:
         self.store = Store(s.db_path)
         self.llm = LlamaServer(s)
         self.assistant = Assistant(s, self.store, self.llm)
+        self.media = MediaStore(self.store, s.data_dir, quota_mb=int(os.environ.get("LIVEAI_MEDIA_QUOTA_MB", "3000")),
+                                ttl_hours=float(os.environ.get("LIVEAI_MEDIA_TTL_HOURS", "72")))
+        self.media.start_cleanup()
+        self.editor = Editor(self.store, self.media, self.assistant)
+        self.max_upload = int(os.environ.get("LIVEAI_MAX_UPLOAD_MB", "500")) * 2**20
         self.cpu = sysinfo.CpuMeter()
         self.started = time.time()
         self.admin_key = os.environ.get("LIVEAI_ADMIN_KEY", "")
@@ -131,6 +140,8 @@ class Handler(BaseHTTPRequestHandler):
                     getattr(self, name)(*mt.groups())
                 except NotFound:
                     self._err(404, "ไม่พบข้อมูล")
+                except (MediaError, EditError) as e:
+                    self._err(400, str(e))
                 except (ValueError, json.JSONDecodeError) as e:
                     self._err(400, f"คำขอไม่ถูกต้อง: {e}")
                 except (BrokenPipeError, ConnectionResetError):
@@ -143,7 +154,7 @@ class Handler(BaseHTTPRequestHandler):
                         pass
                 finally:
                     if path != "/api/health":
-                        logs.event(log, "request", method=method, path=re.sub(r"/\d+", "/:id", path),
+                        logs.event(log, "request", method=method, path=re.sub(r"/(\d+|[a-f0-9]{24})(?=/|$)", "/:id", path),
                                    ms=int((time.time() - started) * 1000))
                 return
         self._err(404, "not found")
@@ -282,6 +293,110 @@ class Handler(BaseHTTPRequestHandler):
                 self.wfile.flush()
         except (BrokenPipeError, ConnectionResetError):
             events.close()
+
+    # media (uploads for the video editor) -----------------------------------
+    @route("POST", "/api/media")
+    def media_upload(self):
+        u = self._auth()
+        if not u:
+            return
+        n = int(self.headers.get("Content-Length") or 0)
+        if n > self.app.max_upload:
+            return self._err(413, f"ไฟล์ใหญ่เกิน {self.app.max_upload // 2**20} MB")
+        name = unquote(self.headers.get("X-Filename", "file"))
+        m = self.app.media.save_upload(u["id"], name, self.headers.get("Content-Type", ""), self.rfile, n)
+        self._send(201, self.app.media.public(m))
+
+    @route("GET", "/api/media")
+    def media_list(self):
+        if (u := self._auth()):
+            self._send(200, self.app.media.list(u["id"]))
+
+    @route("DELETE", r"/api/media/([a-f0-9]{24})")
+    def media_delete(self, mid):
+        if (u := self._auth()):
+            self.app.media.delete(u["id"], mid)
+            self._send(200, {"ok": True})
+
+    @route("GET", r"/api/media/([a-f0-9]{24})/url")
+    def media_url(self, mid):
+        if (u := self._auth()):
+            self.app.media.get(u["id"], mid)
+            self._send(200, {"url": self.app.media.sign(mid)})
+
+    @route("GET", r"/api/media/([a-f0-9]{24})/file")
+    def media_file(self, mid):
+        qs = parse_qs(urlparse(self.path).query)
+        m = self.app.media.verify(mid, (qs.get("exp") or [""])[0], (qs.get("sig") or [""])[0])
+        if not m or not Path(m["path"]).is_file():
+            return self._err(404, "ไม่พบไฟล์หรือลิงก์หมดอายุ")
+        ctype = {"video": "video/mp4", "audio": "audio/mpeg", "image": "image/jpeg"}[m["kind"]]
+        ext = Path(m["path"]).suffix.lower()
+        ctype = {".mp4": "video/mp4", ".mov": "video/quicktime", ".webm": "video/webm", ".mkv": "video/x-matroska",
+                 ".m4a": "audio/mp4", ".mp3": "audio/mpeg", ".wav": "audio/wav", ".ogg": "audio/ogg", ".png": "image/png",
+                 ".webp": "image/webp", ".jpg": "image/jpeg", ".srt": "application/x-subrip"}.get(ext, ctype)
+        self._send_file(Path(m["path"]), ctype, download=m["name"] if "download" in qs else None)
+
+    def _send_file(self, path: Path, ctype: str, download: str | None = None):
+        size = path.stat().st_size
+        start, end, code = 0, size - 1, 200
+        rng = self.headers.get("Range", "")
+        if rng.startswith("bytes="):
+            a, _, b = rng[6:].split(",")[0].partition("-")
+            try:
+                if a:
+                    start, end = int(a), (int(b) if b else size - 1)
+                else:
+                    start = size - int(b)
+                end = min(end, size - 1)
+                if start < 0 or start > end:
+                    raise ValueError
+                code = 206
+            except ValueError:
+                self.send_response(416)
+                self.send_header("Content-Range", f"bytes */{size}")
+                self.send_header("Content-Length", "0")
+                self.end_headers()
+                return
+        self.send_response(code)
+        self.send_header("Content-Type", ctype)
+        self.send_header("Accept-Ranges", "bytes")
+        self.send_header("Content-Length", str(end - start + 1))
+        self.send_header("Cache-Control", "private, max-age=3600")
+        if code == 206:
+            self.send_header("Content-Range", f"bytes {start}-{end}/{size}")
+        if download:
+            from urllib.parse import quote
+            self.send_header("Content-Disposition", f"attachment; filename*=UTF-8''{quote(download)}")
+        self.end_headers()
+        with open(path, "rb") as f:
+            f.seek(start)
+            left = end - start + 1
+            while left > 0:
+                chunk = f.read(min(1 << 20, left))
+                if not chunk:
+                    break
+                self.wfile.write(chunk)
+                left -= len(chunk)
+
+    # quick edits (chat-style instruction) -----------------------------------
+    @route("POST", "/api/edits")
+    def edit_create(self):
+        u = self._auth()
+        if not u:
+            return
+        d = self._json()
+        conv = d.get("conversation_id")
+        base = d.get("base_edit")
+        e = self.app.editor.create(u["id"], int(conv) if conv not in (None, "") else None, str(d.get("instruction", "")),
+                                   [str(x) for x in d.get("media_ids") or []], int(base) if base not in (None, "") else None)
+        e.pop("media_ids_raw", None)
+        self._send(201, e)
+
+    @route("GET", r"/api/edits/(\d+)")
+    def edit_get(self, eid):
+        if (u := self._auth()):
+            self._send(200, self.app.editor.view(u["id"], int(eid)))
 
     # admin -----------------------------------------------------------------
     @route("POST", "/api/admin/backup")

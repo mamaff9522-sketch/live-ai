@@ -273,6 +273,24 @@ class LLMClient:
         except Exception:
             return None
 
+    def complete_json(self, messages: list[dict], schema: dict, max_tokens: int = 1200) -> dict:
+        """One non-streamed reply forced to match a JSON schema (llama.cpp turns it into a grammar)."""
+        body = {"messages": messages, "stream": False, "temperature": 0.1, "top_p": 0.9, "top_k": 20,
+                "max_tokens": max_tokens, "chat_template_kwargs": {"enable_thinking": False},
+                "response_format": {"type": "json_schema", "json_schema": {"name": "plan", "schema": schema}}}
+        req = urllib.request.Request(self.server.url + "/v1/chat/completions", json.dumps(body).encode(),
+                                     {"Content-Type": "application/json"})
+        try:
+            with urllib.request.urlopen(req, timeout=self.s.request_timeout_s) as r:
+                data = json.load(r)
+        except urllib.error.HTTPError as e:
+            raise LLMError(f"model error {e.code}: {e.read()[:300].decode('utf-8', 'replace')}") from e
+        except Exception as e:
+            raise LLMError(f"model unreachable: {e}") from e
+        text = data["choices"][0]["message"].get("content") or ""
+        text = text.strip().removeprefix("```json").removeprefix("```").removesuffix("```").strip()
+        return json.loads(text)
+
     def stream_chat(self, messages: list[dict], think: bool = False, max_tokens: int | None = None,
                     code: bool = False) -> Iterator[dict]:
         """Yields {"type": "token"|"thinking", "text": ...} and finally {"type": "done", "timings": {...}}.
