@@ -902,10 +902,10 @@ def normalize_segment(c: dict, seg: Path, W: int, H: int, fps: int, dialogue_onl
     if not c["has_audio"]:
         args += ["-f", "lavfi", "-i", "anullsrc=r=48000:cl=stereo"]
     args += ["-map", "0:v:0", "-map", "0:a:0" if c["has_audio"] else "1:a:0", "-vf", vf,
-             "-af", af + ",apad", "-t", f"{c['duration']:.3f}",
+             "-af", af + f",apad=whole_dur={c['duration']:.3f}", "-t", f"{c['duration']:.3f}",
              "-c:v", "libx264", "-preset", "veryfast", "-crf", "20", "-g", str(fps * 2), "-c:a", "aac", "-b:a", "160k", "-ar", "48000",
              "-video_track_timescale", "90000", "-movflags", "+faststart", "-threads", os.environ.get("LIVEAI_FFMPEG_THREADS", "2"), str(tmp)]
-    r = subprocess.run(args, capture_output=True, text=True, timeout=3600)
+    r = subprocess.run(args, capture_output=True, text=True, timeout=max(300, int(c["duration"] * 30)))
     if r.returncode != 0:
         tmp.unlink(missing_ok=True)
         raise RuntimeError(f"แปลงคลิป {c['name']} ไม่สำเร็จ: {r.stderr[-200:]}")
