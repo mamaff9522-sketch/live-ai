@@ -1,0 +1,113 @@
+name: deploy to Hugging Face Space
+
+# Puts Live AI on a free Hugging Face Space (Docker, CPU basic: 2 vCPU / 16 GB) and tests it there.
+# Needs one repository secret: HF_TOKEN (a Hugging Face token with "Write" access).
+
+on:
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+concurrency:
+  group: deploy-hf
+  cancel-in-progress: false
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    timeout-minutes: 90
+    env:
+      HF_TOKEN: ${{ secrets.HF_TOKEN }}
+      SPACE_NAME: live-ai
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Offline tests must pass first
+        run: python3 -m unittest tests.test_offline
+
+      - name: Check the token
+        run: |
+          if [ -z "$HF_TOKEN" ]; then echo "::error::Secret HF_TOKEN is missing (GitHub repo Settings → Secrets and variables → Actions)"; exit 1; fi
+          curl -fsS -H "Authorization: Bearer $HF_TOKEN" https://huggingface.co/api/whoami-v2 > whoami.json \
+            || { echo "::error::HF_TOKEN was rejected by Hugging Face"; exit 1; }
+          HF_USER=$(jq -r .name whoami.json)
+          ROLE=$(jq -r '.auth.accessToken.role // "unknown"' whoami.json)
+          echo "Hugging Face user: $HF_USER (token role: $ROLE)"
+          echo "HF_USER=$HF_USER" >> "$GITHUB_ENV"
+          HOST=$(echo "$HF_USER-$SPACE_NAME" | tr '[:upper:]' '[:lower:]' | tr '._' '--')
+          echo "SPACE_URL=https://$HOST.hf.space" >> "$GITHUB_ENV"
+
+      - name: Create the Space (once)
+        run: |
+          code=$(curl -sS -o create.json -w "%{http_code}" -X POST https://huggingface.co/api/repos/create \
+            -H "Authorization: Bearer $HF_TOKEN" -H "Content-Type: application/json" \
+            -d "{\"type\":\"space\",\"name\":\"$SPACE_NAME\",\"sdk\":\"docker\",\"private\":false}")
+          cat create.json; echo
+          case "$code" in 200|201) echo "Space created";; 409) echo "Space already exists";; *) echo "::error::create failed ($code)"; exit 1;; esac
+
+      - name: Push the app to the Space
+        env: { GH_TOKEN: "${{ github.token }}" }
+        run: |
+          TAG=$(curl -fsSL -H "Authorization: Bearer $GH_TOKEN" https://api.github.com/repos/ggml-org/llama.cpp/releases/latest | jq -r .tag_name)
+          W=$(mktemp -d)
+          cp -r Dockerfile live_ai web "$W/"
+          sed -i "s/^ARG LLAMA_TAG=.*/ARG LLAMA_TAG=$TAG/" "$W/Dockerfile"
+          cat > "$W/README.md" <<EOF
+          ---
+          title: Live AI
+          emoji: 💬
+          colorFrom: green
+          colorTo: gray
+          sdk: docker
+          app_port: 7860
+          pinned: false
+          short_description: Thai AI assistant (Qwen3.5-2B on CPU, llama.cpp)
+          ---
+
+          Live AI: Thai chat assistant running Qwen3.5-2B (GGUF Q4_K_M) on CPU with llama.cpp.
+          Source: https://github.com/${GITHUB_REPOSITORY} (commit ${GITHUB_SHA})
+          EOF
+          sed -i 's/^          //' "$W/README.md"
+          cd "$W"
+          git init -q -b main && git config user.name "live-ai-deploy" && git config user.email "deploy@users.noreply.github.com"
+          git add -A && git commit -q -m "Deploy ${GITHUB_SHA}"
+          git push -f "https://$HF_USER:$HF_TOKEN@huggingface.co/spaces/$HF_USER/$SPACE_NAME" main 2>&1 | sed "s/$HF_TOKEN/***/g"
+
+      - name: Wait for the Space to build and start
+        run: |
+          for i in $(seq 1 120); do
+            stage=$(curl -fsS -H "Authorization: Bearer $HF_TOKEN" "https://huggingface.co/api/spaces/$HF_USER/$SPACE_NAME/runtime" | jq -r .stage || echo unknown)
+            echo "$(date +%T) $stage"
+            case "$stage" in RUNNING) break;; BUILD_ERROR|RUNTIME_ERROR|CONFIG_ERROR) echo "::error::Space stage $stage"; exit 1;; esac
+            sleep 30
+          done
+          for i in $(seq 1 90); do
+            if curl -fsS "$SPACE_URL/api/health" -o health.json; then cat health.json; echo; exit 0; fi
+            sleep 10
+          done
+          echo "::error::Space did not become healthy"; curl -sS "$SPACE_URL/api/health"; exit 1
+
+      - name: Test the live Space (Thai chat, memory, isolation)
+        run: |
+          mkdir -p deploy
+          A=$(curl -fsS -X POST "$SPACE_URL/api/register" -H 'Content-Type: application/json' -d '{"name":"deploy-check-a"}' | jq -r .token)
+          B=$(curl -fsS -X POST "$SPACE_URL/api/register" -H 'Content-Type: application/json' -d '{"name":"deploy-check-b"}' | jq -r .token)
+          ask() { curl -fsS -X POST "$SPACE_URL/api/chat" -H "Authorization: Bearer $1" -H 'Content-Type: application/json' -d "{\"message\":\"$2\",\"stream\":false}"; }
+          ask "$A" "สวัสดีครับ แนะนำตัวสั้น ๆ" | tee deploy/hello.json; echo
+          ask "$A" "จำไว้ว่า สีโปรดของฉันคือสีเขียว" > /dev/null
+          ask "$A" "สีโปรดของฉันคือสีอะไร" | tee deploy/recall.json; echo
+          ask "$B" "สีโปรดของฉันคือสีอะไร" | tee deploy/other_user.json; echo
+          curl -fsS "$SPACE_URL/api/health" | tee deploy/health.json; echo
+          echo "$SPACE_URL" > deploy/url.txt
+          jq -e '.reply | length > 5' deploy/hello.json
+          jq -e '.reply | contains("เขียว")' deploy/recall.json
+          jq -e '.reply | contains("เขียว") | not' deploy/other_user.json
+
+      - name: Publish result to the ci-reports branch
+        if: always()
+        env: { GH_TOKEN: "${{ github.token }}" }
+        run: |
+          mkdir -p deploy && echo "${SPACE_URL:-unknown}" > deploy/url.txt
+          curl -sS -H "Authorization: Bearer $HF_TOKEN" "https://huggingface.co/api/spaces/$HF_USER/$SPACE_NAME/runtime" > deploy/runtime.json 2>/dev/null || true
+          bash scripts/publish_report.sh deploy deploy
