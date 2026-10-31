@@ -3,27 +3,27 @@
 {"method": "GET", "path": "/v25.0/me", "params": {"fields": "id,name,category,about,link,followers_count,fan_count"}, "token": "PAGE-"}
 {"method": "GET", "path": "/v25.0/1001/insights", "params": {"metric": "page_follows"}, "token": "PAGE-"}
 {"method": "GET", "path": "/v25.0/1001", "params": {"fields": "id,name,category,about,link,followers_count,fan_count"}, "token": "PAGE-"}
-{"method": "GET", "path": "/v25.0/1001/insights", "params": {"metric": "page_follows", "period": "day", "since": "1793224286", "until": "1793483486"}, "token": "PAGE-"}
-{"method": "GET", "path": "/v25.0/1001/insights", "params": {"metric": "page_daily_follows_unique", "period": "day", "since": "1793224286", "until": "1793483486"}, "token": "PAGE-"}
-{"method": "GET", "path": "/v25.0/1001/insights", "params": {"metric": "page_daily_unfollows_unique", "period": "day", "since": "1793224286", "until": "1793483486"}, "token": "PAGE-"}
-{"method": "GET", "path": "/v25.0/1001/insights", "params": {"metric": "page_media_view", "period": "day", "since": "1793224286", "until": "1793483486"}, "token": "PAGE-"}
-{"method": "GET", "path": "/v25.0/1001/insights", "params": {"metric": "page_total_media_view_unique", "period": "day", "since": "1793224286", "until": "1793483486"}, "token": "PAGE-"}
-{"method": "GET", "path": "/v25.0/1001/insights", "params": {"metric": "page_post_engagements", "period": "day", "since": "1793224286", "until": "1793483486"}, "token": "PAGE-"}
-{"method": "GET", "path": "/v25.0/1001/insights", "params": {"metric": "page_views_total", "period": "day", "since": "1793224286", "until": "1793483486"}, "token": "PAGE-"}
-{"method": "GET", "path": "/v25.0/1001/insights", "params": {"metric": "page_video_views", "period": "day", "since": "1793224286", "until": "1793483486"}, "token": "PAGE-"}
-{"method": "POST", "path": "/v25.0/1001/photos", "params": {"caption": "เรื่องราว 'ไฟแค้นซ่อนรัก' ที่ต้องเลือกระหว่างแม่หรือเมีย? ถ้าสถานการณ์นี้เกิดขึ้นกับคุณ คุณจะเลือกให้ใครอยู่ก่อน? A) ยอมให้แม่อยู่ B) ยอมให้ภรรยาอยู่ C) ร้องขอแม่ให้ลาไปอยู่ด้วย\n\nติดตามเพจไว้ ตอนต่อไปเข้มข้นกว่านี้แน่นอน\n\n#ละครสั้นทดสอบ #ไฟแค้นซ่อนรัก #ดราม่าครอบครัว", "published": "true", "_file_bytes": "972441"}, "token": "PAGE-"}
-{"method": "POST", "path": "/v25.0/1001/photos", "params": {"caption": "น้ำฟ้าแอบจ้องมองว่าแม่จะเลือกใครก่อน? ภาคินต้องรับไหวพริบกับพินัยกรรมพ่อ!\n\nใครอยากรู้ตอนจบ กดติดตามเพจไว้เลย\n\n#ละครสั้นทดสอบ #ไฟแค้นซ่อนรัก", "published": "true", "_file_bytes": "953159"}, "token": "PAGE-"}
-{"method": "POST", "path": "/v25.0/1001/photos", "params": {"caption": "แม่ลูกต้องเลือกใครก่อน? ไฟแค้นซ่อนรัก: แสงน้ำตาตกหลังกาลอ้วนกับภรรยา! 🔥\n\nติดตามเพจไว้ ตอนต่อไปเข้มข้นกว่านี้แน่นอน\n\n#ละครสั้นทดสอบไฟแค้นซ่อนรัก", "published": "true", "_file_bytes": "918564"}, "token": "PAGE-"}
+{"method": "GET", "path": "/v25.0/1001/insights", "params": {"metric": "page_follows", "period": "day", "since": "1793226481", "until": "1793485681"}, "token": "PAGE-"}
+{"method": "GET", "path": "/v25.0/1001/insights", "params": {"metric": "page_daily_follows_unique", "period": "day", "since": "1793226481", "until": "1793485681"}, "token": "PAGE-"}
+{"method": "GET", "path": "/v25.0/1001/insights", "params": {"metric": "page_daily_unfollows_unique", "period": "day", "since": "1793226481", "until": "1793485681"}, "token": "PAGE-"}
+{"method": "GET", "path": "/v25.0/1001/insights", "params": {"metric": "page_media_view", "period": "day", "since": "1793226481", "until": "1793485681"}, "token": "PAGE-"}
+{"method": "GET", "path": "/v25.0/1001/insights", "params": {"metric": "page_total_media_view_unique", "period": "day", "since": "1793226481", "until": "1793485681"}, "token": "PAGE-"}
+{"method": "GET", "path": "/v25.0/1001/insights", "params": {"metric": "page_post_engagements", "period": "day", "since": "1793226481", "until": "1793485681"}, "token": "PAGE-"}
+{"method": "GET", "path": "/v25.0/1001/insights", "params": {"metric": "page_views_total", "period": "day", "since": "1793226481", "until": "1793485681"}, "token": "PAGE-"}
+{"method": "GET", "path": "/v25.0/1001/insights", "params": {"metric": "page_video_views", "period": "day", "since": "1793226481", "until": "1793485681"}, "token": "PAGE-"}
+{"method": "POST", "path": "/v25.0/1001/photos", "params": {"caption": "ลูกสะใภ้ถูกกลั่นแกล้ง? แม่รักลูกแค่ไหน? ไฟแค้นซ่อนรัก! ถ้าเป็นคุณจะทำอย่างไร: A. กลัวแม่จะเสียใจ B. บำเพ็ญพระคุณให้แม่\n\n#ละครสั้น #ไฟแค้นซ่อนรัก #ละครสั้นทดสอบ", "published": "true", "_file_bytes": "959305"}, "token": "PAGE-"}
+{"method": "POST", "path": "/v25.0/1001/photos", "params": {"caption": "ไฟแค้นซ่อนรัก! แม่สั่งลูกสะใภ้กลั่นแกล้งสามี... ภาคินต้องเลือกระหว่างความรักกับความตายในพินัยกรรมที่พเนจรไป\nอย่าพลาดตอนเด็ดขาด กดติดตามเพจละครสั้นทดสอบ เพื่อลุ้นเรื่องราวความรักอันพิสดารและข้อพิพาทที่เข้มข้น\n\n#ละครสั้น #ไฟแค้นซ่อนรัก #ละครสั้นทดสอบ", "published": "true", "_file_bytes": "927539"}, "token": "PAGE-"}
+{"method": "POST", "path": "/v25.0/1001/photos", "params": {"caption": "ลูกสะใภ้ที่ถูกกลั่นแกล้งต้องเลือกระหว่างแม่กับเมีย! แพรวา (คุณหญิงมณี) ยอมรักใคร่แต่พ่อภาคิน (ภาคิน) จะเลือกใครก่อน? 🔥\n\nกดติดตามเพจไว้ แล้วมาลุ้นกันว่าเรื่องจะเป็นอย่างไรต่อ\n\n#ละครสั้นทดสอบ #ไฟแค้นซ่อนรัก #แพรวา #คุณหญิงมณี", "published": "true", "_file_bytes": "875119"}, "token": "PAGE-"}
 {"method": "POST", "path": "/v25.0/1001/video_reels", "params": {"upload_phase": "start"}, "token": "PAGE-"}
 {"method": "POST", "path": "/upload/v25.0/9100", "params": {}, "token": "PAGE-"}
-{"method": "POST", "path": "/v25.0/1001/video_reels", "params": {"upload_phase": "finish", "video_id": "9100", "video_state": "PUBLISHED", "description": "ลูกสะใภ้ถูกกลั่นแกล้ง? แม่สามีอยากแต่งงานกับคนนอก! เรื่องไฟแค้นซ่อนรักมีพินัยกรรมลับรอ揭开 🤔 กดติดตามเพื่อติดตามบทสยองนี้\n\n#ละครสั้นทดสอบ #ไฟแค้นซ่อนรัก #รักที่เจ็บปวด #บทสยอง", "is_ai_generated": "true"}, "token": "PAGE-"}
+{"method": "POST", "path": "/v25.0/1001/video_reels", "params": {"upload_phase": "finish", "video_id": "9100", "video_state": "PUBLISHED", "description": "ภาคินเลือกแม่หรือเมีย? พินัยกรรมของพ่อคือคำตอบที่คาดไม่ถึง... กดติดตามเพื่อรู้ความจริง!\n\n#ละครสั้นทดสอบ #ไฟแค้นซ่อนรัก #ละครไทย #ReelsShorts", "is_ai_generated": "true"}, "token": "PAGE-"}
 {"method": "GET", "path": "/v25.0/1001", "params": {"fields": "id,name,category,about,link,followers_count,fan_count"}, "token": "PAGE-"}
-{"method": "GET", "path": "/v25.0/1001/insights", "params": {"metric": "page_follows", "period": "day", "since": "1793224367", "until": "1793483567"}, "token": "PAGE-"}
-{"method": "GET", "path": "/v25.0/1001/insights", "params": {"metric": "page_daily_follows_unique", "period": "day", "since": "1793224367", "until": "1793483567"}, "token": "PAGE-"}
-{"method": "GET", "path": "/v25.0/1001/insights", "params": {"metric": "page_daily_unfollows_unique", "period": "day", "since": "1793224367", "until": "1793483567"}, "token": "PAGE-"}
-{"method": "GET", "path": "/v25.0/1001/insights", "params": {"metric": "page_media_view", "period": "day", "since": "1793224367", "until": "1793483567"}, "token": "PAGE-"}
-{"method": "GET", "path": "/v25.0/1001/insights", "params": {"metric": "page_total_media_view_unique", "period": "day", "since": "1793224367", "until": "1793483567"}, "token": "PAGE-"}
-{"method": "GET", "path": "/v25.0/1001/insights", "params": {"metric": "page_post_engagements", "period": "day", "since": "1793224367", "until": "1793483567"}, "token": "PAGE-"}
+{"method": "GET", "path": "/v25.0/1001/insights", "params": {"metric": "page_follows", "period": "day", "since": "1793226562", "until": "1793485762"}, "token": "PAGE-"}
+{"method": "GET", "path": "/v25.0/1001/insights", "params": {"metric": "page_daily_follows_unique", "period": "day", "since": "1793226562", "until": "1793485762"}, "token": "PAGE-"}
+{"method": "GET", "path": "/v25.0/1001/insights", "params": {"metric": "page_daily_unfollows_unique", "period": "day", "since": "1793226562", "until": "1793485762"}, "token": "PAGE-"}
+{"method": "GET", "path": "/v25.0/1001/insights", "params": {"metric": "page_media_view", "period": "day", "since": "1793226562", "until": "1793485762"}, "token": "PAGE-"}
+{"method": "GET", "path": "/v25.0/1001/insights", "params": {"metric": "page_total_media_view_unique", "period": "day", "since": "1793226562", "until": "1793485762"}, "token": "PAGE-"}
+{"method": "GET", "path": "/v25.0/1001/insights", "params": {"metric": "page_post_engagements", "period": "day", "since": "1793226562", "until": "1793485762"}, "token": "PAGE-"}
 {"method": "GET", "path": "/v25.0/1001_501", "params": {"fields": "id,created_time,permalink_url,shares,reactions.summary(total_count).limit(0),comments.summary(total_count).limit(0)"}, "token": "PAGE-"}
 {"method": "GET", "path": "/v25.0/1001_501/insights", "params": {"metric": "post_total_media_view_unique", "period": "lifetime"}, "token": "PAGE-"}
 {"method": "GET", "path": "/v25.0/1001_502", "params": {"fields": "id,created_time,permalink_url,shares,reactions.summary(total_count).limit(0),comments.summary(total_count).limit(0)"}, "token": "PAGE-"}
