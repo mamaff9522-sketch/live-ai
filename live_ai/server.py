@@ -489,6 +489,10 @@ class Handler(BaseHTTPRequestHandler):
         self._send(200, {"file": p.name if p else None, "saved_remote": saved})
 
     # Facebook Page growth --------------------------------------------------------------
+    @route("GET", "/privacy")
+    def privacy_page(self):
+        self._send(200, ctype="text/html; charset=utf-8", body=(WEB_DIR / "privacy.html").read_bytes())
+
     @route("GET", "/growth")
     def growth_page(self):
         self._send(200, ctype="text/html; charset=utf-8", body=(WEB_DIR / "growth.html").read_bytes())
