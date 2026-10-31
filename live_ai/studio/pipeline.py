@@ -87,13 +87,19 @@ def denoise_filter() -> tuple[str, str]:
     if _DENOISE is None:
         ok = False
         if RNNOISE_MODEL.is_file():
-            try:
-                r = subprocess.run(["ffmpeg", "-loglevel", "error", "-nostdin", "-f", "lavfi", "-i", "sine=frequency=300:duration=1",
-                                    "-af", f"aresample=48000,arnndn=m={RNNOISE_MODEL}", "-f", "null", "-"],
-                                   capture_output=True, timeout=15)
-                ok = r.returncode == 0
-            except subprocess.TimeoutExpired:
-                ok = False
+            # the same kind of job as a real clip (video + audio into MP4): a lone audio test can pass
+            # while real clips hang
+            import tempfile
+            with tempfile.TemporaryDirectory() as d:
+                try:
+                    r = subprocess.run(["ffmpeg", "-loglevel", "error", "-nostdin", "-y", "-f", "lavfi", "-i", "color=c=gray:s=320x240:d=2",
+                                        "-f", "lavfi", "-i", "sine=frequency=300:duration=2", "-map", "0:v", "-map", "1:a",
+                                        "-af", f"aresample=48000,highpass=f=70,arnndn=m={RNNOISE_MODEL},aformat=channel_layouts=stereo",
+                                        "-t", "2", "-c:v", "libx264", "-preset", "ultrafast", "-c:a", "aac", f"{d}/t.mp4"],
+                                       capture_output=True, timeout=20)
+                    ok = r.returncode == 0
+                except subprocess.TimeoutExpired:
+                    ok = False
         _DENOISE = "rnnoise" if ok else "afftdn"
         logs.event(log, "speech denoiser", engine=_DENOISE)
     if _DENOISE == "rnnoise":

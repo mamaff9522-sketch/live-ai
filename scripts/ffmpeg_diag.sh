@@ -8,6 +8,8 @@ run() { local name="$1"; shift; local t0=$(date +%s.%N); timeout 60 ffmpeg -logl
 run plain "aresample=48000,aformat=channel_layouts=stereo,apad=whole_dur=3"
 run apad_bare "aresample=48000,aformat=channel_layouts=stereo,apad"
 run arnndn "aresample=48000,highpass=f=70,arnndn=m=$M,aformat=channel_layouts=stereo,apad=whole_dur=3"
+run arnndn_mono_first "aresample=48000,aformat=channel_layouts=mono,arnndn=m=$M,aformat=channel_layouts=stereo"
+run afftdn "aresample=48000,highpass=f=70,afftdn=nr=20:nf=-35:tn=1,aformat=channel_layouts=stereo,apad=whole_dur=3"
 run volume_expr "aresample=48000,volume='if(gt(between(t,0.30,2.70),0),1,0.1)':eval=frame,aformat=channel_layouts=stereo,apad=whole_dur=3"
 run full "aresample=48000,highpass=f=70,arnndn=m=$M,volume='if(gt(between(t,0.30,2.70),0),1,0.1)':eval=frame,aformat=channel_layouts=stereo,apad=whole_dur=3"
 cat "$out"
