@@ -1,12 +1,12 @@
-{"ts": "2026-10-31T19:40:18", "level": "INFO", "where": "live_ai.http", "msg": "Live AI listening", "host": "0.0.0.0", "port": 7860, "threads": 2, "ctx": 16384}
-{"ts": "2026-10-31T19:40:18", "level": "INFO", "where": "live_ai.llm", "msg": "model source", "repo": "unsloth/Qwen3.5-2B-GGUF", "file": "Qwen3.5-2B-Q4_K_M.gguf", "sha256": "aaf42c8b7c3cab2bf3d69c355048d4a0ee9973d48f16c731c0520ee914699223"}
-{"ts": "2026-10-31T19:40:18", "level": "INFO", "where": "live_ai.llm", "msg": "downloading model", "url": "https://huggingface.co/unsloth/Qwen3.5-2B-GGUF/resolve/main/Qwen3.5-2B-Q4_K_M.gguf", "resume_from": 0}
-{"ts": "2026-10-31T19:40:39", "level": "INFO", "where": "live_ai.llm", "msg": "model downloaded", "url": "https://huggingface.co/unsloth/Qwen3.5-2B-GGUF/resolve/main/Qwen3.5-2B-Q4_K_M.gguf", "path": "/data/models/Qwen3.5-2B-Q4_K_M.gguf", "size_mb": 1221, "sha256_checked": true}
-{"ts": "2026-10-31T19:40:39", "level": "INFO", "where": "live_ai.llm", "msg": "downloading model", "url": "https://huggingface.co/unsloth/Qwen3.5-2B-GGUF/resolve/main/mmproj-F16.gguf", "resume_from": 0}
-{"ts": "2026-10-31T19:40:47", "level": "INFO", "where": "live_ai.llm", "msg": "vision projector ready", "file": "mmproj-F16.gguf", "size_mb": 637}
-{"ts": "2026-10-31T19:40:47", "level": "INFO", "where": "live_ai.llm", "msg": "starting llama-server", "cmd": "/opt/llama/llama-server -m /data/models/Qwen3.5-2B-Q4_K_M.gguf -c 16384 -t 2 -tb 2 --host 127.0.0.1 --port 8081 --jinja -np 1 --no-webui --mmproj /data/models/mmproj-F16.gguf"}
-{"ts": "2026-10-31T19:40:50", "level": "INFO", "where": "live_ai.llm", "msg": "model ready", "load_seconds": 3.0, "threads": 2, "ctx": 16384}
-{"ts": "2026-10-31T19:40:52", "level": "INFO", "where": "live_ai.http", "msg": "user created", "user": 1}
-{"ts": "2026-10-31T19:40:52", "level": "INFO", "where": "live_ai.http", "msg": "request", "method": "POST", "path": "/api/register", "ms": 0}
-{"ts": "2026-10-31T19:40:59", "level": "INFO", "where": "live_ai.assistant", "msg": "reply", "user": 1, "conversation": 1, "in_chars": 25, "out_chars": 134, "think": false, "seconds": 6.57, "prompt_tokens": 175, "reply_tokens": 33, "tokens_per_second": 12.99, "prompt_tokens_per_second": 42.67, "finish_reason": "stop", "memory": ""}
-{"ts": "2026-10-31T19:40:59", "level": "INFO", "where": "live_ai.http", "msg": "request", "method": "POST", "path": "/api/chat", "ms": 6569}
+{"ts": "2026-10-31T20:03:05", "level": "INFO", "where": "live_ai.http", "msg": "Live AI listening", "host": "0.0.0.0", "port": 7860, "threads": 2, "ctx": 16384}
+{"ts": "2026-10-31T20:03:05", "level": "INFO", "where": "live_ai.llm", "msg": "model source", "repo": "unsloth/Qwen3.5-2B-GGUF", "file": "Qwen3.5-2B-Q4_K_M.gguf", "sha256": "aaf42c8b7c3cab2bf3d69c355048d4a0ee9973d48f16c731c0520ee914699223"}
+{"ts": "2026-10-31T20:03:05", "level": "INFO", "where": "live_ai.llm", "msg": "downloading model", "url": "https://huggingface.co/unsloth/Qwen3.5-2B-GGUF/resolve/main/Qwen3.5-2B-Q4_K_M.gguf", "resume_from": 0}
+{"ts": "2026-10-31T20:03:09", "level": "INFO", "where": "live_ai.llm", "msg": "model downloaded", "url": "https://huggingface.co/unsloth/Qwen3.5-2B-GGUF/resolve/main/Qwen3.5-2B-Q4_K_M.gguf", "path": "/data/models/Qwen3.5-2B-Q4_K_M.gguf", "size_mb": 1221, "sha256_checked": true}
+{"ts": "2026-10-31T20:03:09", "level": "INFO", "where": "live_ai.llm", "msg": "downloading model", "url": "https://huggingface.co/unsloth/Qwen3.5-2B-GGUF/resolve/main/mmproj-F16.gguf", "resume_from": 0}
+{"ts": "2026-10-31T20:03:12", "level": "INFO", "where": "live_ai.llm", "msg": "vision projector ready", "file": "mmproj-F16.gguf", "size_mb": 637}
+{"ts": "2026-10-31T20:03:12", "level": "INFO", "where": "live_ai.llm", "msg": "starting llama-server", "cmd": "/opt/llama/llama-server -m /data/models/Qwen3.5-2B-Q4_K_M.gguf -c 16384 -t 2 -tb 2 --host 127.0.0.1 --port 8081 --jinja -np 1 --no-webui --mmproj /data/models/mmproj-F16.gguf"}
+{"ts": "2026-10-31T20:03:15", "level": "INFO", "where": "live_ai.llm", "msg": "model ready", "load_seconds": 3.0, "threads": 2, "ctx": 16384}
+{"ts": "2026-10-31T20:03:15", "level": "INFO", "where": "live_ai.http", "msg": "user created", "user": 1}
+{"ts": "2026-10-31T20:03:15", "level": "INFO", "where": "live_ai.http", "msg": "request", "method": "POST", "path": "/api/register", "ms": 0}
+{"ts": "2026-10-31T20:03:22", "level": "INFO", "where": "live_ai.assistant", "msg": "reply", "user": 1, "conversation": 1, "in_chars": 25, "out_chars": 165, "think": false, "seconds": 7.43, "prompt_tokens": 175, "reply_tokens": 45, "tokens_per_second": 13.22, "prompt_tokens_per_second": 42.69, "finish_reason": "stop", "memory": ""}
+{"ts": "2026-10-31T20:03:22", "level": "INFO", "where": "live_ai.http", "msg": "request", "method": "POST", "path": "/api/chat", "ms": 7431}
