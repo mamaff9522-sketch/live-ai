@@ -47,6 +47,7 @@ jobs:
             -H "Authorization: Bearer $HF_TOKEN" -H "Content-Type: application/json" \
             -d "{\"type\":\"space\",\"name\":\"$SPACE_NAME\",\"sdk\":\"docker\",\"private\":false}")
           cat create.json; echo
+          mkdir -p deploy && cp create.json deploy/create_response.json
           case "$code" in 200|201) echo "Space created";; 409) echo "Space already exists";; *) echo "::error::create failed ($code)"; exit 1;; esac
 
       - name: Private dataset for saving the database + Space secrets
