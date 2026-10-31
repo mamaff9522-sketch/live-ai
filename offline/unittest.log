@@ -1,0 +1,64 @@
+test_01_health (tests.test_offline.Live.test_01_health) ... ok
+test_02_page (tests.test_offline.Live.test_02_page) ... ok
+ok
+ok
+ok
+ok
+ok
+ok
+ok
+{"ts": "2026-10-31T13:21:28", "level": "WARNING", "where": "live_ai.assistant", "msg": "context too long, trimming history", "conversation": 11}
+{"ts": "2026-10-31T13:21:28", "level": "WARNING", "where": "live_ai.assistant", "msg": "context too long, trimming history", "conversation": 11}
+ok
+ok
+{"ts": "2026-10-31T13:21:29", "level": "WARNING", "where": "live_ai.assistant", "msg": "model unreachable, waiting for recovery"}
+{"ts": "2026-10-31T13:21:29", "level": "ERROR", "where": "live_ai.llm", "msg": "model stopped, restarting", "exit_code": -9, "failed_health_checks": 0}
+ok
+ok
+ok
+ok
+ok
+ok
+FAIL
+FAIL
+Traceback (most recent call last):
+  File "<frozen runpy>", line 198, in _run_module_as_main
+  File "<frozen runpy>", line 88, in _run_code
+  File "/opt/hostedtoolcache/Python/3.12.15/x64/lib/python3.12/unittest/__main__.py", line 18, in <module>
+    main(module=None)
+  File "/opt/hostedtoolcache/Python/3.12.15/x64/lib/python3.12/unittest/main.py", line 105, in __init__
+    self.runTests()
+  File "/opt/hostedtoolcache/Python/3.12.15/x64/lib/python3.12/unittest/main.py", line 281, in runTests
+    self.result = testRunner.run(self.test)
+                  ^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/opt/hostedtoolcache/Python/3.12.15/x64/lib/python3.12/unittest/runner.py", line 240, in run
+    test(result)
+  File "/opt/hostedtoolcache/Python/3.12.15/x64/lib/python3.12/unittest/suite.py", line 84, in __call__
+    return self.run(*args, **kwds)
+           ^^^^^^^^^^^^^^^^^^^^^^^
+  File "/opt/hostedtoolcache/Python/3.12.15/x64/lib/python3.12/unittest/suite.py", line 122, in run
+    test(result)
+  File "/opt/hostedtoolcache/Python/3.12.15/x64/lib/python3.12/unittest/suite.py", line 84, in __call__
+    return self.run(*args, **kwds)
+           ^^^^^^^^^^^^^^^^^^^^^^^
+  File "/opt/hostedtoolcache/Python/3.12.15/x64/lib/python3.12/unittest/suite.py", line 122, in run
+    test(result)
+  File "/opt/hostedtoolcache/Python/3.12.15/x64/lib/python3.12/unittest/suite.py", line 84, in __call__
+    return self.run(*args, **kwds)
+           ^^^^^^^^^^^^^^^^^^^^^^^
+  File "/opt/hostedtoolcache/Python/3.12.15/x64/lib/python3.12/unittest/suite.py", line 122, in run
+    test(result)
+  File "/opt/hostedtoolcache/Python/3.12.15/x64/lib/python3.12/unittest/case.py", line 690, in __call__
+    return self.run(*args, **kwds)
+           ^^^^^^^^^^^^^^^^^^^^^^^
+  File "/opt/hostedtoolcache/Python/3.12.15/x64/lib/python3.12/unittest/case.py", line 634, in run
+    self._callTestMethod(testMethod)
+  File "/opt/hostedtoolcache/Python/3.12.15/x64/lib/python3.12/unittest/case.py", line 589, in _callTestMethod
+    if method() is not None:
+       ^^^^^^^^
+  File "/home/runner/work/live-ai/live-ai/tests/test_studio.py", line 208, in test_4_speech_across_two_clips
+    p = self.wait(t, pid)
+        ^^^^^^^^^^^^^^^^^
+  File "/home/runner/work/live-ai/live-ai/tests/test_studio.py", line 147, in wait
+    time.sleep(0.5)
+KeyboardInterrupt
