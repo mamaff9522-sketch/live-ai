@@ -1,0 +1,34 @@
+{"method": "GET", "path": "/v25.0/oauth/access_token", "params": {"grant_type": "fb_exchange_token", "client_id": "42", "client_secret": "secret123", "fb_exchange_token": "USER-ci-short-token-xxxxxxxx"}, "token": "USER-"}
+{"method": "GET", "path": "/v25.0/me/accounts", "params": {"fields": "id,name,category,access_token,tasks", "limit": "100"}, "token": "USER-"}
+{"method": "GET", "path": "/v25.0/me", "params": {"fields": "id,name,category,about,link,followers_count,fan_count"}, "token": "PAGE-"}
+{"method": "GET", "path": "/v25.0/1001/insights", "params": {"metric": "page_follows"}, "token": "PAGE-"}
+{"method": "GET", "path": "/v25.0/1001", "params": {"fields": "id,name,category,about,link,followers_count,fan_count"}, "token": "PAGE-"}
+{"method": "GET", "path": "/v25.0/1001/insights", "params": {"metric": "page_follows", "period": "day", "since": "1793214926", "until": "1793474126"}, "token": "PAGE-"}
+{"method": "GET", "path": "/v25.0/1001/insights", "params": {"metric": "page_daily_follows_unique", "period": "day", "since": "1793214926", "until": "1793474126"}, "token": "PAGE-"}
+{"method": "GET", "path": "/v25.0/1001/insights", "params": {"metric": "page_daily_unfollows_unique", "period": "day", "since": "1793214926", "until": "1793474126"}, "token": "PAGE-"}
+{"method": "GET", "path": "/v25.0/1001/insights", "params": {"metric": "page_media_view", "period": "day", "since": "1793214926", "until": "1793474126"}, "token": "PAGE-"}
+{"method": "GET", "path": "/v25.0/1001/insights", "params": {"metric": "page_total_media_view_unique", "period": "day", "since": "1793214926", "until": "1793474126"}, "token": "PAGE-"}
+{"method": "GET", "path": "/v25.0/1001/insights", "params": {"metric": "page_post_engagements", "period": "day", "since": "1793214926", "until": "1793474126"}, "token": "PAGE-"}
+{"method": "GET", "path": "/v25.0/1001/insights", "params": {"metric": "page_views_total", "period": "day", "since": "1793214926", "until": "1793474126"}, "token": "PAGE-"}
+{"method": "GET", "path": "/v25.0/1001/insights", "params": {"metric": "page_video_views", "period": "day", "since": "1793214926", "until": "1793474126"}, "token": "PAGE-"}
+{"method": "POST", "path": "/v25.0/1001/photos", "params": {"caption": "ลูกสะใภ้ถูกแม่สามีกลั่นแกล้งจนแทบต้องหนี! ภาคินต้องเลือกระหว่างแม่กับเมียในสถานการณ์คับขันแบบนี้ คุณจะทำอย่างไร? เลือก 'A' ถ้าต้องปกป้องแม่ 'B' ถ้าต้องรักษาครอบครัวกันไว้ด้วยกัน #ละครสั้นทดสอบ #ไฟแค้นซ่อนรัก\n\n#ละครสั้นทดสอบ #ไฟแค้นซ่อนรัก #ละครสั้น", "published": "true", "_file_bytes": "933933"}, "token": "PAGE-"}
+{"method": "POST", "path": "/v25.0/1001/photos", "params": {"caption": "ภาคินกับแม่ลูกสะใภ้... รักหรือแค้น? ท้าทายตอนต่อไป 🤔\n\n#ละครสั้นทดสอบ #ไฟแค้นซ่อนรัก #ภาคินกับแม่", "published": "true", "_file_bytes": "951840"}, "token": "PAGE-"}
+{"method": "POST", "path": "/v25.0/1001/photos", "params": {"caption": "แม่ลูกแค้นใจกันแค่ไหน? 'ถ้าเธอเป็นลูกสาวของฉัน ฉันต้องฆ่าเธอ!' แพรวาพูดกับภาคินด้วยสายตาที่เต็มไปด้วยความมืดมน...\n\n#ละครสั้น #ไฟแค้นซ่อนรัก #น้ำฟ้าลูกสะใภ้ #ภาคินแพรวา", "published": "true", "_file_bytes": "868928"}, "token": "PAGE-"}
+{"method": "POST", "path": "/v25.0/1001/video_reels", "params": {"upload_phase": "start"}, "token": "PAGE-"}
+{"method": "POST", "path": "/upload/v25.0/9100", "params": {}, "token": "PAGE-"}
+{"method": "POST", "path": "/v25.0/1001/video_reels", "params": {"upload_phase": "finish", "video_id": "9100", "video_state": "PUBLISHED", "description": "ไฟแค้นซ่อนรัก: ลูกสะใภ้ถูกแม่สามีกลั่นแกล้งจนต้องเลือกระหว่างแม่กับเมีย! ความลับพินัยกรรมของพ่อภาคิน...\n\n#ละครสั้นทดสอบ #ไฟแค้นซ่อนรัก #Reelsสั้น #ละครไทย", "is_ai_generated": "true"}, "token": "PAGE-"}
+{"method": "GET", "path": "/v25.0/1001", "params": {"fields": "id,name,category,about,link,followers_count,fan_count"}, "token": "PAGE-"}
+{"method": "GET", "path": "/v25.0/1001/insights", "params": {"metric": "page_follows", "period": "day", "since": "1793215027", "until": "1793474227"}, "token": "PAGE-"}
+{"method": "GET", "path": "/v25.0/1001/insights", "params": {"metric": "page_daily_follows_unique", "period": "day", "since": "1793215027", "until": "1793474227"}, "token": "PAGE-"}
+{"method": "GET", "path": "/v25.0/1001/insights", "params": {"metric": "page_daily_unfollows_unique", "period": "day", "since": "1793215027", "until": "1793474227"}, "token": "PAGE-"}
+{"method": "GET", "path": "/v25.0/1001/insights", "params": {"metric": "page_media_view", "period": "day", "since": "1793215027", "until": "1793474227"}, "token": "PAGE-"}
+{"method": "GET", "path": "/v25.0/1001/insights", "params": {"metric": "page_total_media_view_unique", "period": "day", "since": "1793215027", "until": "1793474227"}, "token": "PAGE-"}
+{"method": "GET", "path": "/v25.0/1001/insights", "params": {"metric": "page_post_engagements", "period": "day", "since": "1793215027", "until": "1793474227"}, "token": "PAGE-"}
+{"method": "GET", "path": "/v25.0/1001_501", "params": {"fields": "id,created_time,permalink_url,shares,reactions.summary(total_count).limit(0),comments.summary(total_count).limit(0)"}, "token": "PAGE-"}
+{"method": "GET", "path": "/v25.0/1001_501/insights", "params": {"metric": "post_total_media_view_unique", "period": "lifetime"}, "token": "PAGE-"}
+{"method": "GET", "path": "/v25.0/1001_502", "params": {"fields": "id,created_time,permalink_url,shares,reactions.summary(total_count).limit(0),comments.summary(total_count).limit(0)"}, "token": "PAGE-"}
+{"method": "GET", "path": "/v25.0/1001_502/insights", "params": {"metric": "post_total_media_view_unique", "period": "lifetime"}, "token": "PAGE-"}
+{"method": "GET", "path": "/v25.0/1001_503", "params": {"fields": "id,created_time,permalink_url,shares,reactions.summary(total_count).limit(0),comments.summary(total_count).limit(0)"}, "token": "PAGE-"}
+{"method": "GET", "path": "/v25.0/1001_503/insights", "params": {"metric": "post_total_media_view_unique", "period": "lifetime"}, "token": "PAGE-"}
+{"method": "GET", "path": "/v25.0/1001_704", "params": {"fields": "id,created_time,permalink_url,shares,reactions.summary(total_count).limit(0),comments.summary(total_count).limit(0)"}, "token": "PAGE-"}
+{"method": "GET", "path": "/v25.0/1001_704/insights", "params": {"metric": "post_total_media_view_unique", "period": "lifetime"}, "token": "PAGE-"}
