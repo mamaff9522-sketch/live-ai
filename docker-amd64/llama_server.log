@@ -1,0 +1,25 @@
+0.00.000.949 I srv  llama_server: initializing ...
+0.00.008.880 I cmn  common_param: common_params_print_info: verbosity = 3 (adjust with the `-lv N` CLI arg)
+0.00.008.963 I srv  init_listene: The UI is disabled
+0.00.008.967 I srv  init_listene: Use --ui/--no-ui (or deprecated --webui/--no-webui) to enable/disable
+0.00.009.041 W srv  server_setup: security: no API key is set and CORS allows all origins (see https://github.com/ggml-org/llama.cpp/pull/25655)
+0.00.010.893 I srv    load_model: loading model '/data/models/Qwen3.5-2B-Q4_K_M.gguf'
+0.01.326.727 I cmn          init: llama threadpool init, n_threads = 2
+0.01.430.491 W load_hparams: Qwen-VL models require at minimum 1024 image tokens to function correctly on grounding tasks
+0.01.430.502 W load_hparams: if you encounter problems with accuracy, try adding --image-min-tokens 1024
+0.01.430.503 W load_hparams: more info: https://github.com/ggml-org/llama.cpp/issues/16842
+
+0.01.830.481 I srv    load_model: loaded multimodal model, '/data/models/mmproj-F16.gguf'
+0.01.941.805 I srv    load_model: initializing, n_slots = 1, n_ctx_slot = 16384, kv_unified = 'false'
+0.01.946.080 I srv  server_run_i: model loaded
+0.01.946.094 I srv  server_on_li: listening on http://127.0.0.1:8081
+0.03.956.020 I slot get_availabl: id  0 | task -1 | selected slot by LRU, n_tokens = 0, t_last = -1
+0.03.956.105 I slot launch_slot_: id  0 | task 0 | processing task, is_child = 0
+0.06.972.492 I slot print_timing: id  0 | task 0 | prompt processing, n_tokens =    156, progress = 0.89, t =   3.02 s / 51.72 tokens per second
+0.07.350.646 I slot print_timing: id  0 | task 0 | prompt processing, n_tokens =    171, progress = 0.98, t =   3.39 s / 50.38 tokens per second
+0.11.429.588 I slot print_timing: id  0 | task 0 | prompt eval time =    3553.28 ms /   175 tokens (   20.30 ms per token,    49.25 tokens per second)
+0.11.429.598 I slot print_timing: id  0 | task 0 |        eval time =    3920.15 ms /    69 tokens (   57.65 ms per token,    17.35 tokens per second)
+0.11.429.599 I slot print_timing: id  0 | task 0 |       total time =    7473.43 ms /   244 tokens
+0.11.429.605 I slot print_timing: id  0 | task 0 |    graphs reused =         68
+0.11.429.606 I slot print_timing: id  0 | task 0 |   graph reallocs =          0    /     0        (same size) / (changed size)
+0.11.429.657 I slot      release: id  0 | task 0 | stop processing: n_tokens = 243, truncated = 0
