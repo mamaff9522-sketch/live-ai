@@ -1,5 +1,5 @@
-CONTAINER ID   NAME      CPU %     MEM USAGE / LIMIT    MEM %     NET I/O          BLOCK I/O        PIDS
-0873c3555d7c   live-ai   0.03%     1.691GiB / 3.82GiB   44.27%    59.1kB / 140kB   993MB / 21.8MB   21
+CONTAINER ID   NAME      CPU %     MEM USAGE / LIMIT    MEM %     NET I/O         BLOCK I/O         PIDS
+0f34ecb1ce58   live-ai   0.02%     1.763GiB / 3.82GiB   46.16%    51kB / 76.8kB   1.31GB / 32.7MB   21
                total        used        free      shared  buff/cache   available
-Mem:            3911        1841         153           1        1915        1822
-Swap:           4095          97        3998
+Mem:            3911        1774         134           1        2002        1888
+Swap:           4095         121        3974
