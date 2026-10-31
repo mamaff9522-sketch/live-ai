@@ -186,12 +186,19 @@ jobs:
           path: reports/
 
   docker:
-    name: Docker image (for Hugging Face Space / VPS) starts and answers
+    name: Docker image (${{ matrix.arch }}) starts and answers
     needs: offline
-    runs-on: ubuntu-latest
-    timeout-minutes: 90
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - { arch: amd64, runner: ubuntu-latest }
+          - { arch: arm64, runner: ubuntu-24.04-arm }
+    runs-on: ${{ matrix.runner }}
+    timeout-minutes: 120
     permissions:
       contents: write
+      packages: write
     steps:
       - uses: actions/checkout@v4
       - name: llama.cpp release
@@ -220,9 +227,61 @@ jobs:
           docker logs liveai > dreport/container.log 2>&1 || true
           tail -60 dreport/container.log
           cp h.json reply.json dreport/ 2>/dev/null || true
+          docker stats --no-stream liveai > dreport/stats.txt 2>&1 || true; uname -m >> dreport/stats.txt; nproc >> dreport/stats.txt
           docker exec liveai sh -c 'cat /data/logs/llama_server.log' > dreport/llama_server.log 2>/dev/null || true
 
       - name: Publish report to the ci-reports branch
         if: always()
         env: { GH_TOKEN: "${{ github.token }}" }
-        run: bash scripts/publish_report.sh dreport docker
+        run: bash scripts/publish_report.sh dreport docker-${{ matrix.arch }}
+
+      - name: Publish the tested image (ghcr.io)
+        if: success() && github.ref == 'refs/heads/main'
+        run: |
+          IMG=ghcr.io/$(echo "$GITHUB_REPOSITORY" | tr '[:upper:]' '[:lower:]')
+          echo "${{ github.token }}" | docker login ghcr.io -u "$GITHUB_ACTOR" --password-stdin
+          docker tag live-ai "$IMG:${{ matrix.arch }}" && docker push "$IMG:${{ matrix.arch }}"
+
+  image:
+    name: One image for both CPU types
+    needs: docker
+    if: github.ref == 'refs/heads/main'
+    runs-on: ubuntu-latest
+    permissions:
+      packages: write
+    steps:
+      - run: |
+          IMG=ghcr.io/$(echo "$GITHUB_REPOSITORY" | tr '[:upper:]' '[:lower:]')
+          echo "${{ github.token }}" | docker login ghcr.io -u "$GITHUB_ACTOR" --password-stdin
+          docker buildx imagetools create -t "$IMG:latest" "$IMG:amd64" "$IMG:arm64"
+          docker buildx imagetools inspect "$IMG:latest"
+
+  install:
+    name: One-command install on a fresh machine, used through the public link
+    needs: image
+    runs-on: ubuntu-24.04-arm
+    timeout-minutes: 60
+    permissions:
+      contents: write
+    steps:
+      - uses: actions/checkout@v4
+      - name: Run the installer exactly as a user would
+        run: bash scripts/install.sh 2>&1 | tee install.log
+      - name: Use it through the public HTTPS link
+        run: |
+          mkdir -p ireport && cp install.log ireport/
+          URL=$(grep -o 'https://[a-z0-9-]*\.trycloudflare\.com' install.log | head -1)
+          echo "$URL" > ireport/url.txt
+          for i in $(seq 1 30); do curl -fsS "$URL/api/health" -o ireport/health.json && break; sleep 5; done
+          T=$(curl -fsS -X POST "$URL/api/register" -H 'Content-Type: application/json' -d '{"name":"install-check"}' | jq -r .token)
+          s=$(date +%s.%N)
+          curl -fsS -X POST "$URL/api/chat" -H "Authorization: Bearer $T" -H 'Content-Type: application/json' \
+            -d '{"message":"ช่วยอธิบายสั้น ๆ ว่า CPU กับ RAM ต่างกันอย่างไร","stream":false}' | tee ireport/reply.json
+          echo "seconds $(echo "$(date +%s.%N) - $s" | bc)" | tee ireport/time.txt
+          curl -fsS -o /dev/null -w "studio page %{http_code}\n" "$URL/studio" | tee -a ireport/time.txt
+          docker stats --no-stream live-ai | tee ireport/stats.txt
+          jq -e '.reply | length > 20' ireport/reply.json
+      - name: Publish
+        if: always()
+        env: { GH_TOKEN: "${{ github.token }}" }
+        run: mkdir -p ireport && cp install.log ireport/ 2>/dev/null; bash scripts/publish_report.sh ireport install
