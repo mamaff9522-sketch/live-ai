@@ -30,6 +30,8 @@ jobs:
     needs: offline
     runs-on: ubuntu-latest
     timeout-minutes: 120
+    permissions:
+      contents: write             # to publish the test report to the ci-reports branch
     env:
       LIVEAI_DATA_DIR: ${{ github.workspace }}/data
       LIVEAI_PORT: "7860"
@@ -53,9 +55,9 @@ jobs:
           TAG=$(curl -fsSL -H "Authorization: Bearer $GH_TOKEN" https://api.github.com/repos/ggml-org/llama.cpp/releases/latest | jq -r .tag_name)
           echo "LLAMA_TAG=$TAG" >> "$GITHUB_ENV"; echo "llama.cpp $TAG"
 
-      - name: Cache llama.cpp build
+      - name: Restore llama.cpp build
         id: llcache
-        uses: actions/cache@v4
+        uses: actions/cache/restore@v4
         with:
           path: llama-bin
           key: llama-server-${{ env.LLAMA_TAG }}-${{ env.CPU_KEY }}
@@ -70,6 +72,13 @@ jobs:
           cmake --build llama.cpp/build --target llama-server -j"$(nproc)"
           mkdir -p llama-bin && cp llama.cpp/build/bin/llama-server llama-bin/
 
+      - name: Save llama.cpp build
+        if: steps.llcache.outputs.cache-hit != 'true'
+        uses: actions/cache/save@v4
+        with:
+          path: llama-bin
+          key: llama-server-${{ env.LLAMA_TAG }}-${{ env.CPU_KEY }}
+
       - name: Find the model (trusted source + SHA-256)
         run: |
           python -m live_ai.modelsource | tee model_source.json
@@ -77,8 +86,9 @@ jobs:
           curl -sS -o /dev/null -w "gguf/Qwen3.5-2B-GGUF -> HTTP %{http_code}\n" -I -L \
             https://huggingface.co/gguf/Qwen3.5-2B-GGUF/resolve/main/qwen3.5-2b-Q4_K_M.gguf || true
 
-      - name: Cache model
-        uses: actions/cache@v4
+      - name: Restore model
+        id: modelcache
+        uses: actions/cache/restore@v4
         with:
           path: data/models
           key: model-${{ hashFiles('model_source.json') }}
@@ -93,6 +103,13 @@ jobs:
       - name: Real-model tests
         run: python tests/real_model_test.py http://127.0.0.1:7860 reports
 
+      - name: Save model
+        if: always() && steps.modelcache.outputs.cache-hit != 'true' && hashFiles('data/models/*.gguf') != ''
+        uses: actions/cache/save@v4
+        with:
+          path: data/models
+          key: model-${{ hashFiles('model_source.json') }}
+
       - name: Report
         if: always()
         run: |
@@ -100,6 +117,11 @@ jobs:
           mkdir -p reports/logs && cp -r data/logs/. reports/logs/ 2>/dev/null || true
           cp liveai_stdout.log model_source.json reports/ 2>/dev/null || true
           kill "$(cat liveai.pid)" 2>/dev/null || true
+
+      - name: Publish report to the ci-reports branch
+        if: always()
+        env: { GH_TOKEN: "${{ github.token }}" }
+        run: bash scripts/publish_report.sh reports real-model
 
       - uses: actions/upload-artifact@v4
         if: always()
@@ -112,6 +134,8 @@ jobs:
     needs: offline
     runs-on: ubuntu-latest
     timeout-minutes: 90
+    permissions:
+      contents: write
     steps:
       - uses: actions/checkout@v4
       - name: llama.cpp release
@@ -135,4 +159,14 @@ jobs:
           jq -e '.reply | length > 5' reply.json
       - name: Container logs
         if: always()
-        run: docker logs liveai 2>&1 | tail -60
+        run: |
+          mkdir -p dreport
+          docker logs liveai > dreport/container.log 2>&1 || true
+          tail -60 dreport/container.log
+          cp h.json reply.json dreport/ 2>/dev/null || true
+          docker exec liveai sh -c 'cat /data/logs/llama_server.log' > dreport/llama_server.log 2>/dev/null || true
+
+      - name: Publish report to the ci-reports branch
+        if: always()
+        env: { GH_TOKEN: "${{ github.token }}" }
+        run: bash scripts/publish_report.sh dreport docker
