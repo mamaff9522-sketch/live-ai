@@ -25,6 +25,7 @@ from . import backup, logs, sysinfo
 from .assistant import Assistant
 from .editor import EditError, Editor
 from .media import MediaError, MediaStore
+from .studio.pipeline import Studio
 from .config import Settings
 from .llm import LlamaServer
 from .store import NotFound, Store
@@ -45,6 +46,7 @@ class App:
                                 ttl_hours=float(os.environ.get("LIVEAI_MEDIA_TTL_HOURS", "72")))
         self.media.start_cleanup()
         self.editor = Editor(self.store, self.media, self.assistant)
+        self.studio = Studio(self.store, self.media, s)
         self.max_upload = int(os.environ.get("LIVEAI_MAX_UPLOAD_MB", "500")) * 2**20
         self.cpu = sysinfo.CpuMeter()
         self.started = time.time()
@@ -330,11 +332,11 @@ class Handler(BaseHTTPRequestHandler):
         m = self.app.media.verify(mid, (qs.get("exp") or [""])[0], (qs.get("sig") or [""])[0])
         if not m or not Path(m["path"]).is_file():
             return self._err(404, "ไม่พบไฟล์หรือลิงก์หมดอายุ")
-        ctype = {"video": "video/mp4", "audio": "audio/mpeg", "image": "image/jpeg"}[m["kind"]]
+        ctype = {"video": "video/mp4", "audio": "audio/mpeg", "image": "image/jpeg", "text": "text/plain; charset=utf-8"}[m["kind"]]
         ext = Path(m["path"]).suffix.lower()
         ctype = {".mp4": "video/mp4", ".mov": "video/quicktime", ".webm": "video/webm", ".mkv": "video/x-matroska",
                  ".m4a": "audio/mp4", ".mp3": "audio/mpeg", ".wav": "audio/wav", ".ogg": "audio/ogg", ".png": "image/png",
-                 ".webp": "image/webp", ".jpg": "image/jpeg", ".srt": "application/x-subrip"}.get(ext, ctype)
+                 ".webp": "image/webp", ".jpg": "image/jpeg", ".srt": "application/x-subrip; charset=utf-8"}.get(ext, ctype)
         self._send_file(Path(m["path"]), ctype, download=m["name"] if "download" in qs else None)
 
     def _send_file(self, path: Path, ctype: str, download: str | None = None):
@@ -397,6 +399,74 @@ class Handler(BaseHTTPRequestHandler):
     def edit_get(self, eid):
         if (u := self._auth()):
             self._send(200, self.app.editor.view(u["id"], int(eid)))
+
+    # editing studio (script + many clips -> one long video) --------------------
+    @route("GET", "/studio")
+    def studio_page(self):
+        self._send(200, ctype="text/html; charset=utf-8", body=(WEB_DIR / "studio.html").read_bytes())
+
+    @route("GET", "/api/studio/projects")
+    def st_list(self):
+        if (u := self._auth()):
+            self._send(200, self.app.studio.list(u["id"]))
+
+    @route("POST", "/api/studio/projects")
+    def st_create(self):
+        if (u := self._auth()):
+            self._send(201, self.app.studio.create(u["id"], str(self._json().get("name", ""))))
+
+    @route("GET", r"/api/studio/projects/(\d+)")
+    def st_get(self, pid):
+        if (u := self._auth()):
+            self._send(200, self.app.studio.get(u["id"], int(pid)))
+
+    @route("PATCH", r"/api/studio/projects/(\d+)")
+    def st_update(self, pid):
+        if (u := self._auth()):
+            d = self._json_big()
+            self._send(200, self.app.studio.update(u["id"], int(pid), d.get("name"), d.get("script_text"), d.get("settings")))
+
+    @route("DELETE", r"/api/studio/projects/(\d+)")
+    def st_delete(self, pid):
+        if (u := self._auth()):
+            self.app.studio.delete(u["id"], int(pid))
+            self._send(200, {"ok": True})
+
+    @route("POST", r"/api/studio/projects/(\d+)/clips")
+    def st_add_clips(self, pid):
+        if (u := self._auth()):
+            self._send(200, self.app.studio.add_clips(u["id"], int(pid), [str(x) for x in self._json().get("media_ids") or []]))
+
+    @route("DELETE", r"/api/studio/projects/(\d+)/clips/([a-f0-9]{24})")
+    def st_remove_clip(self, pid, mid):
+        if (u := self._auth()):
+            self.app.studio.remove_clip(u["id"], int(pid), mid)
+            self._send(200, {"ok": True})
+
+    @route("POST", r"/api/studio/projects/(\d+)/zip")
+    def st_zip(self, pid):
+        u = self._auth()
+        if not u:
+            return
+        n = int(self.headers.get("Content-Length") or 0)
+        if n > self.app.max_upload * 4:
+            return self._err(413, f"ZIP ใหญ่เกิน {self.app.max_upload * 4 // 2**20} MB")
+        self._send(200, self.app.studio.add_zip(u["id"], int(pid), self.rfile, n))
+
+    @route("POST", r"/api/studio/projects/(\d+)/(start|pause|resume)")
+    def st_control(self, pid, action):
+        if (u := self._auth()):
+            f = self.app.studio.pause if action == "pause" else self.app.studio.start
+            self._send(200, f(u["id"], int(pid)))
+
+    def _json_big(self) -> dict:
+        n = int(self.headers.get("Content-Length") or 0)
+        if n > 6_000_000:
+            raise ValueError("ข้อมูลใหญ่เกินไป")
+        data = json.loads(self.rfile.read(n) or b"{}")
+        if not isinstance(data, dict):
+            raise ValueError("expected a JSON object")
+        return data
 
     # admin -----------------------------------------------------------------
     @route("POST", "/api/admin/backup")

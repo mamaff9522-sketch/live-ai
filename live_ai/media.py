@@ -29,7 +29,7 @@ MEDIA_SCHEMA = """
 CREATE TABLE IF NOT EXISTS media (
     id TEXT PRIMARY KEY,
     user_id INTEGER NOT NULL REFERENCES users(id) ON DELETE CASCADE,
-    kind TEXT NOT NULL CHECK (kind IN ('video','audio','image')),
+    kind TEXT NOT NULL CHECK (kind IN ('video','audio','image','text')),
     name TEXT NOT NULL,
     path TEXT NOT NULL,
     size INTEGER NOT NULL,
@@ -201,11 +201,12 @@ class MediaStore:
     # housekeeping ----------------------------------------------------------
     def cleanup(self) -> int:
         cutoff = time.time() - self.ttl
-        rows = self.store.conn().execute("SELECT id, path FROM media WHERE created < ?", (cutoff,)).fetchall()
+        # studio files (project clips and results) are the user's originals: never deleted automatically
+        rows = self.store.conn().execute("SELECT id, path FROM media WHERE created < ? AND origin != 'studio'", (cutoff,)).fetchall()
         for r in rows:
             Path(r["path"]).unlink(missing_ok=True)
         with self.store.conn() as c:
-            c.execute("DELETE FROM media WHERE created < ?", (cutoff,))
+            c.execute("DELETE FROM media WHERE created < ? AND origin != 'studio'", (cutoff,))
         if rows:
             logs.event(log, "old media deleted", files=len(rows))
         return len(rows)
