@@ -66,20 +66,45 @@ def prompt(kind: str, page_name: str, story: str, style_examples: list[str], tre
     return [{"role": "system", "content": SYSTEM}, {"role": "user", "content": msg}]
 
 
+CTAS = ["กดติดตามเพจไว้ แล้วมาลุ้นกันว่าเรื่องจะเป็นอย่างไรต่อ", "ติดตามเพจไว้ ตอนต่อไปเข้มข้นกว่านี้แน่นอน",
+        "คิดเห็นอย่างไรคอมเมนต์บอกกันหน่อย และกดติดตามเพจไว้ไม่พลาดตอนใหม่", "ใครอยากรู้ตอนจบ กดติดตามเพจไว้เลย"]
+
+
+def _sim(a: str, b: str) -> float:
+    g = lambda t: {t[i:i + 2] for i in range(len(t) - 1)}
+    x, y = g(re.sub(r"\s+", "", a)), g(re.sub(r"\s+", "", b))
+    return len(x & y) / max(1, len(x | y))
+
+
 def clean(gen: dict, kind: str) -> dict:
-    """Keeps what the model wrote within safe, postable bounds."""
-    cap = re.sub(r"\s+\n", "\n", str(gen.get("caption", ""))).strip()
-    lines = [re.sub(r"\s+", " ", str(x)).strip() for x in gen.get("lines") or [] if str(x).strip()]
+    """Keeps what the model wrote within safe, postable bounds: hashtags only at the end (max 4),
+    no repeated lines, and always one polite invitation to follow or comment."""
     tags = []
-    for t in gen.get("hashtags") or []:
-        t = "#" + re.sub(r"[^\w฀-๿]", "", str(t))
-        if len(t) > 2 and t not in tags:
+    for t in list(gen.get("hashtags") or []) + re.findall(r"#[\w\u0E00-\u0E7F]+", str(gen.get("caption", ""))):
+        t = "#" + re.sub(r"[^\w\u0E00-\u0E7F]", "", str(t))
+        if len(t) > 2 and t.lower() not in [x.lower() for x in tags]:
             tags.append(t)
-    cap = re.sub(r"(#[\w฀-๿]+\s*){4,}$", "", cap).strip()     # model sometimes stuffs tags at the end
+    cap = re.sub(r"#[\w\u0E00-\u0E7F]+", "", str(gen.get("caption", "")))
+    cap = re.sub(r"[ \t]+", " ", re.sub(r"[ \t]*\n[ \t]*", "\n", cap))
+    cap = re.sub(r"\n{3,}", "\n\n", cap).strip()
+    lines = []
+    for x in gen.get("lines") or []:
+        x = re.sub(r"#[\w\u0E00-\u0E7F]+", "", str(x))
+        x = re.sub(r"\s+", " ", x).strip().lstrip("-–—•* ").strip()
+        if x and not any(_sim(x, y) > 0.6 for y in lines):
+            lines.append(x)
+    if kind == "question":                 # "A. ... B. ..." on one line -> one choice per line
+        split = []
+        for x in lines:
+            m = re.match(r"^(.*?\bA[.)：:]\s*.+?)\s+(B[.)：:]\s*.+)$", x)
+            split += [m.group(1), m.group(2)] if m else [x]
+        lines = split
     if not lines:
         lines = [cap.split("\n")[0][:60]]
-    limit = {"teaser": 2, "quote": 2, "reel_clip": 1, "question": 2}.get(kind, 5)
+    limit = {"teaser": 2, "quote": 2, "reel_clip": 1, "question": 3}.get(kind, 5)
     lines = lines[:limit]
+    if not re.search(r"ติดตาม|คอมเมนต์|เม้น|ความเห็น|ถ้าเป็นคุณ", cap):
+        cap += "\n\n" + random.choice(CTAS)
     full = cap + ("\n\n" + " ".join(tags[:4]) if tags else "")
     return {"caption": full[:2000], "lines": lines, "hashtags": tags[:4]}
 
@@ -104,7 +129,8 @@ def card_image(lines: list[str], out: Path, footer: str = "", seed: int = 0) -> 
     """A 1080x1350 picture with the text (for teaser / quote / question posts)."""
     w, h = 1080, 1350
     ass = out.with_suffix(".ass")
-    texts = [{"text": "\n".join(lines), "start": 0, "end": 5, "position": "center", "size": "large"}]
+    size = "large" if sum(len(x) for x in lines) <= 45 else "medium"
+    texts = [{"text": "\n\n".join(lines), "start": 0, "end": 5, "position": "center", "size": size}]
     if footer:
         texts.append({"text": footer, "start": 0, "end": 5, "position": "bottom", "size": "small"})
     write_ass(texts, w, h, ass)

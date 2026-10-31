@@ -118,16 +118,26 @@ class WhisperASR:
             wav = Path(d) / "a.wav"
             subprocess.run(["ffmpeg", "-loglevel", "error", "-nostdin", "-y", "-i", path, "-vn", "-ac", "1", "-ar", "16000",
                             "-c:a", "pcm_s16le", str(wav)], check=True, timeout=300)
-            out = Path(d) / "out"
             beam = os.environ.get("LIVEAI_WHISPER_BEAM", "1")      # 1 = greedy: ~2x faster, enough to match lines
-            cmd = [self.bin, "-m", str(model), "-l", self.lang, "-t", str(self.threads), "-oj", "-of", str(out), "-np",
-                   "-bs", beam, "-bo", beam, "-f", str(wav)]
-            if names:
-                cmd += ["--prompt", " ".join(names[:12])]
-            r = subprocess.run(cmd, capture_output=True, text=True, timeout=1800)
-            if r.returncode != 0 or not out.with_suffix(".json").exists():
-                raise RuntimeError(f"whisper failed: {(r.stderr or r.stdout)[-300:]}")
-            data = json.loads(out.with_suffix(".json").read_text(encoding="utf-8", errors="replace"))
+            segs = self._run(model, wav, Path(d) / "out", beam, names, regions)
+            speech = sum(b - a for a, b in regions or [])
+            if not segs and speech >= 1.0:
+                # clear speech but nothing usable heard (greedy decoding sometimes returns only filler or
+                # nothing): try once more the careful way, without the name prompt
+                segs = self._run(model, wav, Path(d) / "out2", "5", None, regions)
+                if segs:
+                    logs.event(log, "speech recovered on second pass", file=Path(path).name)
+        return {"text": " ".join(s["text"] for s in segs).strip(), "segments": segs, "engine": f"whisper.cpp/{model.name}"}
+
+    def _run(self, model: Path, wav: Path, out: Path, beam: str, names, regions) -> list[dict]:
+        cmd = [self.bin, "-m", str(model), "-l", self.lang, "-t", str(self.threads), "-oj", "-of", str(out), "-np",
+               "-bs", beam, "-bo", beam, "-f", str(wav)]
+        if names:
+            cmd += ["--prompt", " ".join(names[:12])]
+        r = subprocess.run(cmd, capture_output=True, text=True, timeout=1800)
+        if r.returncode != 0 or not out.with_suffix(".json").exists():
+            raise RuntimeError(f"whisper failed: {(r.stderr or r.stdout)[-300:]}")
+        data = json.loads(out.with_suffix(".json").read_text(encoding="utf-8", errors="replace"))
         segs = []
         for s in data.get("transcription", []):
             text = (s.get("text") or "").strip()
@@ -138,7 +148,7 @@ class WhisperASR:
             if regions and not any(min(b, y) - max(a, x) > 0.1 for x, y in regions):
                 continue
             segs.append({"start": round(a, 2), "end": round(b, 2), "text": text})
-        return {"text": " ".join(s["text"] for s in segs).strip(), "segments": segs, "engine": f"whisper.cpp/{model.name}"}
+        return segs
 
 
 class FakeASR:

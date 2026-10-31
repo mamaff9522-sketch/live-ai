@@ -319,64 +319,108 @@ def thai_words(text: str) -> list[str]:
         return [text]
 
 
-def wrap_thai(text: str, max_units: int) -> str:
-    """Thai has no spaces between words, and libass only wraps at spaces, so long lines would run
-    off the screen. Break at spaces when possible, then between Thai words (libthai dictionary),
-    and only as a last resort between character clusters (never before a tone mark/vowel sign,
-    never right after a leading vowel)."""
+def wrap_thai(text: str, max_units: int, balance: bool = True) -> str:
+    """Thai has no spaces between words, and libass only wraps at spaces, so long lines would run off
+    the screen. Lines break at spaces (preferred: phrase boundaries) or between Thai words (libthai
+    dictionary); a single word wider than a line is cut between character clusters. With balance=True
+    the breaks are chosen for the whole paragraph at once so lines are about equally long and no word
+    is left alone on a line. The text itself is never changed apart from the line breaks. Empty
+    paragraphs are kept as blank lines."""
     out = []
     for para in text.split("\n"):
+        if not para.strip():
+            out.append("")
+            continue
+        out.append(_wrap_balanced(para, max_units) if balance else _wrap_greedy(para, max_units))
+    return "\n".join(out)
+
+
+def _tokens(para: str, max_units: int) -> list[tuple[str, bool]]:
+    """(word, space before it); Thai runs are split into dictionary words; over-wide words are cut."""
+    tokens: list[tuple[str, bool]] = []
+    for chunk in para.split(" "):
+        if not chunk:
+            continue
+        ws = thai_words(chunk) if _units(chunk) > 4 else [chunk]
+        for i, w in enumerate(ws):
+            parts = _split_word(w, max_units) if _units(w) > max_units else [w]
+            tokens += [(p, i == 0 and k == 0) for k, p in enumerate(parts)]
+    return tokens
+
+
+def _wrap_balanced(para: str, max_units: int) -> str:
+    toks = _tokens(para, max_units)
+    n = len(toks)
+    if n == 0:
+        return ""
+
+    def width(i: int, j: int) -> int:                 # tokens i..j-1 on one line
+        return sum(_units(toks[k][0]) + (1 if k > i and toks[k][1] else 0) for k in range(i, j))
+
+    INF = float("inf")
+    best = [INF] * (n + 1)
+    prev = [0] * (n + 1)
+    best[0] = 0.0
+    for j in range(1, n + 1):
+        for i in range(j - 1, -1, -1):
+            w = width(i, j)
+            if w > max_units and j - i > 1:
+                break
+            slack = max_units - w
+            if j == n:
+                cost = 0.0 if i == 0 else (40.0 + 0.2 * slack ** 2 + (120 if w < max_units * 0.35 else 0))
+            else:
+                cost = 40.0 + slack ** 2 + (0 if toks[j][1] else 60)    # every line, and breaking inside a phrase, cost extra
+            if best[i] + cost < best[j]:
+                best[j], prev[j] = best[i] + cost, i
+    lines, j = [], n
+    while j > 0:
+        i = prev[j]
         line = ""
-        pieces = []
-        for chunk in para.split(" "):
-            if _units(chunk) > max_units:
-                ws = thai_words(chunk)
-                pieces.extend([("", w) for w in ws[:1]] + [("~", w) for w in ws[1:]])   # "~": glue without a space
-            else:
-                pieces.append(("", chunk))
-        merged: list[str] = []
-        for glue, w in pieces:
-            if glue == "~" and merged:
-                cand = merged[-1] + w
-                if _units(cand) <= max_units:
-                    merged[-1] = cand
-                    continue
-                merged.append("\u2060" + w)                    # word joiner marks "no space before this"
-            else:
-                merged.append(w)
-        for word in merged:
-            nospace = word.startswith("\u2060")
-            word = word.lstrip("\u2060")
-            cand = (line + ("" if nospace else " ") + word) if line else word
-            cand = (line + " " + word) if line else word
-            if _units(cand) <= max_units:
-                line = cand
-                continue
-            if line:
-                out.append(line)
-                line = ""
-            while _units(word) > max_units:
-                cut, good, n = 0, 0, 0
-                for i, ch in enumerate(word):
-                    if ch not in THAI_MARKS:
-                        n += 1
-                    if n > max_units:
-                        break
-                    nxt = word[i + 1] if i + 1 < len(word) else ""
-                    nxt2 = word[i + 2] if i + 2 < len(word) else ""
-                    if nxt and nxt not in THAI_MARKS and nxt not in THAI_FOLLOWING and ch not in THAI_LEADING and nxt2 != "์":
-                        cut = i + 1
-                        # a leading vowel always starts a syllable: the nicest place to break
-                        if nxt in THAI_LEADING and n >= max_units * 0.6:
-                            good = i + 1
-                cut = good or cut
-                if cut <= 0:
-                    break
-                out.append(word[:cut])
-                word = word[cut:]
-            line = word
+        for k in range(i, j):
+            line += (" " if k > i and toks[k][1] else "") + toks[k][0]
+        lines.append(line)
+        j = i
+    return "\n".join(reversed(lines))
+
+
+def _split_word(word: str, max_units: int) -> list[str]:
+    """Last resort for one word wider than a line: cut between character clusters (never before a
+    tone mark/vowel sign, never right after a leading vowel)."""
+    parts = []
+    while _units(word) > max_units:
+        cut, good, n = 0, 0, 0
+        for i, ch in enumerate(word):
+            if ch not in THAI_MARKS:
+                n += 1
+            if n > max_units:
+                break
+            nxt = word[i + 1] if i + 1 < len(word) else ""
+            nxt2 = word[i + 2] if i + 2 < len(word) else ""
+            if nxt and nxt not in THAI_MARKS and nxt not in THAI_FOLLOWING and ch not in THAI_LEADING and nxt2 != "์":
+                cut = i + 1
+                if nxt in THAI_LEADING and n >= max_units * 0.6:   # a leading vowel starts a syllable: nicest break
+                    good = i + 1
+        cut = good or cut
+        if cut <= 0:
+            break
+        parts.append(word[:cut])
+        word = word[cut:]
+    return parts + [word]
+
+
+def _wrap_greedy(para: str, max_units: int) -> str:
+    out, line = [], ""
+    for word, space in _tokens(para, max_units):
+        cand = (line + (" " if space else "") + word) if line else word
+        if _units(cand) <= max_units:
+            line = cand
+            continue
         if line:
             out.append(line)
+        line = word
+    if line:
+        out.append(line)
     return "\n".join(out)
 
 
@@ -395,7 +439,8 @@ def write_ass(texts: list[dict], w: int, h: int, path: Path) -> None:
         fs = max(16, int(base * sizes[t["size"]] * (1.6 if w <= h else 1.0)))
         usable = w - 2 * int(w * 0.06)
         wrapped = wrap_thai(t["text"], max(6, int(usable / (fs * 0.56))))
-        txt = wrapped.replace("\\", "＼").replace("{", "(").replace("}", ")").replace("\n", "\\N")
+        wrapped = "\n".join(x if x else "\u00a0" for x in wrapped.split("\n"))    # keep blank lines visible
+        txt = wrapped.replace("\\", "＼").replace("{", "(").replace("}", ")").replace("\n", "\\N").replace("\u00a0", "\\h")
         events.append(f"Dialogue: 0,{_ass_time(t['start'])},{_ass_time(t['end'])},{t['position']}_{t['size']},,0,0,0,,{txt}")
     path.write_text("[Script Info]\nScriptType: v4.00+\nWrapStyle: 0\nScaledBorderAndShadow: yes\n"
                     f"PlayResX: {w}\nPlayResY: {h}\n\n[V4+ Styles]\n"
