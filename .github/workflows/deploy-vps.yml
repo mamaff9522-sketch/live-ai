@@ -1,0 +1,96 @@
+name: deploy to my VPS
+
+# Installs Live AI on your own empty Linux VPS (e.g. a SUN-VPS machine) and tests it through its public link.
+# Repository secrets needed:  VPS_HOST (IP address), VPS_PASSWORD (root password)   [optional: VPS_USER, default root]
+# Safety: it first inspects the machine and STOPS without changing anything if the machine is already
+# running other systems (other Docker containers, web servers, สามจั๊ง, LiveKit …) or is too small.
+
+on:
+  workflow_dispatch:
+    inputs:
+      force:
+        description: "Install even if other programs are found (only if you are sure the machine is free)"
+        type: boolean
+        default: false
+
+permissions:
+  contents: write
+
+concurrency:
+  group: deploy-vps
+  cancel-in-progress: false
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    timeout-minutes: 90
+    env:
+      VPS_HOST: ${{ secrets.VPS_HOST }}
+      VPS_USER: ${{ secrets.VPS_USER || 'root' }}
+      SSHPASS: ${{ secrets.VPS_PASSWORD }}
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Connect
+        run: |
+          [ -n "$VPS_HOST" ] && [ -n "$SSHPASS" ] || { echo "::error::Add the secrets VPS_HOST and VPS_PASSWORD first"; exit 1; }
+          sudo apt-get install -y -qq sshpass > /dev/null
+          echo 'ssh() { sshpass -e /usr/bin/ssh -o StrictHostKeyChecking=accept-new -o ConnectTimeout=20 -o ServerAliveInterval=30 "$VPS_USER@$VPS_HOST" "$@"; }' > ssh.sh
+          . ./ssh.sh
+          ssh 'echo connected to $(hostname)'
+
+      - name: Inspect the machine (changes nothing)
+        run: |
+          . ./ssh.sh; mkdir -p vps
+          ssh 'bash -s' > vps/inspect.txt <<'EOF'
+          echo "== system"; uname -m; (. /etc/os-release; echo "$PRETTY_NAME")
+          echo "== cpu"; nproc
+          echo "== ram_mb"; free -m | awk '/Mem:/{print $2}'
+          echo "== disk_free_gb"; df -BG --output=avail / | tail -1 | tr -dc 0-9; echo
+          echo "== other_containers"; (docker ps --format '{{.Names}} {{.Image}}' 2>/dev/null | grep -v -E '^live-ai(-link)? ' || true)
+          echo "== listening"; (ss -ltnpH 2>/dev/null | grep -v -E '"(sshd|systemd-resolve|cloudflared|docker-proxy)"' | awk '{print $4, $6}' || true)
+          echo "== known_systems"; ls -d /opt/three-junk /opt/*livekit* /etc/livekit* 2>/dev/null || true
+          echo "== end"
+          EOF
+          cat vps/inspect.txt
+          sec() { awk -v s="== $1" '$0==s{f=1;next} /^== /{f=0} f' vps/inspect.txt; }
+          RAM=$(sec ram_mb); DISK=$(sec disk_free_gb); OTHER=$(sec other_containers; sec listening; sec known_systems)
+          echo "RAM=${RAM}MB DISK=${DISK}GB"
+          if [ "${RAM:-0}" -lt 3300 ]; then echo "::error::RAM ${RAM} MB is too small (need 4 GB or more)"; exit 1; fi
+          if [ "${DISK:-0}" -lt 12 ]; then echo "::error::Only ${DISK} GB free disk (need 12 GB or more)"; exit 1; fi
+          if [ -n "$(echo "$OTHER" | tr -d '[:space:]')" ] && [ "${{ inputs.force }}" != "true" ]; then
+            echo "::error::This machine already runs other programs - stopped without changing anything:"; echo "$OTHER"; exit 1
+          fi
+
+      - name: Install (one command, same as scripts/install.sh)
+        run: |
+          . ./ssh.sh
+          ssh 'cat > /tmp/live-ai-install.sh' < scripts/install.sh
+          set -o pipefail
+          ssh 'bash /tmp/live-ai-install.sh' < /dev/null 2>&1 | tee vps/install.log
+          grep -o 'https://[a-z0-9-]*\.trycloudflare\.com' vps/install.log | head -1 > vps/url.txt
+          cat vps/url.txt
+
+      - name: Test through the public link (Thai chat, memory, isolation, studio page)
+        run: |
+          URL=$(cat vps/url.txt); [ -n "$URL" ] || { echo "::error::no public link"; exit 1; }
+          for i in $(seq 1 30); do curl -fsS "$URL/api/health" -o vps/health.json && break; sleep 5; done
+          cat vps/health.json; echo
+          reg() { curl -fsS -X POST "$URL/api/register" -H 'Content-Type: application/json' -d "{\"name\":\"$1\"}" | jq -r .token; }
+          ask() { curl -fsS -X POST "$URL/api/chat" -H "Authorization: Bearer $1" -H 'Content-Type: application/json' -d "{\"message\":\"$2\",\"stream\":false}"; }
+          A=$(reg vps-check-a); B=$(reg vps-check-b)
+          s=$(date +%s.%N); ask "$A" "สวัสดีครับ แนะนำตัวสั้น ๆ" | tee vps/hello.json; echo
+          echo "hello_seconds $(echo "$(date +%s.%N) - $s" | bc)" | tee vps/timing.txt
+          ask "$A" "จำไว้ว่า สีโปรดของฉันคือสีเขียว" > /dev/null
+          ask "$A" "สีโปรดของฉันคือสีอะไร" | tee vps/recall.json; echo
+          ask "$B" "สีโปรดของฉันคือสีอะไร" | tee vps/other_user.json; echo
+          curl -fsS -o /dev/null -w "studio_page %{http_code}\n" "$URL/studio" | tee -a vps/timing.txt
+          . ./ssh.sh; ssh 'docker stats --no-stream live-ai; free -m' | tee vps/resources.txt
+          jq -e '.reply | length > 5' vps/hello.json
+          jq -e '.reply | contains("เขียว")' vps/recall.json
+          jq -e '.reply | contains("เขียว") | not' vps/other_user.json
+
+      - name: Publish result to the ci-reports branch
+        if: always()
+        env: { GH_TOKEN: "${{ github.token }}" }
+        run: mkdir -p vps && bash scripts/publish_report.sh vps vps
