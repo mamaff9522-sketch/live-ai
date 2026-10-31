@@ -332,8 +332,10 @@ class FreeFormScripts(unittest.TestCase):
         self.assertEqual([(d["speaker"], d["text"]) for s in r["shots"] for d in s["dialogue"]],
                          [("พี่ทุย", "คนหนึ่ง... ไปไกลแล้ว..."), ("พี่ทุย", "แต่อีกคน... ยังอยู่ที่เดิม..."),
                           ("พี่ทุย", "ยังรออยู่ตรงนี้นะ... ยังไม่ได้ไปไหน...")])
-        self.assertEqual(r["stats"]["shots"], 3)                       # no extra shots for ending / style
-        self.assertTrue(any("ตอนจบ" in a for a in r["shots"][-1]["action"]))
+        # opening (performance before words) and ending become optional shots without words; style is a note
+        self.assertEqual(r["stats"]["shots"], 5)
+        self.assertTrue(r["shots"][0].get("optional") and not r["shots"][0]["dialogue"])
+        self.assertTrue(r["shots"][-1].get("optional") and any("ตอนจบ" in a for a in r["shots"][-1]["action"]))
         self.assertTrue(any("สไตล์ภาพ" in n for n in r["notes"]))
 
 

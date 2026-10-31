@@ -22,6 +22,7 @@ from pathlib import Path
 from .. import logs
 from ..media import MediaError, probe
 from ..store import NotFound
+from . import cutter
 from . import match as M
 from .asr import ASRUnavailable, FakeASR, loudness, make_asr, speech_regions
 from .script import label, parse
@@ -74,6 +75,7 @@ AGENTS = [
 ]
 NOT_YET: dict[int, str] = {}
 DEFAULT_SETTINGS = {"aspect": "9:16", "height": 720, "fps": 30, "subtitles": "file", "audio": "dialogue_only", "match_light": False,
+                    "pacing": "auto",
                     "speaker_in_subs": False, "range_from": None, "range_to": None}
 VIDEO_EXT = {".mp4", ".mov", ".m4v", ".webm", ".mkv", ".3gp"}
 RNNOISE_MODEL = Path(__file__).resolve().parent.parent / "assets" / "rnnoise-std.rnnn"
@@ -246,6 +248,8 @@ class Studio:
                 elif k == "fps" and int(v) in (24, 25, 30, 60):
                     cur[k] = int(v)
                 elif k == "subtitles" and v in ("none", "file", "burn"):
+                    cur[k] = v
+                elif k == "pacing" and v in ("auto", "original"):
                     cur[k] = v
                 elif k == "audio" and v in ("original", "dialogue_only"):
                     cur[k] = v
@@ -658,7 +662,7 @@ class Studio:
         for m in moods.values():
             counts[m] = counts.get(m, 0) + 1
         self._agent(pid, 10, "done", "อารมณ์รายฉาก: " + ", ".join(f"{k} {v}" for k, v in counts.items())
-                    + " — ไม่ตัดคลิปให้สั้นลง จึงรักษาจังหวะการแสดงและปฏิกิริยาตามต้นฉบับ")
+                    + " — ใช้กำหนดจังหวะตัดต่อ (ค้างภาพหลังพูด, รอยต่อ)")
 
     def _cinematic(self, pid, script, clips, timeline) -> None:
         """AI 12: brightness of each clip vs the rest of its scene; optional gentle correction."""
@@ -683,8 +687,20 @@ class Studio:
                     timeline["issues"].append({"type": "light", "clip": it["clip"], "message":
                         f"“{it['name']}” {'สว่าง' if diff > 0 else 'มืด'}กว่าคลิปอื่นในฉากเดียวกัน ({int(l)} เทียบ {int(med)})"
                         + (" — ปรับให้ใกล้เคียงแล้ว" if st.get("match_light") else " — เปิด 'ปรับแสงให้ใกล้กัน' ได้ในหน้าตั้งค่า")})
+        scene_mood = {sc["id"]: sc.get("mood", "ปกติ") for sc in script["scenes"]}
+        for it in timeline["video"]:
+            it["scene"] = script["shots"][it["shots"][0]]["scene"]
+        before = timeline["duration"]
+        notes = cutter.plan_cuts(timeline, by_id, lambda it: scene_mood.get(it.get("scene"), "ปกติ"), st.get("pacing", "auto"))
+        timeline["cuts"] = notes
+        fades = sum(1 for it in timeline["video"][1:] if it.get("fade_in"))
+        if st.get("pacing", "auto") == "original":
+            how = "ใช้คลิปเต็มความยาวตามต้นฉบับ ต่อแบบ Hard Cut"
+        else:
+            how = (f"ตัดช่วงว่าง/ภาพเสียตามจังหวะอารมณ์: {before:.1f} → {timeline['duration']:.1f} วินาที, "
+                   f"รอยต่อแบบจางผ่านดำ {fades} จุด (ไม่ตัดคำพูด)")
         self._agent(pid, 12, "warning" if off and not st.get("match_light") else "done",
-                    "ต่อแบบ Hard Cut ไม่ครอป ไม่เพิ่มเอฟเฟกต์ " + (f"; แสงต่างจากฉาก {off} คลิป" if off else "; แสงใกล้เคียงกันทั้งฉาก")
+                    how + (f"; แสงต่างจากฉาก {off} คลิป" if off else "; แสงใกล้เคียงกันทั้งฉาก")
                     + (" (ปรับให้แล้ว)" if off and st.get("match_light") else ""))
 
     def _audio(self, pid, clips, timeline) -> None:
@@ -759,13 +775,15 @@ class Studio:
             self._check_pause(pid)
             c = by_id[item["clip"]]
             bright = item.get("brightness", 0.0)
-            key = hashlib.sha1(f"{W}x{H}@{fps}|{dialogue_only}|{bright}".encode()).hexdigest()[:8]
+            cut = (item.get("in", 0.0), item.get("out", c["duration"]))
+            fades = (item.get("fade_in", 0.0), item.get("fade_out", 0.0))
+            key = hashlib.sha1(f"{W}x{H}@{fps}|{dialogue_only}|{bright}|{cut}|{fades}".encode()).hexdigest()[:8]
             seg = cache / f"{c['id']}-{key}.mp4"
             if not seg.exists():    # render checkpoint: finished segments are reused
                 # where people speak: the recogniser's segments are more reliable than loudness in noisy clips
                 spoken = [(x["start"], x["end"]) for x in (c.get("asr") or {}).get("segments") or []]
                 normalize_segment(c, seg, W, H, fps, dialogue_only=dialogue_only, brightness=bright,
-                                  regions=spoken or (c.get("inspect") or {}).get("speech_regions") or [])
+                                  regions=spoken or (c.get("inspect") or {}).get("speech_regions") or [], cut=cut, fades=fades)
             segs.append(seg)
             self._agent(pid, 11, "running", f"เตรียมคลิป {i + 1}/{len(timeline['video'])} ({W}x{H} {fps}fps)")
         out_dir = self.media.root / str(uid)
@@ -798,6 +816,8 @@ class Studio:
                 continue
             segs = (c.get("asr") or {}).get("segments") or []
             spans = align_lines(ls, segs, c["duration"])
+            t_in, keep = item.get("in", 0.0), item.get("out", c["duration"]) - item.get("in", 0.0)
+            spans = [(min(max(0.0, a - t_in), keep), min(max(0.0, b - t_in), keep)) for a, b in spans]
             for l, (a, b) in zip(ls, spans):
                 if cues and any(c["li"] == l["li"] for c in cues):
                     prev = next(c for c in cues if c["li"] == l["li"])      # line continues from the previous clip
@@ -867,6 +887,10 @@ class Studio:
             checks.append(("ซับตรงตามบททุกตัวอักษร", texts_ok))
             in_range = all(0 <= c["start"] < c["end"] <= info["duration"] + 0.05 for c in subs["cues"])
             checks.append(("เวลาซับอยู่ในวิดีโอ ไม่ทับกัน", in_range))
+        by_id = {c["id"]: c for c in clips}
+        cut_words = [i["name"] for i in timeline["video"] if i.get("lines") and any(
+            a < i.get("in", 0) - 0.05 or b > i.get("out", 1e9) + 0.05 for a, b in cutter.speech_spans(by_id[i["clip"]]))]
+        checks.append(("ไม่ตัดคำพูดทิ้ง" + (f" (ตัดโดน: {', '.join(cut_words[:3])})" if cut_words else ""), not cut_words))
         low = [i for i in timeline["video"] if i["confidence"] == "ต่ำ"]
         checks.append((f"คลิปที่จับคู่ความมั่นใจต่ำ {len(low)} คลิป (ต้องให้คนตรวจ)", not low))
         for name, ok in checks:
@@ -985,15 +1009,29 @@ def integrated_lufs(path: str) -> float | None:
 
 
 def normalize_segment(c: dict, seg: Path, W: int, H: int, fps: int, dialogue_only: bool = False,
-                      brightness: float = 0.0, regions: list | None = None) -> None:
+                      brightness: float = 0.0, regions: list | None = None, cut: tuple | None = None,
+                      fades: tuple = (0.0, 0.0)) -> None:
     """Same size/fps/codec for every clip, picture kept whole (padded, never cropped).
+    cut = (in, out) seconds kept from the clip; fades = (in, out) dip-to-black seconds.
     dialogue_only: RNNoise speech denoiser + gaps between spoken lines lowered by 20 dB."""
+    t0, t1 = cut or (0.0, c["duration"])
+    t0, t1 = max(0.0, float(t0)), min(float(c["duration"]), float(t1))
+    D = round(t1 - t0, 3)
+    ss = ["-ss", f"{t0:.3f}"] if t0 > 0 else []
+    regions = [(max(0.0, a - t0), min(D, b - t0)) for a, b in (regions or []) if b > t0 and a < t1]
     tmp = seg.with_suffix(".part.mp4")
     vf = (f"scale={W}:{H}:force_original_aspect_ratio=decrease:force_divisible_by=2,pad={W}:{H}:(ow-iw)/2:(oh-ih)/2:black,"
           f"setsar=1,fps={fps},format=yuv420p")
     if brightness:
         vf += f",eq=brightness={brightness:.3f}"
-    af = f"aresample=48000,apad=whole_dur={c['duration']:.3f},aformat=channel_layouts=stereo"
+    af = f"aresample=48000,apad=whole_dur={D:.3f},aformat=channel_layouts=stereo"
+    fi, fo = (round(min(float(x), D / 3), 2) for x in fades)
+    if fi > 0:
+        vf += f",fade=t=in:st=0:d={fi}"
+        af += f",afade=t=in:st=0:d={fi}"
+    if fo > 0:
+        vf += f",fade=t=out:st={D - fo:.3f}:d={fo}"
+        af += f",afade=t=out:st={D - fo:.3f}:d={fo}"
     audio_src = None
     if dialogue_only and c["has_audio"]:
         # pass 1, audio only: denoise + lower the gaps between lines. Kept separate from the video job
@@ -1003,17 +1041,17 @@ def normalize_segment(c: dict, seg: Path, W: int, H: int, fps: int, dialogue_onl
         flt = denoise_filter()[0]
         audio_src = seg.with_suffix(".clean.wav")
         try:
-            r1 = subprocess.run(["nice", "-n", "10", "ffmpeg", "-loglevel", "error", "-nostdin", "-y", "-i", c["path"], "-vn",
+            r1 = subprocess.run(["nice", "-n", "10", "ffmpeg", "-loglevel", "error", "-nostdin", "-y", *ss, "-t", f"{D:.3f}", "-i", c["path"], "-vn",
                                  "-af", f"aresample=48000,aformat=channel_layouts=mono,{flt},volume='if(gt({gate},0),1,0.1)':eval=frame",
                                  "-c:a", "pcm_s16le", str(audio_src)], capture_output=True, text=True, timeout=max(120, int(c["duration"] * 10)))
             if r1.returncode != 0:
                 raise RuntimeError(r1.stderr[-200:])
         except (subprocess.TimeoutExpired, RuntimeError):
             # last resort: gap lowering only, never a silent failure
-            subprocess.run(["ffmpeg", "-loglevel", "error", "-nostdin", "-y", "-i", c["path"], "-vn",
+            subprocess.run(["ffmpeg", "-loglevel", "error", "-nostdin", "-y", *ss, "-t", f"{D:.3f}", "-i", c["path"], "-vn",
                             "-af", f"aresample=48000,volume='if(gt({gate},0),1,0.1)':eval=frame", "-c:a", "pcm_s16le", str(audio_src)],
                            capture_output=True, timeout=120, check=True)
-    args = ["nice", "-n", "10", "ffmpeg", "-loglevel", "error", "-nostdin", "-y", "-i", c["path"]]
+    args = ["nice", "-n", "10", "ffmpeg", "-loglevel", "error", "-nostdin", "-y", *ss, "-i", c["path"]]
     if audio_src:
         args += ["-i", str(audio_src)]
         amap = "1:a:0"
@@ -1023,7 +1061,7 @@ def normalize_segment(c: dict, seg: Path, W: int, H: int, fps: int, dialogue_onl
     else:
         amap = "0:a:0"
     args += ["-map", "0:v:0", "-map", amap, "-vf", vf,
-             "-af", af, "-t", f"{c['duration']:.3f}",
+             "-af", af, "-t", f"{D:.3f}",
              "-c:v", "libx264", "-preset", "veryfast", "-crf", "20", "-g", str(fps * 2), "-c:a", "aac", "-b:a", "160k", "-ar", "48000",
              "-video_track_timescale", "90000", "-movflags", "+faststart", "-threads", os.environ.get("LIVEAI_FFMPEG_THREADS", "2"), str(tmp)]
     r = subprocess.run(args, capture_output=True, text=True, timeout=max(300, int(c["duration"] * 30)))

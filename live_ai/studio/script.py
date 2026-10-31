@@ -160,6 +160,13 @@ def _parse(text: str, free: bool) -> dict:
         if not text:
             return False
         if sc.format == "story":
+            if free and not sc.shots and any(not re.match(r"^(สถานที่|บรรยากาศ|ฉากหลัง|แสง)\s*[:：]", a) for a in pending_actions):
+                # free-form script that describes the performance before anyone speaks: an opening shot
+                # without words. It is optional — the video is complete without a clip for it.
+                new_shot()
+                cur_shot["action"] += pending_actions
+                cur_shot["optional"] = True
+                pending_actions.clear()
             # one spoken line = one shot; picture directions written before it belong to that shot
             new_shot()
             cur_shot["action"] += pending_actions
@@ -326,7 +333,10 @@ def _parse(text: str, free: bool) -> dict:
 
     if pending_actions:
         if free and sc.format == "story" and any(x["dialogue"] for x in sc.shots):
-            sc.shots[-1]["action"] += pending_actions        # how the scene ends happens in the last shot
+            # how the scene ends: an optional closing shot without words (a clip may or may not exist)
+            new_shot()
+            cur_shot["action"] += pending_actions
+            cur_shot["optional"] = True
         elif free and sc.format == "story" and not any(x["dialogue"] for x in sc.shots):
             for a in pending_actions:          # prose only: one paragraph = one shot
                 new_shot()

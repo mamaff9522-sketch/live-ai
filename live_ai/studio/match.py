@@ -189,6 +189,8 @@ def match(script: dict, clips: list[dict], visual: dict | None = None, vl_votes:
     covered_lines = {li for a in assign.values() for li in a["lines"]}
     missing = []
     for s in shots:
+        if s.get("optional") and s["index"] not in covered:
+            continue                     # e.g. an opening / closing shot without words in a free-form script
         lines_here = [l for l in lines if l["shot"] == s["index"]]
         if s["index"] in covered and all(l["li"] in covered_lines for l in lines_here):
             continue
