@@ -1,0 +1,109 @@
+name: build Android app (APK)
+
+# Builds the Live AI Android app pointing at the server's permanent HTTPS address and publishes it as
+# the GitHub release "android-app" (download link never changes):
+#   https://github.com/<owner>/live-ai/releases/download/android-app/live-ai.apk
+# The signing key is created once and kept on the server (/root/.live-ai-apk), never in this public repo,
+# so every new version installs over the old one.
+
+on:
+  workflow_dispatch:
+    inputs:
+      server_url:
+        description: "Server address for the app (empty = the VPS's permanent https address)"
+        required: false
+        default: ""
+
+permissions:
+  contents: write
+
+concurrency:
+  group: build-apk
+  cancel-in-progress: false
+
+jobs:
+  apk:
+    runs-on: ubuntu-latest
+    timeout-minutes: 40
+    env:
+      VPS_HOST: ${{ secrets.VPS_HOST }}
+      VPS_USER: ${{ secrets.VPS_USER || 'root' }}
+      SSHPASS: ${{ secrets.VPS_PASSWORD }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-java@v4
+        with: { distribution: temurin, java-version: "17" }
+      - uses: gradle/actions/setup-gradle@v4
+        with: { gradle-version: "8.11.1" }
+
+      - name: Connect to the server
+        run: |
+          sudo apt-get install -y -qq sshpass > /dev/null
+          echo 'ssh() { sshpass -e /usr/bin/ssh -o StrictHostKeyChecking=accept-new -o ConnectTimeout=20 "$VPS_USER@$VPS_HOST" "$@"; }' > ssh.sh
+          . ./ssh.sh; ssh 'echo connected' < /dev/null
+
+      - name: Server address
+        run: |
+          . ./ssh.sh; mkdir -p apk
+          URL="${{ inputs.server_url }}"
+          if [ -z "$URL" ]; then
+            D=$(ssh "docker inspect -f '{{join .Args \" \"}}' live-ai-https 2>/dev/null" < /dev/null | sed -n 's/.*--from \([^ ]*\).*/\1/p')
+            [ -n "$D" ] && URL="https://$D"
+          fi
+          [ -n "$URL" ] || { echo "::error::No permanent address on the server yet - run 'deploy to my VPS' first"; exit 1; }
+          curl -fsS -m 30 "$URL/api/health" > apk/health.json || { echo "::error::$URL is not reachable from the internet"; exit 1; }
+          echo "SERVER_URL=$URL" >> "$GITHUB_ENV"; echo "$URL" > apk/server.txt; echo "app will open $URL"
+
+      - name: Signing key (kept on the server)
+        run: |
+          . ./ssh.sh
+          if ssh 'test -s /root/.live-ai-apk/release.jks' < /dev/null; then
+            ssh 'base64 -w0 /root/.live-ai-apk/release.jks' < /dev/null | base64 -d > release.jks
+            PW=$(ssh 'cat /root/.live-ai-apk/password' < /dev/null)
+            echo "using the existing signing key"
+          else
+            PW=$(openssl rand -hex 20)
+            keytool -genkeypair -keystore release.jks -storetype PKCS12 -storepass "$PW" -keypass "$PW" -alias liveai \
+              -keyalg RSA -keysize 3072 -validity 36500 -dname "CN=Live AI, O=Live AI, C=TH" > /dev/null
+            ssh 'umask 077; mkdir -p /root/.live-ai-apk; base64 -d > /root/.live-ai-apk/release.jks' < <(base64 -w0 release.jks)
+            echo -n "$PW" | ssh 'umask 077; cat > /root/.live-ai-apk/password'
+            echo "created a new signing key and stored it on the server"
+          fi
+          echo "::add-mask::$PW"
+          echo "LIVEAI_KEYSTORE=$PWD/release.jks" >> "$GITHUB_ENV"
+          echo "LIVEAI_KEYSTORE_PASSWORD=$PW" >> "$GITHUB_ENV"
+
+      - name: Build
+        run: |
+          gradle -p android --no-daemon assembleRelease \
+            -PserverUrl="$SERVER_URL" -PversionCode=${{ github.run_number }} -PversionName="1.0.${{ github.run_number }}"
+          cp android/app/build/outputs/apk/release/app-release.apk apk/live-ai.apk
+          rm -f release.jks
+
+      - name: Check the APK (signature, package, size)
+        run: |
+          BT=$(ls -d "$ANDROID_HOME"/build-tools/* | sort -V | tail -1)
+          "$BT/apksigner" verify --print-certs apk/live-ai.apk | tee apk/signature.txt
+          "$BT/aapt" dump badging apk/live-ai.apk | grep -E "^(package|sdkVersion|targetSdkVersion|application-label):" | tee apk/badging.txt
+          grep -q "package: name='ai.live.app'" apk/badging.txt
+          ls -l apk/live-ai.apk | tee apk/size.txt; sha256sum apk/live-ai.apk | tee apk/sha256.txt
+
+      - name: Publish the download (release "android-app")
+        env: { GH_TOKEN: "${{ github.token }}" }
+        run: |
+          NOTES="แอป Live AI สำหรับ Android รุ่น 1.0.${{ github.run_number }} — เปิดที่ $SERVER_URL
+          ติดตั้ง: ดาวน์โหลด live-ai.apk แล้วเปิดไฟล์ (อนุญาต 'ติดตั้งแอปที่ไม่รู้จัก' ให้ Chrome ครั้งแรกครั้งเดียว)"
+          if gh release view android-app > /dev/null 2>&1; then
+            gh release upload android-app apk/live-ai.apk --clobber
+            gh release edit android-app --title "Live AI Android 1.0.${{ github.run_number }}" --notes "$NOTES"
+          else
+            gh release create android-app apk/live-ai.apk --title "Live AI Android 1.0.${{ github.run_number }}" --notes "$NOTES" --latest
+          fi
+          URL="https://github.com/${GITHUB_REPOSITORY}/releases/download/android-app/live-ai.apk"
+          echo "$URL" > apk/download.txt
+          sleep 5; curl -fsSIL "$URL" | grep -iE "^(HTTP|content-length)" | tee apk/download_check.txt
+
+      - name: Report
+        if: always()
+        env: { GH_TOKEN: "${{ github.token }}" }
+        run: mkdir -p apk && rm -f apk/live-ai.apk && bash scripts/publish_report.sh apk apk

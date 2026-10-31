@@ -74,7 +74,31 @@ for i in $(seq 1 60); do
   sleep 2
 done
 
+# Permanent HTTPS address (does not change on restart): https://<ip-with-dashes>.sslip.io, with a free
+# Let's Encrypt certificate handled by Caddy. Only if ports 80 and 443 are free on this machine.
+# Use your own domain instead with: LIVEAI_DOMAIN=ai.example.com bash install.sh
+STABLE=""
+PUBLIC_IP=$(curl -fsS4 -m 10 https://api.ipify.org 2>/dev/null || hostname -I | awk '{print $1}')
+DOMAIN="${LIVEAI_DOMAIN:-$(echo "$PUBLIC_IP" | tr . -).sslip.io}"
+if [ "${LIVEAI_HTTPS:-1}" != 1 ]; then
+  echo "(ข้ามลิงก์ถาวร: LIVEAI_HTTPS=0)"
+elif $DOCKER ps --format '{{.Names}}' | grep -qx live-ai-https || ! ss -ltnH 2>/dev/null | awk '{print $4}' | grep -qE ':(80|443)$'; then
+  say "ตั้งลิงก์ถาวร https://${DOMAIN} …"
+  $DOCKER rm -f live-ai-https >/dev/null 2>&1 || true
+  $DOCKER volume create liveai-https >/dev/null
+  $DOCKER run -d --name live-ai-https --restart unless-stopped --network host -v liveai-https:/data \
+    caddy:2 caddy reverse-proxy --from "$DOMAIN" --to "127.0.0.1:${PORT}" </dev/null >/dev/null
+  for i in $(seq 1 45); do
+    if curl -fsS -m 10 --resolve "${DOMAIN}:443:127.0.0.1" "https://${DOMAIN}/api/health" >/dev/null 2>&1; then STABLE="https://${DOMAIN}"; break; fi
+    sleep 4
+  done
+  [ -n "$STABLE" ] || echo "(ยังออกใบรับรอง HTTPS ไม่ได้ — ตรวจว่าเปิดพอร์ต 80/443 ในไฟร์วอลล์ของผู้ให้บริการ; ระหว่างนี้ใช้ลิงก์ trycloudflare ได้)"
+else
+  echo "(พอร์ต 80/443 มีโปรแกรมอื่นใช้อยู่ — ข้ามลิงก์ถาวร)"
+fi
+
 say "เสร็จแล้ว"
+[ -n "$STABLE" ] && echo "ลิงก์ถาวร:    $STABLE   (สตูดิโอ: $STABLE/studio)"
 echo "ลิงก์ใช้งาน:  ${URL:-(ยังไม่ได้ลิงก์ — ดูด้วยคำสั่ง: $DOCKER logs live-ai-link)}"
 echo "สตูดิโอตัดต่อ: ${URL:+$URL/studio}"
 echo "รหัสผู้ดูแล (สำรองข้อมูล): เก็บไว้ที่ $ADMIN_FILE"

@@ -269,7 +269,7 @@ jobs:
     steps:
       - uses: actions/checkout@v4
       - name: Run the installer exactly as a user would
-        run: bash scripts/install.sh 2>&1 | tee install.log
+        run: LIVEAI_HTTPS=0 bash scripts/install.sh 2>&1 | tee install.log
       - name: Use it through the public HTTPS link
         run: |
           mkdir -p ireport && cp install.log ireport/
