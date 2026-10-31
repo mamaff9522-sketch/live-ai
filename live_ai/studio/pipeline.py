@@ -23,7 +23,7 @@ from .. import logs
 from ..media import MediaError, probe
 from ..store import NotFound
 from . import match as M
-from .asr import ASRUnavailable, FakeASR, make_asr, speech_regions
+from .asr import ASRUnavailable, FakeASR, loudness, make_asr, speech_regions
 from .script import label, parse
 
 log = logs.get("studio")
@@ -504,7 +504,9 @@ class Studio:
                     asr = self.asr.transcribe_named(c["name"], c["duration"])
                 else:
                     t0 = time.time()
-                    asr = self.asr.transcribe(c["path"], [tuple(x) for x in c["inspect"]["speech_regions"]])
+                    names = [ch["name"] for ch in script.get("characters", [])] or sorted(
+                        {d["speaker"] for sh in script["shots"] for d in sh["dialogue"] if d["speaker"]})
+                    asr = self.asr.transcribe(c["path"], [tuple(x) for x in c["inspect"]["speech_regions"]], names)
                     asr["seconds"] = round(time.time() - t0, 1)
                 with self.store.conn() as cn:
                     cn.execute("UPDATE project_clips SET asr=? WHERE project_id=? AND media_id=?",
@@ -727,6 +729,7 @@ def inspect_clip(path: str) -> dict:
         out["problems"].append("มีเฟรมเสีย ถอดรหัสไม่ได้บางส่วน")
     if info["has_audio"]:
         regions = speech_regions(path, info["duration"])
+        out["audio_db"] = list(loudness(path))
         out["speech_regions"] = regions
         out["speech"] = sum(b - a for a, b in regions) >= 0.4
     else:

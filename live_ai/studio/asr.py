@@ -37,8 +37,28 @@ class ASRUnavailable(RuntimeError):
     pass
 
 
-def speech_regions(path: str, duration: float, noise_db: float = -35, min_silence: float = 0.35) -> list[tuple[float, float]]:
-    """Non-silent stretches of the audio track, e.g. [(0.4, 3.1), (4.0, 7.2)]."""
+def loudness(path: str) -> tuple[float, float]:
+    """(mean dB, max dB) of the audio track; (-91, -91) when there is no sound at all."""
+    try:
+        r = subprocess.run(["ffmpeg", "-hide_banner", "-nostdin", "-i", path, "-vn", "-af", "volumedetect", "-f", "null", "-"],
+                           capture_output=True, text=True, timeout=300)
+    except (OSError, subprocess.TimeoutExpired):
+        return -91.0, -91.0
+    mean = re.search(r"mean_volume: (-?[\d.]+|-inf) dB", r.stderr)
+    peak = re.search(r"max_volume: (-?[\d.]+|-inf) dB", r.stderr)
+    f = lambda m: -91.0 if not m or m.group(1) == "-inf" else float(m.group(1))
+    return f(mean), f(peak)
+
+
+def speech_regions(path: str, duration: float, min_silence: float = 0.35) -> list[tuple[float, float]]:
+    """Stretches with sound clearly above the clip's own background, e.g. [(0.4, 3.1), (4.0, 7.2)].
+
+    The threshold follows each clip's loudness (recordings differ a lot); a clip that never gets
+    louder than -50 dB is treated as silent."""
+    mean, peak = loudness(path)
+    if peak < -50:
+        return []
+    noise_db = max(-60.0, min(-20.0, peak - 26))
     try:
         r = subprocess.run(["ffmpeg", "-hide_banner", "-nostdin", "-i", path, "-vn", "-af",
                             f"silencedetect=noise={noise_db}dB:d={min_silence}", "-f", "null", "-"],
@@ -92,23 +112,25 @@ class WhisperASR:
             raise ASRUnavailable("ยังไม่ได้ติดตั้งโปรแกรมถอดเสียง (whisper.cpp)")
         self.model_path()
 
-    def transcribe(self, path: str, regions: list[tuple[float, float]]) -> dict:
+    def transcribe(self, path: str, regions: list[tuple[float, float]], names: list[str] | None = None) -> dict:
         model = self.model_path()
         with tempfile.TemporaryDirectory(prefix="asr-") as d:
             wav = Path(d) / "a.wav"
             subprocess.run(["ffmpeg", "-loglevel", "error", "-nostdin", "-y", "-i", path, "-vn", "-ac", "1", "-ar", "16000",
                             "-c:a", "pcm_s16le", str(wav)], check=True, timeout=300)
             out = Path(d) / "out"
-            r = subprocess.run([self.bin, "-m", str(model), "-l", self.lang, "-t", str(self.threads), "-oj", "-of", str(out),
-                                "-np", "-f", str(wav)], capture_output=True, text=True, timeout=1800)
+            cmd = [self.bin, "-m", str(model), "-l", self.lang, "-t", str(self.threads), "-oj", "-of", str(out), "-np", "-f", str(wav)]
+            if names:
+                cmd += ["--prompt", " ".join(names[:12])]
+            r = subprocess.run(cmd, capture_output=True, text=True, timeout=1800)
             if r.returncode != 0 or not out.with_suffix(".json").exists():
                 raise RuntimeError(f"whisper failed: {(r.stderr or r.stdout)[-300:]}")
             data = json.loads(out.with_suffix(".json").read_text(encoding="utf-8", errors="replace"))
         segs = []
         for s in data.get("transcription", []):
             text = (s.get("text") or "").strip()
-            if not text or HALLUCINATIONS.search(text):
-                continue
+            if not text or HALLUCINATIONS.search(text) or re.fullmatch(r"[\[(（【].*[\])）】]\s*", text):
+                continue                   # filler like "[ พากษ์เสียงไทย ]" is not speech
             a, b = s["offsets"]["from"] / 1000, s["offsets"]["to"] / 1000
             # drop words "heard" where the audio is actually silent
             if regions and not any(min(b, y) - max(a, x) > 0.1 for x, y in regions):
