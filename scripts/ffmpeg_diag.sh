@@ -12,4 +12,7 @@ run arnndn_mono_first "aresample=48000,aformat=channel_layouts=mono,arnndn=m=$M,
 run afftdn "aresample=48000,highpass=f=70,afftdn=nr=20:nf=-35:tn=1,aformat=channel_layouts=stereo,apad=whole_dur=3"
 run volume_expr "aresample=48000,volume='if(gt(between(t,0.30,2.70),0),1,0.1)':eval=frame,aformat=channel_layouts=stereo,apad=whole_dur=3"
 run full "aresample=48000,highpass=f=70,arnndn=m=$M,volume='if(gt(between(t,0.30,2.70),0),1,0.1)':eval=frame,aformat=channel_layouts=stereo,apad=whole_dur=3"
+run highpass_only "aresample=48000,highpass=f=70,aformat=channel_layouts=stereo,apad=whole_dur=3"
+run used_now "aresample=48000,aformat=channel_layouts=mono,arnndn=m=$M,volume='if(gt(between(t,0.30,2.70),0),1,0.1)':eval=frame,aformat=channel_layouts=stereo,apad=whole_dur=3"
+run afftdn_now "aresample=48000,aformat=channel_layouts=mono,afftdn=nr=20:nf=-35,aformat=channel_layouts=stereo,apad=whole_dur=3"
 cat "$out"

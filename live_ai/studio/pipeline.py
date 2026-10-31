@@ -91,20 +91,23 @@ def denoise_filter() -> tuple[str, str]:
             # while real clips hang
             import tempfile
             with tempfile.TemporaryDirectory() as d:
-                try:
-                    r = subprocess.run(["ffmpeg", "-loglevel", "error", "-nostdin", "-y", "-f", "lavfi", "-i", "color=c=gray:s=320x240:d=2",
-                                        "-f", "lavfi", "-i", "sine=frequency=300:duration=2", "-map", "0:v", "-map", "1:a",
-                                        "-af", f"aresample=48000,highpass=f=70,arnndn=m={RNNOISE_MODEL},aformat=channel_layouts=stereo",
+                try:   # exactly the job a real clip gets: an MP4 with AAC audio in, the same filter chain
+                    subprocess.run(["ffmpeg", "-loglevel", "error", "-nostdin", "-y", "-f", "lavfi", "-i", "color=c=gray:s=320x240:d=2",
+                                    "-f", "lavfi", "-i", "sine=frequency=300:duration=2", "-c:v", "libx264", "-preset", "ultrafast",
+                                    "-c:a", "aac", "-t", "2", f"{d}/in.mp4"], capture_output=True, timeout=30, check=True)
+                    r = subprocess.run(["ffmpeg", "-loglevel", "error", "-nostdin", "-y", "-i", f"{d}/in.mp4", "-map", "0:v:0", "-map", "0:a:0",
+                                        "-af", f"aresample=48000,aformat=channel_layouts=mono,arnndn=m={RNNOISE_MODEL},"
+                                               "volume='if(gt(between(t,0.2,1.8),0),1,0.1)':eval=frame,aformat=channel_layouts=stereo,apad=whole_dur=2",
                                         "-t", "2", "-c:v", "libx264", "-preset", "ultrafast", "-c:a", "aac", f"{d}/t.mp4"],
                                        capture_output=True, timeout=20)
                     ok = r.returncode == 0
-                except subprocess.TimeoutExpired:
+                except (subprocess.TimeoutExpired, subprocess.CalledProcessError):
                     ok = False
         _DENOISE = "rnnoise" if ok else "afftdn"
         logs.event(log, "speech denoiser", engine=_DENOISE)
     if _DENOISE == "rnnoise":
         return f"arnndn=m={RNNOISE_MODEL}", "RNNoise"
-    return "afftdn=nr=20:nf=-35:tn=1", "ตัวกรองเสียงรบกวน FFT ของ ffmpeg"
+    return "afftdn=nr=20:nf=-35", "ตัวกรองเสียงรบกวน FFT ของ ffmpeg"
 MAX_RETRIES = 2
 
 
@@ -922,7 +925,8 @@ def normalize_segment(c: dict, seg: Path, W: int, H: int, fps: int, dialogue_onl
     if dialogue_only and c["has_audio"]:
         spans = [(max(0.0, a - 0.25), b + 0.25) for a, b in (regions or [])]
         gate = "+".join(f"between(t,{a:.2f},{b:.2f})" for a, b in spans) or "0"
-        af = (f"aresample=48000,highpass=f=70,{denoise_filter()[0]},volume='if(gt({gate},0),1,0.1)':eval=frame,"
+        # no highpass: in ffmpeg 8.0.1 (Ubuntu 26.04) a highpass in this chain makes the job hang
+        af = (f"aresample=48000,aformat=channel_layouts=mono,{denoise_filter()[0]},volume='if(gt({gate},0),1,0.1)':eval=frame,"
               f"aformat=channel_layouts=stereo")
     args = ["nice", "-n", "10", "ffmpeg", "-loglevel", "error", "-nostdin", "-y", "-i", c["path"]]
     if not c["has_audio"]:
