@@ -114,6 +114,8 @@ async function openDrawer() {
       $('button', { title: 'ลบ', onclick: async e => { e.stopPropagation(); if (confirm('ลบบทสนทนานี้?')) { await api('/api/conversations/' + c.id, { method: 'DELETE' }); if (conv === c.id) openConv(null); openDrawer(); } } }, '✕'))) : $('p', { class: 'status' }, 'ยังไม่มี'),
     $('h2', {}, 'สิ่งที่ Live AI จำเกี่ยวกับคุณ'),
     mems.length ? mems.map(m => $('div', { class: 'row' }, $('span', {}, m.content), $('button', { title: 'ลืม', onclick: async () => { await api('/api/memories/' + m.id, { method: 'DELETE' }); openDrawer(); } }, '✕'))) : $('p', { class: 'status' }, 'พิมพ์ "จำไว้ว่า ..." เพื่อให้จำ'),
+    $('h2', {}, 'เครื่องมือ'),
+    $('a', { class: 'icon', href: '/studio', style: 'display:inline-block;text-decoration:none' }, '🎬 สตูดิโอตัดต่อวิดีโอ'),
     $('h2', {}, 'บัญชี'),
     $('button', { class: 'icon', onclick: () => { if (confirm('ออกจากระบบ? ต้องใช้รหัสเข้าใช้เพื่อกลับเข้ามา')) { store.set('liveai_token', null); token = null; renderLogin(); } } }, 'ออกจากระบบ'));
 }

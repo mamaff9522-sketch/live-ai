@@ -23,7 +23,8 @@ jobs:
       - uses: actions/checkout@v4
       - uses: actions/setup-python@v5
         with: { python-version: "3.12" }
-      - run: python -m unittest tests.test_offline -v
+      - run: sudo apt-get install -y -qq ffmpeg fonts-tlwg-loma-otf > /dev/null
+      - run: python -m unittest tests.test_offline tests.test_studio -v
 
   real-model:
     name: Real Qwen3.5-2B on 2 free CPU cores
@@ -79,6 +80,35 @@ jobs:
           path: llama-bin
           key: llama-server-${{ env.LLAMA_TAG }}-${{ env.CPU_KEY }}
 
+      - name: whisper.cpp release
+        env: { GH_TOKEN: "${{ github.token }}" }
+        run: |
+          WTAG=$(curl -fsSL -H "Authorization: Bearer $GH_TOKEN" https://api.github.com/repos/ggml-org/whisper.cpp/releases/latest | jq -r .tag_name)
+          echo "WHISPER_TAG=$WTAG" >> "$GITHUB_ENV"; echo "whisper.cpp $WTAG"
+
+      - name: Restore whisper.cpp build
+        id: wcache
+        uses: actions/cache/restore@v4
+        with:
+          path: whisper-bin
+          key: whisper-cli-${{ env.WHISPER_TAG }}-${{ env.CPU_KEY }}
+
+      - name: Build whisper-cli (CPU)
+        if: steps.wcache.outputs.cache-hit != 'true'
+        run: |
+          git clone --depth 1 --branch "$WHISPER_TAG" https://github.com/ggml-org/whisper.cpp whisper.cpp
+          cmake -S whisper.cpp -B whisper.cpp/build -DCMAKE_BUILD_TYPE=Release -DBUILD_SHARED_LIBS=OFF \
+            -DWHISPER_BUILD_TESTS=OFF -DWHISPER_BUILD_SERVER=OFF
+          cmake --build whisper.cpp/build --target whisper-cli -j"$(nproc)"
+          mkdir -p whisper-bin && cp whisper.cpp/build/bin/whisper-cli whisper-bin/
+
+      - name: Save whisper.cpp build
+        if: steps.wcache.outputs.cache-hit != 'true'
+        uses: actions/cache/save@v4
+        with:
+          path: whisper-bin
+          key: whisper-cli-${{ env.WHISPER_TAG }}-${{ env.CPU_KEY }}
+
       - name: Find the model (trusted source + SHA-256)
         run: |
           python -m live_ai.modelsource | tee model_source.json
@@ -96,12 +126,19 @@ jobs:
       - name: Start Live AI (pinned to 2 CPU cores)
         run: |
           export LIVEAI_LLAMA_SERVER="$PWD/llama-bin/llama-server"
+          export LIVEAI_WHISPER_BIN="$PWD/whisper-bin/whisper-cli" LIVEAI_WHISPER_MODEL=small
+          sudo apt-get install -y -qq fonts-tlwg-loma-otf > /dev/null || true
           "$LIVEAI_LLAMA_SERVER" --version || true
           nohup taskset -c 0,1 python -m live_ai > liveai_stdout.log 2>&1 &
           echo $! > liveai.pid
 
       - name: Real-model tests
         run: python tests/real_model_test.py http://127.0.0.1:7860 reports
+
+      - name: Studio with real Thai speech (whisper.cpp, FLEURS)
+        if: always()
+        timeout-minutes: 60
+        run: python tests/real_studio_test.py http://127.0.0.1:7860 reports
 
       - name: RAM with small context sizes (low-RAM machines)
         if: always()
@@ -122,6 +159,7 @@ jobs:
           cat reports/real_model_report.md >> "$GITHUB_STEP_SUMMARY" || echo "no report" >> "$GITHUB_STEP_SUMMARY"
           mkdir -p reports/logs && cp -r data/logs/. reports/logs/ 2>/dev/null || true
           cp liveai_stdout.log model_source.json reports/ 2>/dev/null || true
+          rm -rf reports/studio_work
 
       - name: Publish report to the ci-reports branch
         if: always()

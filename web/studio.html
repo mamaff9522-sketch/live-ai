@@ -1,0 +1,219 @@
+<!doctype html>
+<html lang="th">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Live AI Studio</title>
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans+Thai:wght@400;500;600&family=IBM+Plex+Mono&display=swap" rel="stylesheet">
+<style>
+:root{--bg:#f6f5f1;--panel:#fff;--ink:#1d1f1e;--muted:#6b6f6c;--line:#e3e1da;--accent:#0f7b5f;--accent-ink:#fff;--soft:#e7f2ee;--warn:#a5481b;--warn-soft:#fbeee6;--bad:#b42318}
+@media (prefers-color-scheme:dark){:root:not([data-theme=light]){--bg:#121514;--panel:#1a1e1c;--ink:#e6e9e7;--muted:#9aa29d;--line:#2a302d;--accent:#3bb38d;--accent-ink:#0b1310;--soft:#1d2b26;--warn:#e08a5c;--warn-soft:#2b211b;--bad:#f2766b}}
+:root[data-theme=dark]{--bg:#121514;--panel:#1a1e1c;--ink:#e6e9e7;--muted:#9aa29d;--line:#2a302d;--accent:#3bb38d;--accent-ink:#0b1310;--soft:#1d2b26;--warn:#e08a5c;--warn-soft:#2b211b;--bad:#f2766b}
+*{box-sizing:border-box}
+html,body{margin:0;background:var(--bg);color:var(--ink);font:15px/1.6 "IBM Plex Sans Thai",system-ui,sans-serif}
+button,input,textarea,select{font:inherit;color:inherit}
+.wrap{max-width:860px;margin:0 auto;padding:0 16px 80px}
+header{position:sticky;top:0;z-index:3;background:var(--panel);border-bottom:1px solid var(--line);padding:10px 16px;display:flex;gap:10px;align-items:center}
+header h1{font-size:17px;margin:0;flex:1;font-weight:600;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+a{color:var(--accent)}
+nav.tabs{display:flex;gap:6px;overflow-x:auto;padding:10px 0;position:sticky;top:49px;background:var(--bg);z-index:2}
+nav.tabs button{border:1px solid var(--line);background:var(--panel);border-radius:999px;padding:6px 12px;white-space:nowrap;cursor:pointer}
+nav.tabs button.on{background:var(--accent);color:var(--accent-ink);border-color:var(--accent)}
+.card{background:var(--panel);border:1px solid var(--line);border-radius:12px;padding:14px;margin:10px 0}
+.card h2{font-size:15px;margin:0 0 8px}
+.muted{color:var(--muted);font-size:13px}
+.btn{background:var(--accent);color:var(--accent-ink);border:0;border-radius:10px;padding:10px 16px;font-weight:600;cursor:pointer}
+.btn2{background:transparent;border:1px solid var(--line);border-radius:10px;padding:8px 12px;cursor:pointer}
+.btn:disabled,.btn2:disabled{opacity:.5}
+.row{display:flex;gap:8px;flex-wrap:wrap;align-items:center}
+textarea,input[type=text],input[type=number],select{width:100%;border:1px solid var(--line);border-radius:10px;padding:9px 11px;background:var(--bg)}
+textarea{min-height:180px;font:13px/1.5 "IBM Plex Mono",monospace}
+label{font-size:13px;color:var(--muted);display:block;margin:8px 0 4px}
+.grid2{display:grid;grid-template-columns:1fr 1fr;gap:8px}
+.list{display:flex;flex-direction:column;gap:6px}
+.item{display:flex;gap:8px;align-items:flex-start;padding:8px 10px;border:1px solid var(--line);border-radius:10px;background:var(--panel)}
+.item .t{flex:1;min-width:0;overflow-wrap:anywhere}
+.pill{font-size:12px;border-radius:999px;padding:1px 8px;border:1px solid var(--line);white-space:nowrap}
+.s-done{background:var(--soft);border-color:var(--accent);color:var(--accent)}
+.s-running{border-color:var(--accent);color:var(--accent)}
+.s-warning,.s-needs_attention,.s-paused{background:var(--warn-soft);border-color:var(--warn);color:var(--warn)}
+.s-failed{border-color:var(--bad);color:var(--bad)}
+.s-skipped,.s-waiting,.s-draft,.s-queued{color:var(--muted)}
+.bar{height:6px;background:var(--line);border-radius:3px;overflow:hidden;margin-top:6px}.bar i{display:block;height:100%;background:var(--accent);width:0}
+pre{white-space:pre-wrap;font:12px/1.5 "IBM Plex Mono",monospace;background:var(--bg);border:1px solid var(--line);border-radius:8px;padding:8px;margin:6px 0 0}
+video{width:100%;max-height:70vh;border-radius:10px;background:#000;margin-top:8px}
+.qa li{list-style:none;margin:2px 0}.qa{padding:0;margin:6px 0}
+.hide{display:none}
+</style>
+</head>
+<body>
+<header><a href="/" class="btn2" style="text-decoration:none">← แชต</a><h1 id="title">สตูดิโอตัดต่อ</h1><span id="pstatus" class="pill"></span></header>
+<div class="wrap">
+  <div id="root"></div>
+</div>
+<script>
+const $ = (t, a = {}, ...kids) => { const e = document.createElement(t); for (const [k, v] of Object.entries(a)) { if (k.startsWith('on')) e.addEventListener(k.slice(2), v); else if (k === 'class') e.className = v; else if (v !== false && v != null) e.setAttribute(k, v === true ? '' : v); } for (const c of kids.flat()) if (c != null && c !== false) e.append(c); return e; };
+const store = { get(k) { try { return localStorage.getItem(k) } catch { return null } } };
+const token = store.get('liveai_token');
+const ST = { draft: 'ร่าง', queued: 'รอคิว', running: 'กำลังทำงาน', paused: 'หยุดชั่วคราว', done: 'เสร็จสมบูรณ์', needs_attention: 'ต้องแก้ไข', failed: 'หยุดทำงาน', waiting: 'รอ', skipped: 'ยังไม่เปิดใช้', warning: 'มีข้อสังเกต' };
+let P = null, tab = 'script', timer = null;
+
+async function api(path, opt = {}) {
+  const r = await fetch(path, { ...opt, headers: { ...(opt.raw ? {} : { 'Content-Type': 'application/json' }), Authorization: 'Bearer ' + token, ...(opt.headers || {}) } });
+  const j = await r.json().catch(() => ({}));
+  if (!r.ok) throw new Error(j.error || r.statusText);
+  return j;
+}
+function upload(path, file, ctype, onProgress) {
+  return new Promise((ok, bad) => {
+    const x = new XMLHttpRequest(); x.open('POST', path); x.setRequestHeader('Authorization', 'Bearer ' + token);
+    x.setRequestHeader('Content-Type', ctype); x.setRequestHeader('X-Filename', encodeURIComponent(file.name));
+    x.upload.onprogress = e => e.lengthComputable && onProgress && onProgress(e.loaded / e.total);
+    x.onload = () => { let j = {}; try { j = JSON.parse(x.responseText) } catch {} x.status < 300 ? ok(j) : bad(new Error(j.error || x.statusText)); };
+    x.onerror = () => bad(new Error('อัปโหลดไม่สำเร็จ (เครือข่าย)')); x.send(file);
+  });
+}
+const pill = s => $('span', { class: 'pill s-' + s }, ST[s] || s);
+
+async function home() {
+  P = null; clearTimeout(timer); document.getElementById('title').textContent = 'สตูดิโอตัดต่อ'; document.getElementById('pstatus').replaceChildren();
+  const root = document.getElementById('root');
+  if (!token) { root.replaceChildren($('div', { class: 'card' }, 'กรุณาเข้าสู่ระบบที่หน้าแชตก่อน ', $('a', { href: '/' }, 'ไปหน้าแชต'))); return; }
+  const list = await api('/api/studio/projects');
+  const name = $('input', { type: 'text', placeholder: 'ชื่อโปรเจกต์ เช่น ไฟแค้นซ่อนรัก ตอนที่ 1' });
+  root.replaceChildren(
+    $('div', { class: 'card' }, $('h2', {}, 'สร้างโปรเจกต์ใหม่'),
+      $('p', { class: 'muted' }, 'อัปโหลดบทละคร + คลิปวิดีโอทั้งหมด แล้วกด Start ครั้งเดียว AI จะจับคู่ เรียง ตัดต่อ ทำซับ และตรวจคุณภาพให้'),
+      $('div', { class: 'row' }, name, $('button', { class: 'btn', onclick: async () => { const p = await api('/api/studio/projects', { method: 'POST', body: JSON.stringify({ name: name.value }) }); open_(p.id); } }, 'สร้าง'))),
+    $('div', { class: 'card' }, $('h2', {}, 'โปรเจกต์ของฉัน'),
+      list.length ? $('div', { class: 'list' }, list.map(p => $('div', { class: 'item', style: 'cursor:pointer', onclick: () => open_(p.id) }, $('div', { class: 't' }, $('b', {}, p.name), $('div', { class: 'muted' }, p.message || '')), pill(p.status)))) : $('p', { class: 'muted' }, 'ยังไม่มีโปรเจกต์')));
+}
+
+async function open_(id) { P = await api('/api/studio/projects/' + id); render(); poll(); }
+function poll() { clearTimeout(timer); if (!P) return; const live = ['queued', 'running'].includes(P.status); timer = setTimeout(async () => { if (!P) return; try { const n = await api('/api/studio/projects/' + P.id); const changed = JSON.stringify([n.status, n.agents, n.message]) !== JSON.stringify([P.status, P.agents, P.message]); P = n; if (changed && !document.activeElement?.matches('textarea,input,select')) render(); } catch {} poll(); }, live ? 2000 : 15000); }
+
+function render() {
+  document.getElementById('title').textContent = P.name; document.getElementById('pstatus').replaceChildren(pill(P.status));
+  const tabs = [['script', 'บทละคร'], ['clips', `คลิป (${P.clips.length})`], ['agents', 'AI 15 ตัว'], ['issues', 'ตรวจข้อผิดพลาด'], ['timeline', 'Timeline'], ['export', 'ตั้งค่า & ส่งออก']];
+  const body = { script: tScript, clips: tClips, agents: tAgents, issues: tIssues, timeline: tTimeline, export: tExport }[tab]();
+  document.getElementById('root').replaceChildren(
+    $('div', { class: 'row', style: 'margin-top:10px' }, $('button', { class: 'btn2', onclick: home }, '← โปรเจกต์ทั้งหมด'), $('span', { class: 'muted', style: 'flex:1' }, P.message)),
+    controls(),
+    $('nav', { class: 'tabs' }, tabs.map(([k, n]) => $('button', { class: tab === k ? 'on' : '', onclick: () => { tab = k; render(); } }, n))),
+    body);
+}
+
+function controls() {
+  const live = ['queued', 'running'].includes(P.status);
+  const doneAgents = Object.values(P.agents).filter(a => ['done', 'warning'].includes(a.status)).length;
+  const active = Object.values(P.agents).filter(a => a.status !== 'skipped').length;
+  return $('div', { class: 'card' },
+    $('div', { class: 'row' },
+      live ? $('button', { class: 'btn2', onclick: () => act('pause') }, '⏸ หยุดชั่วคราว')
+        : $('button', { class: 'btn', onclick: () => act(P.status === 'paused' ? 'resume' : 'start'), disabled: !P.has_script || !P.clips.length }, P.status === 'paused' ? '▶ ดำเนินการต่อ' : '▶ Start'),
+      $('span', { class: 'muted' }, !P.has_script ? 'ใส่บทละครก่อน' : !P.clips.length ? 'อัปโหลดคลิปก่อน' : live ? `ทำงานแล้ว ${doneAgents}/${active} หน้าที่` : '')),
+    live ? $('div', { class: 'bar' }, $('i', { style: `width:${Math.round(100 * doneAgents / active)}%` })) : null);
+}
+async function act(a) { try { P = await api(`/api/studio/projects/${P.id}/${a}`, { method: 'POST', body: '{}' }); render(); poll(); } catch (e) { alert(e.message); } }
+
+function tScript() {
+  const ta = $('textarea', { placeholder: 'วางบทละครทั้งเรื่องที่นี่ (รองรับรูปแบบ "คลิป 001/225 | 8 วินาที", "ฉาก:", ชื่อ: "บทพูด")' }); ta.value = P.script_text || '';
+  const file = $('input', { type: 'file', accept: '.txt,text/plain', class: 'hide', onchange: async e => { const f = e.target.files[0]; if (f) ta.value = await f.text(); } });
+  const s = P.script;
+  return $('div', {},
+    $('div', { class: 'card' }, $('h2', {}, 'บทละคร'), ta,
+      $('div', { class: 'row', style: 'margin-top:8px' }, $('button', { class: 'btn', onclick: async () => { try { P = await api('/api/studio/projects/' + P.id, { method: 'PATCH', body: JSON.stringify({ script_text: ta.value }) }); render(); } catch (e) { alert(e.message); } } }, 'บันทึกและวิเคราะห์บท'), $('button', { class: 'btn2', onclick: () => file.click() }, 'เปิดไฟล์ .txt'), file)),
+    s ? $('div', { class: 'card' }, $('h2', {}, `โครงสร้างที่อ่านได้: ${s.title || '(ไม่มีชื่อเรื่อง)'}`),
+      $('p', { class: 'muted' }, `${s.stats.shots} ช็อต · บทพูด ${s.stats.dialogue_lines} บรรทัด · ช็อตไม่มีบทพูด ${s.stats.silent_shots} · ${s.scenes.length} ฉาก` + (s.stats.expected_seconds ? ` · ยาวตามบท ${Math.round(s.stats.expected_seconds / 60)} นาที` : '')),
+      s.characters.length ? $('p', { class: 'muted' }, 'ตัวละคร: ' + s.characters.map(c => c.name).join(', ')) : null,
+      s.warnings.length ? $('div', { class: 'list' }, s.warnings.map(w => $('div', { class: 'item' }, '⚠️ ', $('div', { class: 't' }, w)))) : $('p', { class: 'muted' }, '✅ ตรวจแล้ว บทพูดทุกบรรทัดคัดลอกตรงต้นฉบับ'),
+      $('details', {}, $('summary', { class: 'muted' }, 'ดูช็อตทั้งหมด'), $('div', { class: 'list' }, s.shots.slice(0, 400).map(sh => $('div', { class: 'item' }, $('div', { class: 't' }, $('b', {}, sh.number ? `คลิป ${String(sh.number).padStart(3, '0')}` : `ช็อต ${sh.index + 1}`), ' ', $('span', { class: 'muted' }, sh.action.join(' ')), sh.dialogue.map(d => $('div', {}, `${d.speaker || 'ไม่ระบุ'}: “${d.text}”`)))))))) : null);
+}
+
+function tClips() {
+  const vids = $('input', { type: 'file', accept: 'video/*', multiple: true, class: 'hide', onchange: e => sendVideos([...e.target.files]) });
+  const zip = $('input', { type: 'file', accept: '.zip,application/zip', class: 'hide', onchange: e => sendZip(e.target.files[0]) });
+  const prog = $('div', { id: 'prog', class: 'muted' });
+  return $('div', {},
+    $('div', { class: 'card' }, $('h2', {}, 'อัปโหลดคลิป'), $('p', { class: 'muted' }, 'ไม่ต้องเรียงลำดับ ไม่ต้องเปลี่ยนชื่อไฟล์ AI จะจับคู่กับบทจากเสียงพูดเอง'),
+      $('div', { class: 'row' }, $('button', { class: 'btn', onclick: () => vids.click() }, '+ เลือกวิดีโอหลายไฟล์'), $('button', { class: 'btn2', onclick: () => zip.click() }, '+ ไฟล์ ZIP'), vids, zip), prog),
+    $('div', { class: 'card' }, $('h2', {}, `คลิปในโปรเจกต์ (${P.clips.length})`),
+      $('div', { class: 'list' }, P.clips.map(c => {
+        const tl = P.result?.timeline?.video?.find(v => v.clip === c.id);
+        const pr = c.inspect?.problems || [];
+        return $('div', { class: 'item' }, $('div', { class: 't' }, $('b', {}, c.name), $('div', { class: 'muted' }, `${(c.duration || 0).toFixed(1)} วิ · ${c.width}x${c.height}` + (tl ? ` · ลำดับที่ ${P.result.timeline.video.indexOf(tl) + 1} · ความมั่นใจ${tl.confidence}` : '')),
+          c.asr?.text ? $('div', { class: 'muted' }, '🗣 ' + c.asr.text.slice(0, 120)) : null, pr.length ? $('div', { style: 'color:var(--warn);font-size:13px' }, '⚠️ ' + pr.join(', ')) : null),
+          $('button', { class: 'btn2', title: 'เอาออกจากโปรเจกต์ (ไฟล์ต้นฉบับไม่ถูกลบ)', onclick: async () => { await api(`/api/studio/projects/${P.id}/clips/${c.id}`, { method: 'DELETE' }); open_(P.id); } }, '✕'));
+      }))));
+}
+async function sendVideos(files) {
+  const prog = document.getElementById('prog'); const ids = [];
+  for (let i = 0; i < files.length; i++) {
+    try { const m = await upload('/api/media', files[i], files[i].type || 'video/mp4', p => prog.textContent = `อัปโหลด ${i + 1}/${files.length}: ${files[i].name} ${Math.round(p * 100)}%`); ids.push(m.id); }
+    catch (e) { prog.textContent = `${files[i].name}: ${e.message}`; await new Promise(r => setTimeout(r, 1500)); }
+  }
+  if (ids.length) { P = await api(`/api/studio/projects/${P.id}/clips`, { method: 'POST', body: JSON.stringify({ media_ids: ids }) }); }
+  render();
+}
+async function sendZip(f) {
+  const prog = document.getElementById('prog');
+  try { const r = await upload(`/api/studio/projects/${P.id}/zip`, f, 'application/zip', p => prog.textContent = `อัปโหลด ZIP ${Math.round(p * 100)}% (แตกไฟล์ต่อหลังอัปโหลดเสร็จ)`); P = r.project; render(); if (r.skipped.length) alert('ข้ามไฟล์:\n' + r.skipped.join('\n')); }
+  catch (e) { prog.textContent = e.message; }
+}
+
+function tAgents() {
+  return $('div', { class: 'card' }, $('h2', {}, 'สถานะ AI ทั้ง 15 หน้าที่'),
+    $('div', { class: 'list' }, Object.entries(P.agents).sort((a, b) => a[0] - b[0]).map(([n, a]) =>
+      $('div', { class: 'item' }, $('b', { style: 'width:28px' }, n), $('div', { class: 't' }, $('div', {}, a.name, ' ', $('span', { class: 'muted' }, a.en)), a.message ? $('div', { class: 'muted' }, a.message) : null), pill(a.status)))));
+}
+
+function tIssues() {
+  const r = P.result; if (!r) return $('div', { class: 'card muted' }, 'ยังไม่มีผลตรวจ กด Start ก่อน');
+  const copy = t => navigator.clipboard?.writeText(t).then(() => alert('คัดลอกแล้ว'));
+  return $('div', {},
+    $('div', { class: 'card' }, $('h2', {}, r.missing?.length ? `พบคลิปที่ขาด ${r.missing.length} ช็อต` : '✅ ครบทุกช็อต'),
+      r.missing?.length ? $('div', { class: 'list' }, r.missing.map(m => $('div', { class: 'item' }, $('div', { class: 't' }, $('b', {}, m.label + (m.partial ? ' (บทพูดบางส่วนขาด)' : '')), m.regen ? $('pre', {}, m.regen) : null),
+        m.regen ? $('button', { class: 'btn2', onclick: () => copy(m.regen) }, 'คัดลอก') : null))) : null,
+      r.missing?.length ? $('p', { class: 'muted' }, 'สร้างคลิปที่ขาดแล้วอัปโหลดเพิ่มในแท็บคลิป จากนั้นกด Start อีกครั้ง ระบบจะใช้ผลที่ทำไว้แล้วและทำเฉพาะส่วนที่เพิ่ม') : null),
+    $('div', { class: 'card' }, $('h2', {}, `ข้อสังเกต (${(r.issues || []).length})`), $('div', { class: 'list' }, (r.issues || []).map(i => $('div', { class: 'item' }, '⚠️', $('div', { class: 't' }, i.message))))),
+    r.qa ? $('div', { class: 'card' }, $('h2', {}, 'ผล QA'), $('ul', { class: 'qa' }, r.qa.checks.map(c => $('li', {}, (c.ok ? '✅ ' : '❌ ') + c.name)))) : null);
+}
+
+function tTimeline() {
+  const tl = P.result?.timeline; if (!tl) return $('div', { class: 'card muted' }, 'ยังไม่มี Timeline');
+  const sh = P.script?.shots || [];
+  return $('div', { class: 'card' }, $('h2', {}, `Timeline · ${tl.video.length} คลิป · ${tl.duration.toFixed(1)} วินาที`),
+    $('p', { class: 'muted' }, 'แทร็กภาพและเสียงพูดมาจากคลิปเดียวกัน · แทร็กซับมาจากบท · เพลง/เอฟเฟกต์: ปิด (ค่าเริ่มต้น)'),
+    $('div', { class: 'list' }, tl.video.map((v, i) => $('div', { class: 'item' }, $('b', { style: 'width:36px' }, i + 1), $('div', { class: 't' },
+      $('div', {}, v.shots.map(s => { const x = sh[s]; return x ? (x.number ? `คลิป ${String(x.number).padStart(3, '0')}` : `ช็อต ${(x.pos ?? x.index) + 1}`) : s; }).join(', '), ' ', $('span', { class: 'muted' }, `${v.start.toFixed(1)}–${(v.start + v.out).toFixed(1)} วิ`)),
+      $('div', { class: 'muted' }, v.name)), $('span', { class: 'pill s-' + (v.confidence === 'สูง' ? 'done' : v.confidence === 'กลาง' ? 'warning' : 'failed') }, 'มั่นใจ' + v.confidence)))));
+}
+
+function tExport() {
+  const s = P.settings; const r = P.result || {};
+  const sel = (k, opts) => { const e = $('select', { onchange: () => save({ [k]: isNaN(+e.value) || e.value === '' ? e.value : +e.value }) }, opts.map(([v, n]) => $('option', { value: v, selected: String(s[k]) === String(v) }, n))); return e; };
+  const num = k => { const e = $('input', { type: 'number', min: 1, value: s[k] ?? '', placeholder: 'ทั้งหมด', onchange: () => save({ [k]: e.value ? +e.value : null }) }); return e; };
+  const file = (m, label) => m && m.url ? $('a', { class: 'btn2', href: m.url + '&download=1', style: 'text-decoration:none' }, '⬇ ' + label) : null;
+  return $('div', {},
+    $('div', { class: 'card' }, $('h2', {}, 'ตั้งค่าการส่งออก'),
+      $('div', { class: 'grid2' },
+        $('div', {}, $('label', {}, 'อัตราส่วน'), sel('aspect', [['9:16', 'แนวตั้ง 9:16'], ['16:9', 'แนวนอน 16:9'], ['original', 'ตามต้นฉบับ']])),
+        $('div', {}, $('label', {}, 'ความละเอียด'), sel('height', [[720, '720p'], [1080, '1080p'], [1440, '2K (ช้ามากบน CPU)'], [2160, '4K (ช้ามากบน CPU)']])),
+        $('div', {}, $('label', {}, 'FPS'), sel('fps', [[24, '24'], [25, '25'], [30, '30'], [60, '60']])),
+        $('div', {}, $('label', {}, 'ซับไตเติล'), sel('subtitles', [['file', 'ไฟล์ .srt แยก'], ['burn', 'ไฟล์แยก + ฝังลงวิดีโอ'], ['none', 'ไม่ใส่ซับ']])),
+        $('div', {}, $('label', {}, 'ระบบเสียง'), sel('audio', [['original', 'เสียงต้นฉบับ'], ['dialogue_only', 'Dialogue Only (ยังไม่พร้อม)']])),
+        $('div', {}, $('label', {}, 'ใส่ชื่อผู้พูดในซับ'), sel('speaker_in_subs', [['false', 'ไม่ใส่'], ['true', 'ใส่']])),
+        $('div', {}, $('label', {}, 'ตัดต่อตั้งแต่คลิป/ช็อตที่'), num('range_from')),
+        $('div', {}, $('label', {}, 'ถึงคลิป/ช็อตที่'), num('range_to'))),
+      $('p', { class: 'muted' }, 'ค่าเริ่มต้นรักษาภาพต้นฉบับ (ไม่ครอป ใส่ขอบดำถ้าสัดส่วนไม่ตรง) และไม่ขยายภาพแล้วอ้างว่าเป็นความละเอียดสูง')),
+    $('div', { class: 'card' }, $('h2', {}, 'ผลลัพธ์'),
+      r.video?.url ? $('video', { src: r.video.url, controls: true, playsinline: true, preload: 'metadata' }) : r.review?.url ? $('div', {}, $('p', { style: 'color:var(--warn)' }, '⚠️ ฉบับตรวจสอบ ยังไม่ผ่าน QA ดูแท็บ "ตรวจข้อผิดพลาด"'), $('video', { src: r.review.url, controls: true, playsinline: true, preload: 'metadata' })) : $('p', { class: 'muted' }, 'ยังไม่มีไฟล์'),
+      $('div', { class: 'row', style: 'margin-top:8px' }, file(r.video, 'MP4'), file(r.video_subs, 'MP4 มีซับ'), file(r.srt, 'ซับ .srt'), file(r.review, 'ฉบับตรวจสอบ')),
+      r.seconds ? $('p', { class: 'muted' }, `ใช้เวลาประมวลผล ${Math.round(r.seconds)} วินาที`) : null));
+}
+async function save(settings) { if (settings.speaker_in_subs !== undefined) settings.speaker_in_subs = settings.speaker_in_subs === 'true' || settings.speaker_in_subs === true; try { P = await api('/api/studio/projects/' + P.id, { method: 'PATCH', body: JSON.stringify({ settings }) }); render(); } catch (e) { alert(e.message); } }
+
+const q = new URLSearchParams(location.search).get('p'); q ? open_(+q).catch(home) : home();
+</script>
+</body>
+</html>

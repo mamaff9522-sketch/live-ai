@@ -16,12 +16,23 @@ RUN cmake -S /src -B /src/build -DCMAKE_BUILD_TYPE=Release -DGGML_NATIVE=OFF \
     && cmake --build /src/build --target llama-server -j"$(nproc)" \
     && mkdir -p /out && cp -a /src/build/bin/llama-server /src/build/bin/*.so* /out/ && /out/llama-server --version
 
+FROM debian:bookworm-slim AS whisper
+ARG WHISPER_TAG=master
+RUN apt-get update && apt-get install -y --no-install-recommends git cmake g++ make ca-certificates \
+    && rm -rf /var/lib/apt/lists/*
+RUN git clone --depth 1 --branch "${WHISPER_TAG}" https://github.com/ggml-org/whisper.cpp /src
+RUN cmake -S /src -B /src/build -DCMAKE_BUILD_TYPE=Release -DBUILD_SHARED_LIBS=OFF -DGGML_NATIVE=OFF \
+      -DGGML_AVX=ON -DGGML_AVX2=ON -DGGML_FMA=ON -DGGML_F16C=ON -DWHISPER_BUILD_TESTS=OFF -DWHISPER_BUILD_SERVER=OFF \
+    && cmake --build /src/build --target whisper-cli -j"$(nproc)" && cp /src/build/bin/whisper-cli /whisper-cli
+
 FROM python:3.12-slim
 RUN apt-get update && apt-get install -y --no-install-recommends libgomp1 ca-certificates ffmpeg fonts-tlwg-loma-otf \
     && rm -rf /var/lib/apt/lists/* && useradd -m -u 1000 user
 COPY --from=build /out/ /opt/llama/
+COPY --from=whisper /whisper-cli /opt/whisper/whisper-cli
 ENV LD_LIBRARY_PATH=/opt/llama \
     LIVEAI_LLAMA_SERVER=/opt/llama/llama-server \
+    LIVEAI_WHISPER_BIN=/opt/whisper/whisper-cli \
     LIVEAI_DATA_DIR=/data \
     LIVEAI_PORT=7860 \
     PYTHONUNBUFFERED=1
