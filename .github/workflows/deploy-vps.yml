@@ -118,7 +118,8 @@ jobs:
           ok=1
           jq -e '.reply | length > 5' vps/hello.json >/dev/null || { echo "::error::hello failed"; ok=0; }
           jq -e '.reply | contains("เขียว")' vps/recall.json >/dev/null || { echo "::error::memory recall failed"; ok=0; }
-          jq -e '(.reply | type == "string") and (.reply | contains("เขียว") | not)' vps/other_user.json >/dev/null || { echo "::error::second user check failed"; ok=0; }
+          # the other user must not be told user A's colour (the model may still list green among suggestions)
+          jq -e '(.reply | type == "string") and (.reply | test("(สีโปรด|ชอบ)[^\\n]{0,25}(คือ|เป็น)?[^\\n]{0,6}สีเขียว") | not)' vps/other_user.json >/dev/null || { echo "::error::second user check failed"; ok=0; }
           jq -e '.reply | contains("def ")' vps/code.json >/dev/null || { echo "::error::code answer failed"; ok=0; }
           grep -q "studio_page 200" vps/timing.txt || { echo "::error::studio page failed"; ok=0; }
           grep -q "growth_page 200" vps/timing.txt || { echo "::error::growth page failed"; ok=0; }
