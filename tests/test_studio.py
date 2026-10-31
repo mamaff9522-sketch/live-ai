@@ -225,7 +225,7 @@ class Studio(unittest.TestCase):
         p = self.wait(t, pid)
         self.assertEqual(p["status"], "done", p["message"])
         self.assertEqual(p["agents"]["13"]["status"], "done")
-        self.assertIn("RNNoise", p["agents"]["13"]["message"])
+        self.assertIn("Dialogue Only", p["agents"]["13"]["message"])
 
     def test_7_silent_clips_placed_by_picture_continuity(self):
         """Shots 18–31 of the real script hold 3 silent shots. Like Meta AI clips made from the

@@ -77,6 +77,28 @@ DEFAULT_SETTINGS = {"aspect": "9:16", "height": 720, "fps": 30, "subtitles": "fi
                     "speaker_in_subs": False, "range_from": None, "range_to": None}
 VIDEO_EXT = {".mp4", ".mov", ".m4v", ".webm", ".mkv", ".3gp"}
 RNNOISE_MODEL = Path(__file__).resolve().parent.parent / "assets" / "rnnoise-std.rnnn"
+_DENOISE: str | None = None
+
+
+def denoise_filter() -> tuple[str, str]:
+    """(ffmpeg filter, name). RNNoise when this ffmpeg runs it correctly (it hangs in some builds,
+    e.g. ffmpeg 8.0 on Ubuntu 26.04), otherwise ffmpeg's built-in FFT denoiser."""
+    global _DENOISE
+    if _DENOISE is None:
+        ok = False
+        if RNNOISE_MODEL.is_file():
+            try:
+                r = subprocess.run(["ffmpeg", "-loglevel", "error", "-nostdin", "-f", "lavfi", "-i", "sine=frequency=300:duration=1",
+                                    "-af", f"aresample=48000,arnndn=m={RNNOISE_MODEL}", "-f", "null", "-"],
+                                   capture_output=True, timeout=15)
+                ok = r.returncode == 0
+            except subprocess.TimeoutExpired:
+                ok = False
+        _DENOISE = "rnnoise" if ok else "afftdn"
+        logs.event(log, "speech denoiser", engine=_DENOISE)
+    if _DENOISE == "rnnoise":
+        return f"arnndn=m={RNNOISE_MODEL}", "RNNoise"
+    return "afftdn=nr=20:nf=-35:tn=1", "ตัวกรองเสียงรบกวน FFT ของ ffmpeg"
 MAX_RETRIES = 2
 
 
@@ -649,10 +671,8 @@ class Studio:
         if st["audio"] != "dialogue_only":
             self._agent(pid, 13, "done", "ใช้เสียงจากคลิปต้นฉบับตามเดิม")
             return
-        if not RNNOISE_MODEL.is_file():
-            self._agent(pid, 13, "warning", "ไม่พบโมเดลลดเสียงรบกวน — ใช้เสียงต้นฉบับ")
-            return
-        self._agent(pid, 13, "done", "Dialogue Only: ลดเสียงลม/รถ/ฝน/เสียงรบกวนด้วย RNNoise บนเครื่อง และลดเสียงช่วงที่ไม่มีคนพูดลง 20 dB "
+        engine = denoise_filter()[1]
+        self._agent(pid, 13, "done", f"Dialogue Only: ลดเสียงลม/รถ/ฝน/เสียงรบกวนด้วย {engine} บนเครื่อง และลดเสียงช่วงที่ไม่มีคนพูดลง 20 dB "
                     "— เพลงที่ดังซ้อนใต้เสียงพูดพร้อมกันอาจยังได้ยินบ้าง ระบบไม่สร้างหรือแก้คำพูด")
 
     def _match(self, pid, script, clips) -> dict:
@@ -708,7 +728,7 @@ class Studio:
             raise StudioError("ไม่มีคลิปที่จับคู่ได้เลย จึงตัดต่อไม่ได้")
         W, H = out_size(st, first)
         fps = st["fps"]
-        dialogue_only = st["audio"] == "dialogue_only" and RNNOISE_MODEL.is_file()
+        dialogue_only = st["audio"] == "dialogue_only"
         cache = self.root / str(pid) / "segments"
         cache.mkdir(parents=True, exist_ok=True)
         segs = []
@@ -896,7 +916,7 @@ def normalize_segment(c: dict, seg: Path, W: int, H: int, fps: int, dialogue_onl
     if dialogue_only and c["has_audio"]:
         spans = [(max(0.0, a - 0.25), b + 0.25) for a, b in (regions or [])]
         gate = "+".join(f"between(t,{a:.2f},{b:.2f})" for a, b in spans) or "0"
-        af = (f"aresample=48000,highpass=f=70,arnndn=m={RNNOISE_MODEL},volume='if(gt({gate},0),1,0.1)':eval=frame,"
+        af = (f"aresample=48000,highpass=f=70,{denoise_filter()[0]},volume='if(gt({gate},0),1,0.1)':eval=frame,"
               f"aformat=channel_layouts=stereo")
     args = ["nice", "-n", "10", "ffmpeg", "-loglevel", "error", "-nostdin", "-y", "-i", c["path"]]
     if not c["has_audio"]:
