@@ -206,6 +206,7 @@ if __name__ == "__main__":
     try:
         main()
     except Exception as e:
-        REPORT["fatal"] = repr(e)
+        import traceback
+        REPORT["fatal"] = traceback.format_exc()[-1500:]
         (OUT / "real_studio_report.json").write_text(json.dumps(REPORT, ensure_ascii=False, indent=2), encoding="utf-8")
         raise

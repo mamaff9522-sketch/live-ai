@@ -127,7 +127,7 @@ jobs:
         run: |
           export LIVEAI_LLAMA_SERVER="$PWD/llama-bin/llama-server"
           export LIVEAI_WHISPER_BIN="$PWD/whisper-bin/whisper-cli" LIVEAI_WHISPER_MODEL=small
-          sudo apt-get install -y -qq fonts-tlwg-loma-otf > /dev/null || true
+          sudo apt-get install -y -qq ffmpeg fonts-tlwg-loma-otf > /dev/null
           "$LIVEAI_LLAMA_SERVER" --version || true
           nohup taskset -c 0,1 python -m live_ai > liveai_stdout.log 2>&1 &
           echo $! > liveai.pid
