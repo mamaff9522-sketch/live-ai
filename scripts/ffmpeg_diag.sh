@@ -18,3 +18,8 @@ run pad_first_rnn "aresample=48000,apad=whole_dur=3,aformat=channel_layouts=mono
 run pad_first_fft "aresample=48000,apad=whole_dur=3,aformat=channel_layouts=mono,afftdn=nr=20:nf=-35,volume='if(gt(between(t,0.30,2.70),0),1,0.1)':eval=frame,aformat=channel_layouts=stereo"
 run afftdn_now "aresample=48000,aformat=channel_layouts=mono,afftdn=nr=20:nf=-35,aformat=channel_layouts=stereo,apad=whole_dur=3"
 cat "$out"
+# the two-pass way the studio now works
+t0=$(date +%s.%N); timeout 15 ffmpeg -loglevel error -nostdin -y -i "$d/in.mp4" -vn -af "aresample=48000,aformat=channel_layouts=mono,arnndn=m=$M,volume='if(gt(between(t,0.30,2.70),0),1,0.1)':eval=frame" -c:a pcm_s16le "$d/c.wav"; rc1=$?
+timeout 15 ffmpeg -loglevel error -nostdin -y -i "$d/in.mp4" -i "$d/c.wav" -map 0:v:0 -map 1:a:0 -vf "scale=720:1280,fps=30,format=yuv420p" -af "aresample=48000,apad=whole_dur=3,aformat=channel_layouts=stereo" -t 3 -c:v libx264 -preset veryfast -c:a aac "$d/o2.mp4"; rc2=$?
+echo "two_pass rc1=$rc1 rc2=$rc2 secs=$(echo "$(date +%s.%N) - $t0" | bc)" >> "$out"
+tail -1 "$out"

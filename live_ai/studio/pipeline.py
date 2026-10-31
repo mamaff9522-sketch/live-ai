@@ -101,11 +101,10 @@ def denoise_filter() -> tuple[str, str]:
                 cands = cands[-1:]
             for flt, name in cands[:-1]:
                 try:
-                    r = subprocess.run(["ffmpeg", "-loglevel", "error", "-nostdin", "-y", "-i", f"{d}/in.mp4", "-map", "0:v:0", "-map", "0:a:0",
-                                        "-af", f"aresample=48000,apad=whole_dur=2,aformat=channel_layouts=mono,{flt},"
-                                               "volume='if(gt(between(t,0.2,1.8),0),1,0.1)':eval=frame,aformat=channel_layouts=stereo",
-                                        "-t", "2", "-c:v", "libx264", "-preset", "ultrafast", "-c:a", "aac", f"{d}/t.mp4"],
-                                       capture_output=True, timeout=20)
+                    r = subprocess.run(["ffmpeg", "-loglevel", "error", "-nostdin", "-y", "-i", f"{d}/in.mp4", "-vn",
+                                        "-af", f"aresample=48000,aformat=channel_layouts=mono,{flt},"
+                                               "volume='if(gt(between(t,0.2,1.8),0),1,0.1)':eval=frame",
+                                        "-c:a", "pcm_s16le", f"{d}/t.wav"], capture_output=True, timeout=20)
                     if r.returncode == 0:
                         chosen = (flt, name)
                         break
@@ -931,20 +930,41 @@ def normalize_segment(c: dict, seg: Path, W: int, H: int, fps: int, dialogue_onl
     if brightness:
         vf += f",eq=brightness={brightness:.3f}"
     af = f"aresample=48000,apad=whole_dur={c['duration']:.3f},aformat=channel_layouts=stereo"
+    audio_src = None
     if dialogue_only and c["has_audio"]:
+        # pass 1, audio only: denoise + lower the gaps between lines. Kept separate from the video job
+        # because some ffmpeg builds (8.0.1) hang when a denoiser and apad share one job.
         spans = [(max(0.0, a - 0.25), b + 0.25) for a, b in (regions or [])]
         gate = "+".join(f"between(t,{a:.2f},{b:.2f})" for a, b in spans) or "0"
-        # no highpass: in ffmpeg 8.0.1 (Ubuntu 26.04) a highpass in this chain makes the job hang
-        af = (f"aresample=48000,apad=whole_dur={c['duration']:.3f},aformat=channel_layouts=mono,{denoise_filter()[0]},"
-              f"volume='if(gt({gate},0),1,0.1)':eval=frame,aformat=channel_layouts=stereo")
+        flt = denoise_filter()[0]
+        audio_src = seg.with_suffix(".clean.wav")
+        try:
+            r1 = subprocess.run(["nice", "-n", "10", "ffmpeg", "-loglevel", "error", "-nostdin", "-y", "-i", c["path"], "-vn",
+                                 "-af", f"aresample=48000,aformat=channel_layouts=mono,{flt},volume='if(gt({gate},0),1,0.1)':eval=frame",
+                                 "-c:a", "pcm_s16le", str(audio_src)], capture_output=True, text=True, timeout=max(120, int(c["duration"] * 10)))
+            if r1.returncode != 0:
+                raise RuntimeError(r1.stderr[-200:])
+        except (subprocess.TimeoutExpired, RuntimeError):
+            # last resort: gap lowering only, never a silent failure
+            subprocess.run(["ffmpeg", "-loglevel", "error", "-nostdin", "-y", "-i", c["path"], "-vn",
+                            "-af", f"aresample=48000,volume='if(gt({gate},0),1,0.1)':eval=frame", "-c:a", "pcm_s16le", str(audio_src)],
+                           capture_output=True, timeout=120, check=True)
     args = ["nice", "-n", "10", "ffmpeg", "-loglevel", "error", "-nostdin", "-y", "-i", c["path"]]
-    if not c["has_audio"]:
+    if audio_src:
+        args += ["-i", str(audio_src)]
+        amap = "1:a:0"
+    elif not c["has_audio"]:
         args += ["-f", "lavfi", "-i", "anullsrc=r=48000:cl=stereo"]
-    args += ["-map", "0:v:0", "-map", "0:a:0" if c["has_audio"] else "1:a:0", "-vf", vf,
+        amap = "1:a:0"
+    else:
+        amap = "0:a:0"
+    args += ["-map", "0:v:0", "-map", amap, "-vf", vf,
              "-af", af, "-t", f"{c['duration']:.3f}",
              "-c:v", "libx264", "-preset", "veryfast", "-crf", "20", "-g", str(fps * 2), "-c:a", "aac", "-b:a", "160k", "-ar", "48000",
              "-video_track_timescale", "90000", "-movflags", "+faststart", "-threads", os.environ.get("LIVEAI_FFMPEG_THREADS", "2"), str(tmp)]
     r = subprocess.run(args, capture_output=True, text=True, timeout=max(300, int(c["duration"] * 30)))
+    if audio_src:
+        audio_src.unlink(missing_ok=True)
     if r.returncode != 0:
         tmp.unlink(missing_ok=True)
         raise RuntimeError(f"แปลงคลิป {c['name']} ไม่สำเร็จ: {r.stderr[-200:]}")
