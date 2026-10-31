@@ -138,14 +138,17 @@ class Studio(unittest.TestCase):
         self.assertEqual(code, 200, r)
         return p["id"], r
 
-    def wait(self, t, pid, timeout=300):
+    def wait(self, t, pid, timeout=180):
         end = time.time() + timeout
+        p = {}
         while time.time() < end:
             p = self.call("GET", f"/api/studio/projects/{pid}", token=t)[1]
             if p["status"] in ("done", "needs_attention", "failed", "paused"):
                 return p
             time.sleep(0.5)
-        self.fail("project did not finish")
+        import faulthandler
+        faulthandler.dump_traceback(all_threads=True)
+        self.fail("project did not finish: " + json.dumps({k: p.get(k) for k in ("status", "message", "agents")}, ensure_ascii=False)[:3000])
 
     def order_of(self, p):
         return [self.truth.get(i["name"], i["name"]) for i in p["result"]["timeline"]["video"]] if p["result"].get("timeline") else None

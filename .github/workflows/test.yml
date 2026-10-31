@@ -31,7 +31,7 @@ jobs:
           mkdir -p offline-report
           set -o pipefail
           timeout -s INT 900 python -X faulthandler -u -m unittest tests.test_offline tests.test_studio -v 2>&1 \
-            | grep -v '"level": "INFO"' | tee offline-report/unittest.log
+            | tee offline-report/unittest.log | grep -v '"level": "INFO"' 
       - name: Publish test log
         if: always()
         env: { GH_TOKEN: "${{ github.token }}" }
