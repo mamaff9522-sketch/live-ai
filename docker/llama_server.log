@@ -1,18 +1,18 @@
-/opt/llama/llama-server: error while loading shared libraries: libllama-common.so.0: cannot open shared object file: No such file or directory
-/opt/llama/llama-server: error while loading shared libraries: libllama-common.so.0: cannot open shared object file: No such file or directory
-/opt/llama/llama-server: error while loading shared libraries: libllama-common.so.0: cannot open shared object file: No such file or directory
-/opt/llama/llama-server: error while loading shared libraries: libllama-common.so.0: cannot open shared object file: No such file or directory
-/opt/llama/llama-server: error while loading shared libraries: libllama-common.so.0: cannot open shared object file: No such file or directory
-/opt/llama/llama-server: error while loading shared libraries: libllama-common.so.0: cannot open shared object file: No such file or directory
-/opt/llama/llama-server: error while loading shared libraries: libllama-common.so.0: cannot open shared object file: No such file or directory
-/opt/llama/llama-server: error while loading shared libraries: libllama-common.so.0: cannot open shared object file: No such file or directory
-/opt/llama/llama-server: error while loading shared libraries: libllama-common.so.0: cannot open shared object file: No such file or directory
-/opt/llama/llama-server: error while loading shared libraries: libllama-common.so.0: cannot open shared object file: No such file or directory
-/opt/llama/llama-server: error while loading shared libraries: libllama-common.so.0: cannot open shared object file: No such file or directory
-/opt/llama/llama-server: error while loading shared libraries: libllama-common.so.0: cannot open shared object file: No such file or directory
-/opt/llama/llama-server: error while loading shared libraries: libllama-common.so.0: cannot open shared object file: No such file or directory
-/opt/llama/llama-server: error while loading shared libraries: libllama-common.so.0: cannot open shared object file: No such file or directory
-/opt/llama/llama-server: error while loading shared libraries: libllama-common.so.0: cannot open shared object file: No such file or directory
-/opt/llama/llama-server: error while loading shared libraries: libllama-common.so.0: cannot open shared object file: No such file or directory
-/opt/llama/llama-server: error while loading shared libraries: libllama-common.so.0: cannot open shared object file: No such file or directory
-/opt/llama/llama-server: error while loading shared libraries: libllama-common.so.0: cannot open shared object file: No such file or directory
+0.00.000.933 I srv  llama_server: initializing ...
+0.00.002.036 I cmn  common_param: common_params_print_info: verbosity = 3 (adjust with the `-lv N` CLI arg)
+0.00.002.103 I srv  init_listene: The UI is disabled
+0.00.002.107 I srv  init_listene: Use --ui/--no-ui (or deprecated --webui/--no-webui) to enable/disable
+0.00.002.179 W srv  server_setup: security: no API key is set and CORS allows all origins (see https://github.com/ggml-org/llama.cpp/pull/25655)
+0.00.003.580 I srv    load_model: loading model '/data/models/Qwen3.5-2B-Q4_K_M.gguf'
+0.01.280.973 I cmn          init: llama threadpool init, n_threads = 2
+0.01.490.169 I srv    load_model: initializing, n_slots = 1, n_ctx_slot = 16384, kv_unified = 'false'
+0.01.494.369 I srv  server_run_i: model loaded
+0.01.494.382 I srv  server_on_li: listening on http://127.0.0.1:8081
+0.05.980.316 I slot get_availabl: id  0 | task -1 | selected slot by LRU, n_tokens = 0, t_last = -1
+0.05.980.376 I slot launch_slot_: id  0 | task 0 | processing task, is_child = 0
+0.10.375.184 I slot print_timing: id  0 | task 0 | prompt eval time =    3129.01 ms /   165 tokens (   18.96 ms per token,    52.73 tokens per second)
+0.10.375.196 I slot print_timing: id  0 | task 0 |        eval time =    1265.74 ms /    24 tokens (   55.03 ms per token,    18.17 tokens per second)
+0.10.375.197 I slot print_timing: id  0 | task 0 |       total time =    4394.76 ms /   189 tokens
+0.10.375.203 I slot print_timing: id  0 | task 0 |    graphs reused =         23
+0.10.375.204 I slot print_timing: id  0 | task 0 |   graph reallocs =          0    /     0        (same size) / (changed size)
+0.10.375.251 I slot      release: id  0 | task 0 | stop processing: n_tokens = 188, truncated = 0
