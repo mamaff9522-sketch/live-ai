@@ -26,6 +26,8 @@ jobs:
       - uses: actions/setup-python@v5
         with: { python-version: "3.12" }
       - run: sudo apt-get install -y -qq ffmpeg fonts-tlwg-loma-otf > /dev/null && ffmpeg -version | head -1 && lsb_release -ds
+      - name: ffmpeg filter check
+        run: mkdir -p offline-report && bash scripts/ffmpeg_diag.sh offline-report/ffmpeg_diag.txt
       - name: Offline + studio tests
         run: |
           mkdir -p offline-report
