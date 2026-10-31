@@ -1,10 +1,10 @@
-{"ts": "2026-10-31T09:42:10", "level": "INFO", "where": "live_ai.http", "msg": "Live AI listening", "host": "0.0.0.0", "port": 7860, "threads": 2, "ctx": 16384}
-{"ts": "2026-10-31T09:42:11", "level": "INFO", "where": "live_ai.llm", "msg": "model source", "repo": "unsloth/Qwen3.5-2B-GGUF", "file": "Qwen3.5-2B-Q4_K_M.gguf", "sha256": "aaf42c8b7c3cab2bf3d69c355048d4a0ee9973d48f16c731c0520ee914699223"}
-{"ts": "2026-10-31T09:42:11", "level": "INFO", "where": "live_ai.llm", "msg": "downloading model", "url": "https://huggingface.co/unsloth/Qwen3.5-2B-GGUF/resolve/main/Qwen3.5-2B-Q4_K_M.gguf", "resume_from": 0}
-{"ts": "2026-10-31T09:42:17", "level": "INFO", "where": "live_ai.llm", "msg": "model downloaded", "url": "https://huggingface.co/unsloth/Qwen3.5-2B-GGUF/resolve/main/Qwen3.5-2B-Q4_K_M.gguf", "path": "/data/models/Qwen3.5-2B-Q4_K_M.gguf", "size_mb": 1221, "sha256_checked": true}
-{"ts": "2026-10-31T09:42:17", "level": "INFO", "where": "live_ai.llm", "msg": "starting llama-server", "cmd": "/opt/llama/llama-server -m /data/models/Qwen3.5-2B-Q4_K_M.gguf -c 16384 -t 2 -tb 2 --host 127.0.0.1 --port 8081 --jinja -np 1 --no-webui"}
-{"ts": "2026-10-31T09:42:19", "level": "INFO", "where": "live_ai.llm", "msg": "model ready", "load_seconds": 2.0, "threads": 2, "ctx": 16384}
-{"ts": "2026-10-31T09:42:20", "level": "INFO", "where": "live_ai.http", "msg": "user created", "user": 1}
-{"ts": "2026-10-31T09:42:20", "level": "INFO", "where": "live_ai.http", "msg": "request", "method": "POST", "path": "/api/register", "ms": 1}
-{"ts": "2026-10-31T09:42:25", "level": "INFO", "where": "live_ai.assistant", "msg": "reply", "user": 1, "conversation": 1, "in_chars": 25, "out_chars": 122, "think": false, "seconds": 5.03, "prompt_tokens": 175, "reply_tokens": 31, "tokens_per_second": 17.84, "prompt_tokens_per_second": 52.29, "finish_reason": "stop", "memory": ""}
-{"ts": "2026-10-31T09:42:25", "level": "INFO", "where": "live_ai.http", "msg": "request", "method": "POST", "path": "/api/chat", "ms": 5033}
+{"ts": "2026-10-31T10:01:27", "level": "INFO", "where": "live_ai.http", "msg": "Live AI listening", "host": "0.0.0.0", "port": 7860, "threads": 2, "ctx": 16384}
+{"ts": "2026-10-31T10:01:27", "level": "INFO", "where": "live_ai.llm", "msg": "model source", "repo": "unsloth/Qwen3.5-2B-GGUF", "file": "Qwen3.5-2B-Q4_K_M.gguf", "sha256": "aaf42c8b7c3cab2bf3d69c355048d4a0ee9973d48f16c731c0520ee914699223"}
+{"ts": "2026-10-31T10:01:27", "level": "INFO", "where": "live_ai.llm", "msg": "downloading model", "url": "https://huggingface.co/unsloth/Qwen3.5-2B-GGUF/resolve/main/Qwen3.5-2B-Q4_K_M.gguf", "resume_from": 0}
+{"ts": "2026-10-31T10:01:34", "level": "INFO", "where": "live_ai.llm", "msg": "model downloaded", "url": "https://huggingface.co/unsloth/Qwen3.5-2B-GGUF/resolve/main/Qwen3.5-2B-Q4_K_M.gguf", "path": "/data/models/Qwen3.5-2B-Q4_K_M.gguf", "size_mb": 1221, "sha256_checked": true}
+{"ts": "2026-10-31T10:01:34", "level": "INFO", "where": "live_ai.llm", "msg": "starting llama-server", "cmd": "/opt/llama/llama-server -m /data/models/Qwen3.5-2B-Q4_K_M.gguf -c 16384 -t 2 -tb 2 --host 127.0.0.1 --port 8081 --jinja -np 1 --no-webui"}
+{"ts": "2026-10-31T10:01:36", "level": "INFO", "where": "live_ai.llm", "msg": "model ready", "load_seconds": 2.0, "threads": 2, "ctx": 16384}
+{"ts": "2026-10-31T10:01:41", "level": "INFO", "where": "live_ai.http", "msg": "user created", "user": 1}
+{"ts": "2026-10-31T10:01:41", "level": "INFO", "where": "live_ai.http", "msg": "request", "method": "POST", "path": "/api/register", "ms": 1}
+{"ts": "2026-10-31T10:01:47", "level": "INFO", "where": "live_ai.assistant", "msg": "reply", "user": 1, "conversation": 1, "in_chars": 25, "out_chars": 182, "think": false, "seconds": 6.01, "prompt_tokens": 175, "reply_tokens": 54, "tokens_per_second": 17.52, "prompt_tokens_per_second": 58.66, "finish_reason": "stop", "memory": ""}
+{"ts": "2026-10-31T10:01:47", "level": "INFO", "where": "live_ai.http", "msg": "request", "method": "POST", "path": "/api/chat", "ms": 6013}
