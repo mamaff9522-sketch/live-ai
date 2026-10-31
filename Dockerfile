@@ -11,8 +11,11 @@ RUN apt-get update && apt-get install -y --no-install-recommends git cmake g++ m
 RUN git clone --depth 1 --branch "${LLAMA_TAG}" https://github.com/ggml-org/llama.cpp /src
 # Portable build: every CPU variant is built and llama-server picks the best one for the machine it
 # runs on at start-up (x86-64: SSE4 → AVX2 → AVX-512; ARM64: e.g. Oracle Ampere A1 with dot-product).
-RUN cmake -S /src -B /src/build -DCMAKE_BUILD_TYPE=Release -DGGML_NATIVE=OFF \
-      -DGGML_BACKEND_DL=ON -DGGML_CPU_ALL_VARIANTS=ON -DLLAMA_BUILD_TESTS=OFF -DLLAMA_BUILD_EXAMPLES=OFF -DLLAMA_BUILD_APP=OFF \
+# (ARM64 uses one armv8.2 build: Debian 12's compiler cannot build the newest armv9 variants.)
+RUN if [ "$(uname -m)" = "x86_64" ]; then CPU="-DGGML_BACKEND_DL=ON -DGGML_CPU_ALL_VARIANTS=ON"; \
+    else CPU="-DGGML_CPU_ARM_ARCH=armv8.2-a+dotprod+fp16"; fi \
+    && cmake -S /src -B /src/build -DCMAKE_BUILD_TYPE=Release -DGGML_NATIVE=OFF $CPU \
+      -DLLAMA_BUILD_TESTS=OFF -DLLAMA_BUILD_EXAMPLES=OFF -DLLAMA_BUILD_APP=OFF \
       -DLLAMA_USE_PREBUILT_UI=OFF -DLLAMA_BUILD_UI=OFF -DLLAMA_CURL=OFF \
     && cmake --build /src/build -j"$(nproc)" \
     && mkdir -p /out && cp -a /src/build/bin/llama-server /src/build/bin/*.so* /out/ && /out/llama-server --version

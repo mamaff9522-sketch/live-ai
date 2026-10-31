@@ -25,6 +25,16 @@ if ! command -v docker >/dev/null 2>&1; then
 fi
 DOCKER="$SUDO docker"
 
+# Small machines (under 6 GB RAM): add a 4 GB swap file once, so a big video job slows down instead of
+# being killed. Undo: sudo swapoff /swapfile && sudo rm /swapfile (and remove its line in /etc/fstab).
+RAM_MB=$(free -m | awk '/Mem:/{print $2}')
+if [ "$RAM_MB" -lt 6000 ] && [ -z "$(swapon --show --noheadings 2>/dev/null)" ] && [ ! -e /swapfile ]; then
+  say "เพิ่มหน่วยความจำสำรอง (swap) 4 GB สำหรับเครื่อง RAM ${RAM_MB} MB…"
+  { $SUDO fallocate -l 4G /swapfile || $SUDO dd if=/dev/zero of=/swapfile bs=1M count=4096 status=none; } \
+    && $SUDO chmod 600 /swapfile && $SUDO mkswap /swapfile >/dev/null && $SUDO swapon /swapfile \
+    && echo '/swapfile none swap sw 0 0' | $SUDO tee -a /etc/fstab >/dev/null || echo "(ข้าม swap ได้ ไม่กระทบการทำงานหลัก)"
+fi
+
 say "ดึงโปรแกรม Live AI รุ่นล่าสุด…"
 if ! $DOCKER pull "$IMAGE"; then
   say "ดึงไม่ได้ — สร้างจากซอร์สโค้ดบนเครื่องนี้แทน (ใช้เวลาประมาณ 15–30 นาที)…"
