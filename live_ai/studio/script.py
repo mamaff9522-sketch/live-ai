@@ -91,7 +91,21 @@ def stats(shots: list[dict]) -> dict:
             "expected_seconds": round(sum(s["duration"] or 0 for s in shots), 1)}
 
 
-def parse(text: str) -> dict:
+def parse(text: str, free: bool = False) -> dict:
+    """free=True: the text has no scene/clip markers at all (plain dialogue lines or prose); every
+    line is story content. parse() falls back to it by itself when the normal reading finds nothing."""
+    if not free:
+        first = _parse(text, False)
+        if first["shots"] or not text.strip():
+            return first
+        second = _parse(text, True)
+        if second["shots"]:
+            second["warnings"].insert(0, "บทนี้ไม่มีหัวข้อ ฉาก/คลิป จึงอ่านทีละบรรทัด: บทพูดแต่ละบรรทัด (หรือแต่ละย่อหน้าถ้าไม่มีบทพูด) เป็น 1 ช็อต")
+        return second
+    return _parse(text, True)
+
+
+def _parse(text: str, free: bool) -> dict:
     lines = [norm(x) for x in text.replace("\r\n", "\n").split("\n")]
     sc = Script()
     sc.format = "clips" if any(RE_CLIP.match(x) for x in lines) else "story"
@@ -102,7 +116,13 @@ def parse(text: str) -> dict:
     pending_actions: list[str] = []
     in_chars = False
     chars_in_block = 0
-    started = False                # story content begins at the first scene/clip
+    started = free                 # story content begins at the first scene/clip (free: at once)
+    if free:
+        # plain "ชื่อ: คำพูด" lines: names used this way are speakers even without quotation marks
+        names = [m.group(1).strip() for x in lines if (m := RE_DIALOGUE.match(x.lstrip("#*•- ").strip()))]
+        names = [n for n in names if n not in NOT_SPEAKERS and len(n) <= 20]
+        if len(names) >= 2:
+            known.update(names)
 
     def new_scene(title: str, number=None) -> dict:
         nonlocal cur_scene
@@ -267,6 +287,12 @@ def parse(text: str) -> dict:
                     continue
         if (m := RE_ACTION.match(bare)):
             line = m.group(1).strip()
+        if free and sc.format == "story" and quoted_segments(line):
+            # prose with speech in it: เธอพูดว่า “…” -> the quoted words are dialogue (speaker unknown)
+            for q in quoted_segments(line):
+                add_dialogue("", None, "“" + q + "”")
+            cur_shot["action"].append(line)
+            continue
         if sc.format == "clips":
             if cur_shot is None:
                 new_shot()
@@ -275,9 +301,14 @@ def parse(text: str) -> dict:
             pending_actions.append(line)
 
     if pending_actions:
-        if sc.format == "story":
-            new_shot()
-        cur_shot["action"] += pending_actions
+        if free and sc.format == "story" and not any(x["dialogue"] for x in sc.shots):
+            for a in pending_actions:          # prose only: one paragraph = one shot
+                new_shot()
+                cur_shot["action"].append(a)
+        else:
+            if sc.format == "story":
+                new_shot()
+            cur_shot["action"] += pending_actions
     for s in sc.shots:
         names = {d["speaker"] for d in s["dialogue"]}
         if not s["characters"]:

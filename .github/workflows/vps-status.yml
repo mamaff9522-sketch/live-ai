@@ -1,0 +1,61 @@
+name: VPS status (read-only)
+
+# Reads how Live AI is doing on the VPS without changing anything. The repository is public, so only
+# counts and states are printed: no page names, tokens, captions or user data.
+
+on:
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  status:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    env:
+      VPS_HOST: ${{ secrets.VPS_HOST }}
+      VPS_USER: ${{ secrets.VPS_USER || 'root' }}
+      SSHPASS: ${{ secrets.VPS_PASSWORD }}
+    steps:
+      - uses: actions/checkout@v4
+      - name: Read status
+        run: |
+          sudo apt-get install -y -qq sshpass > /dev/null
+          mkdir -p status
+          sshpass -e ssh -o StrictHostKeyChecking=accept-new -o ConnectTimeout=20 "$VPS_USER@$VPS_HOST" 'bash -s' > status/status.txt <<'EOF'
+          echo "== containers"; docker ps --format '{{.Names}} {{.Status}}' | grep -E '^live-ai' || echo none
+          echo "== memory"; free -m | awk '/Mem:|Swap:/{print $1, $2" total", $3" used"}'
+          echo "== disk_free_gb"; df -BG --output=avail / | tail -1 | tr -dc 0-9; echo
+          echo "== health"; curl -fsS -m 10 http://127.0.0.1:7860/api/health | python3 -c 'import json,sys; h=json.load(sys.stdin); print("ok", h["ok"], "model", h["model"]["state"], "uptime_s", h["uptime_s"], "ram_model_mb", h["ram_mb"]["model"])' || echo unreachable
+          echo "== growth"
+          docker exec -i live-ai python - <<'PY'
+          import json, sqlite3, time
+          c = sqlite3.connect("/data/live_ai.sqlite3")
+          c.row_factory = sqlite3.Row
+          try:
+              pages = c.execute("SELECT user_id, status, last_error, marks, info FROM growth_pages").fetchall()
+          except sqlite3.OperationalError:
+              pages = []
+          print("pages_connected", len(pages))
+          for p in pages:
+              info = json.loads(p["info"] or "{}")
+              marks = json.loads(p["marks"] or "{}")
+              items = c.execute("SELECT status, COUNT(*) n FROM growth_items WHERE user_id=? GROUP BY status", (p["user_id"],)).fetchall()
+              fails = c.execute("SELECT error FROM growth_items WHERE user_id=? AND error != '' ORDER BY id DESC LIMIT 3", (p["user_id"],)).fetchall()
+              stats = c.execute("SELECT day, followers FROM growth_stats WHERE user_id=? ORDER BY day DESC LIMIT 7", (p["user_id"],)).fetchall()
+              print("page status:", p["status"], "| error:", (p["last_error"] or "-")[:160])
+              print("followers_now:", info.get("followers_count"), "| last snapshot min ago:",
+                    round((time.time() - marks.get("snapshot", 0)) / 60) if marks.get("snapshot") else "-")
+              print("items:", {r["status"]: r["n"] for r in items})
+              print("recent item errors:", [f["error"][:120] for f in fails])
+              print("followers by day:", [(s["day"], s["followers"]) for s in stats])
+              print("unavailable metrics:", marks.get("no_metrics"))
+          PY
+          echo "== growth log (last problems)"; docker exec live-ai sh -c 'grep -h "live_ai.growth" /data/logs/live_ai.log 2>/dev/null | grep -E "WARNING|ERROR" | tail -8 | cut -c1-300' || true
+          EOF
+          cat status/status.txt
+      - name: Publish
+        if: always()
+        env: { GH_TOKEN: "${{ github.token }}" }
+        run: mkdir -p status && bash scripts/publish_report.sh status vps-status

@@ -458,6 +458,8 @@ class Studio:
 
     # ------------------------------------------------------------------ agents
     def _script(self, pid, p) -> dict:
+        if not (p["script_text"] or "").strip():
+            raise StudioError("ยังไม่ได้ใส่บทละคร: ไปที่แท็บ บทละคร วางบทแล้วกด บันทึกและวิเคราะห์บท")
         script = parse(p["script_text"])
         if not script["shots"]:
             raise StudioError("อ่านบทละครไม่ได้: ไม่พบฉาก คลิป หรือบทพูด")

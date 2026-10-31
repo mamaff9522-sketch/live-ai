@@ -91,6 +91,11 @@ def clean(gen: dict, kind: str) -> dict:
     for x in gen.get("lines") or []:
         x = re.sub(r"#[\w\u0E00-\u0E7F]+", "", str(x))
         x = re.sub(r"\s+", " ", x).strip().lstrip("-–—•* ").strip()
+        x = re.sub(r"(.{3,}?)(?:\s*[:：,]?\s*\1){1,}", r"\1", x)       # "X: X: X" (small models repeat) -> "X"
+        if kind in ("teaser", "quote", "reel_clip") and len(x) > 50:
+            m = re.match(r"^(.{12,50}?[!?…]+|.{12,50}?\.\.\.)", x)     # a card line: keep the first sentence
+            if m:
+                x = m.group(1)
         if x and not any(_sim(x, y) > 0.6 for y in lines):
             lines.append(x)
     if kind == "question":                 # "A. ... B. ..." on one line -> one choice per line

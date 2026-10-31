@@ -304,5 +304,22 @@ class Studio(unittest.TestCase):
         self.assertEqual(self.call("GET", "/api/studio/projects", token=other)[1], [])
 
 
+class FreeFormScripts(unittest.TestCase):
+    """Scripts without any ฉาก/คลิป headings are still read (one spoken line = one shot)."""
+
+    def test_plain_dialogue_lines(self):
+        from live_ai.studio.script import parse
+        r = parse("น้ำฟ้า: ฉันไม่ยอมหรอก\nภาคิน: ใจเย็นก่อน\nแม่: ออกไปจากบ้านนี้!")
+        self.assertEqual([(d["speaker"], d["text"]) for s in r["shots"] for d in s["dialogue"]],
+                         [("น้ำฟ้า", "ฉันไม่ยอมหรอก"), ("ภาคิน", "ใจเย็นก่อน"), ("แม่", "ออกไปจากบ้านนี้!")])
+
+    def test_prose_with_quotes_and_prose_only(self):
+        from live_ai.studio.script import parse
+        r = parse("น้ำฟ้าเดินเข้าบ้าน\n\nเธอพูดว่า “ทำไมทุกคนเงียบ”\n\nภาคินหันมามอง")
+        self.assertEqual([d["text"] for s in r["shots"] for d in s["dialogue"]], ["ทำไมทุกคนเงียบ"])
+        r = parse("ทุยเดินไปตลาด\nทุยซื้อกล้วย\nทุยกลับบ้าน")
+        self.assertEqual(r["stats"]["shots"], 3)
+
+
 if __name__ == "__main__":
     unittest.main(verbosity=2)
