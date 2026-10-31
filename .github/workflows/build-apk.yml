@@ -77,33 +77,40 @@ jobs:
         run: |
           gradle -p android --no-daemon assembleRelease \
             -PserverUrl="$SERVER_URL" -PversionCode=${{ github.run_number }} -PversionName="1.0.${{ github.run_number }}"
-          cp android/app/build/outputs/apk/release/app-release.apk apk/live-ai.apk
+          cp android/app/build/outputs/apk/chat/release/app-chat-release.apk apk/live-ai.apk
+          cp android/app/build/outputs/apk/studio/release/app-studio-release.apk apk/live-ai-studio.apk
           rm -f release.jks
 
-      - name: Check the APK (signature, package, size)
+      - name: Check the APKs (signature, package, size)
         run: |
           BT=$(ls -d "$ANDROID_HOME"/build-tools/* | sort -V | tail -1)
-          "$BT/apksigner" verify --print-certs apk/live-ai.apk | tee apk/signature.txt
-          "$BT/aapt" dump badging apk/live-ai.apk | grep -E "^(package|sdkVersion|targetSdkVersion|application-label):" | tee apk/badging.txt
-          grep -q "package: name='ai.live.app'" apk/badging.txt
-          ls -l apk/live-ai.apk | tee apk/size.txt; sha256sum apk/live-ai.apk | tee apk/sha256.txt
+          : > apk/badging.txt; : > apk/signature.txt
+          for f in live-ai live-ai-studio; do
+            "$BT/apksigner" verify --print-certs apk/$f.apk | sed "s/^/$f: /" | tee -a apk/signature.txt
+            "$BT/aapt" dump badging apk/$f.apk | grep -E "^(package|sdkVersion|targetSdkVersion|application-label|launchable-activity):" | sed "s/^/$f: /" | tee -a apk/badging.txt
+          done
+          grep -q "live-ai: package: name='ai.live.app'" apk/badging.txt
+          grep -q "live-ai-studio: package: name='ai.live.studio'" apk/badging.txt
+          ls -l apk/*.apk | tee apk/size.txt; sha256sum apk/*.apk | tee apk/sha256.txt
 
       - name: Publish the download (release "android-app")
         env: { GH_TOKEN: "${{ github.token }}" }
         run: |
           NOTES="แอป Live AI สำหรับ Android รุ่น 1.0.${{ github.run_number }} — เปิดที่ $SERVER_URL
+          live-ai.apk = แชต (และทุกเมนู), live-ai-studio.apk = สตูดิโอตัดต่อคลิป (ติดตั้งคู่กันได้)
           ติดตั้ง: ดาวน์โหลด live-ai.apk แล้วเปิดไฟล์ (อนุญาต 'ติดตั้งแอปที่ไม่รู้จัก' ให้ Chrome ครั้งแรกครั้งเดียว)"
           if gh release view android-app > /dev/null 2>&1; then
-            gh release upload android-app apk/live-ai.apk --clobber
+            gh release upload android-app apk/live-ai.apk apk/live-ai-studio.apk --clobber
             gh release edit android-app --title "Live AI Android 1.0.${{ github.run_number }}" --notes "$NOTES"
           else
-            gh release create android-app apk/live-ai.apk --title "Live AI Android 1.0.${{ github.run_number }}" --notes "$NOTES" --latest
+            gh release create android-app apk/live-ai.apk apk/live-ai-studio.apk --title "Live AI Android 1.0.${{ github.run_number }}" --notes "$NOTES" --latest
           fi
           URL="https://github.com/${GITHUB_REPOSITORY}/releases/download/android-app/live-ai.apk"
           echo "$URL" > apk/download.txt
           sleep 5; curl -fsSIL "$URL" | grep -iE "^(HTTP|content-length)" | tee apk/download_check.txt
+          curl -fsSIL "${URL%/*}/live-ai-studio.apk" | grep -iE "^(HTTP|content-length)" | tee -a apk/download_check.txt
 
       - name: Report
         if: always()
         env: { GH_TOKEN: "${{ github.token }}" }
-        run: mkdir -p apk && rm -f apk/live-ai.apk && bash scripts/publish_report.sh apk apk
+        run: mkdir -p apk && rm -f apk/*.apk && bash scripts/publish_report.sh apk apk

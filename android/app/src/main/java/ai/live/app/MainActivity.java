@@ -47,6 +47,11 @@ public class MainActivity extends Activity {
         return (saved == null || saved.isEmpty()) ? BuildConfig.SERVER_URL : saved;
     }
 
+    /** The page this app opens first: the chat, or /studio for the editing app. */
+    private String startUrl() {
+        return serverUrl() + BuildConfig.START_PATH;
+    }
+
     @Override
     protected void onCreate(Bundle state) {
         super.onCreate(state);
@@ -57,6 +62,10 @@ public class MainActivity extends Activity {
         root.addView(web, new FrameLayout.LayoutParams(-1, -1));
         root.addView(bar, new FrameLayout.LayoutParams(-1, 8));
         setContentView(root);
+        if (!BuildConfig.START_PATH.isEmpty()) {
+            // the editing app: uploads of many clips take a while, keep the screen (and the upload) alive
+            getWindow().addFlags(android.view.WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON);
+        }
 
         WebSettings s = web.getSettings();
         s.setJavaScriptEnabled(true);
@@ -121,7 +130,7 @@ public class MainActivity extends Activity {
         web.setDownloadListener((url, ua, disposition, mime, length) -> download(url, disposition, mime));
 
         if (state != null) web.restoreState(state);
-        else web.loadUrl(serverUrl());
+        else web.loadUrl(startUrl());
     }
 
     /** Saves a file (a finished video, subtitles) to the phone's Download folder. */
@@ -145,7 +154,7 @@ public class MainActivity extends Activity {
         new AlertDialog.Builder(this)
             .setTitle("เชื่อมต่อ Live AI ไม่ได้")
             .setMessage("ตรวจอินเทอร์เน็ตของมือถือ แล้วลองใหม่\n\nที่อยู่ตอนนี้: " + serverUrl() + "\n(" + why + ")")
-            .setPositiveButton("ลองใหม่", (d, w) -> web.loadUrl(serverUrl()))
+            .setPositiveButton("ลองใหม่", (d, w) -> web.loadUrl(startUrl()))
             .setNeutralButton("เปลี่ยนที่อยู่เซิร์ฟเวอร์", (d, w) -> askServer())
             .setCancelable(false)
             .show();
@@ -166,9 +175,9 @@ public class MainActivity extends Activity {
                 SharedPreferences.Editor e = getSharedPreferences(PREFS, MODE_PRIVATE).edit();
                 if (u.isEmpty()) e.remove("server"); else e.putString("server", u);
                 e.apply();
-                web.loadUrl(serverUrl());
+                web.loadUrl(startUrl());
             })
-            .setNegativeButton("ยกเลิก", (d, w) -> web.loadUrl(serverUrl()))
+            .setNegativeButton("ยกเลิก", (d, w) -> web.loadUrl(startUrl()))
             .show();
     }
 

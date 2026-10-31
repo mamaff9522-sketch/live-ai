@@ -8,7 +8,6 @@ android {
     namespace "ai.live.app"
     compileSdk 35
     defaultConfig {
-        applicationId "ai.live.app"
         minSdk 26
         targetSdk 35
         versionCode((project.findProperty("versionCode") ?: "1") as int)
@@ -16,6 +15,23 @@ android {
         buildConfigField "String", "SERVER_URL", "\"${serverUrl}\""
     }
     buildFeatures { buildConfig true }
+    // Two apps from the same code: "Live AI" opens the chat, "Live AI ตัดต่อ" opens the editing studio.
+    // They install side by side (different application ids) and share the server and the signing key.
+    flavorDimensions "app"
+    productFlavors {
+        chat {
+            dimension "app"
+            applicationId "ai.live.app"
+            buildConfigField "String", "START_PATH", "\"\""
+            resValue "string", "app_name", "Live AI"
+        }
+        studio {
+            dimension "app"
+            applicationId "ai.live.studio"
+            buildConfigField "String", "START_PATH", "\"/studio\""
+            resValue "string", "app_name", "Live AI ตัดต่อ"
+        }
+    }
     signingConfigs {
         release {
             if (ks) {
