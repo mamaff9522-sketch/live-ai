@@ -1,0 +1,51 @@
+name: studio — run a project again on the VPS
+
+# Starts a studio project on the VPS again (the owner asked for it), with fresh clip checks, and waits
+# for the result. Only counts, states and the studio's own messages are printed (the repository is
+# public): no script text and no video.
+
+on:
+  workflow_dispatch:
+    inputs:
+      project:
+        description: "Project name (the newest project with this name)"
+        required: true
+        default: "ทุย"
+
+permissions:
+  contents: write
+
+jobs:
+  rerun:
+    runs-on: ubuntu-latest
+    timeout-minutes: 60
+    env:
+      VPS_HOST: ${{ secrets.VPS_HOST }}
+      VPS_USER: ${{ secrets.VPS_USER || 'root' }}
+      SSHPASS: ${{ secrets.VPS_PASSWORD }}
+      PROJECT: ${{ inputs.project }}
+    steps:
+      - uses: actions/checkout@v4
+      - name: Queue the project and restart Live AI (it resumes queued projects at start-up)
+        run: |
+          sudo apt-get install -y -qq sshpass > /dev/null
+          echo 'ssh() { sshpass -e /usr/bin/ssh -o StrictHostKeyChecking=accept-new -o ConnectTimeout=20 "$VPS_USER@$VPS_HOST" "$@"; }' > ssh.sh
+          . ./ssh.sh; mkdir -p rerun
+          ssh "docker exec -i -e PROJECT='$PROJECT' live-ai python -" < scripts/studio_queue.py | tee rerun/queue.txt
+          grep -q "^QUEUED " rerun/queue.txt || { echo "::error::project not queued"; exit 1; }
+          ssh 'docker restart live-ai >/dev/null && echo restarted'
+      - name: Wait for the result
+        run: |
+          . ./ssh.sh
+          PID=$(sed -n 's/^QUEUED \([0-9]*\).*/\1/p' rerun/queue.txt)
+          for i in $(seq 1 150); do
+            sleep 15
+            S=$(ssh "docker exec live-ai python -c \"import sqlite3;c=sqlite3.connect('/data/live_ai.sqlite3');print(c.execute('SELECT status FROM projects WHERE id=$PID').fetchone()[0])\"" 2>/dev/null || echo starting)
+            echo "$(date +%T) $S"
+            case "$S" in done|needs_attention|failed|paused) break;; esac
+          done
+          ssh "docker exec -i -e PID=$PID live-ai python -" < scripts/studio_report.py | tee rerun/result.txt
+      - name: Publish
+        if: always()
+        env: { GH_TOKEN: "${{ github.token }}" }
+        run: mkdir -p rerun && bash scripts/publish_report.sh rerun studio-rerun
