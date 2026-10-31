@@ -68,6 +68,7 @@ class Settings:
     threads: int = field(default_factory=lambda: int(_env("THREADS", "0")))
     ctx_size: int = field(default_factory=lambda: int(_env("CTX", "0")))
     max_reply_tokens: int = field(default_factory=lambda: int(_env("MAX_REPLY_TOKENS", "1024")))
+    think_budget: int = field(default_factory=lambda: int(_env("THINK_BUDGET", "768")))
     temperature: float = field(default_factory=lambda: float(_env("TEMPERATURE", "0.7")))
 
     # service limits

@@ -15,13 +15,15 @@ from .store import Store
 
 log = logs.get("assistant")
 
-SYSTEM_PROMPT = """คุณคือ Live AI ผู้ช่วยอัจฉริยะที่พูดภาษาไทยเป็นหลัก
-- ตอบเป็นภาษาเดียวกับที่ผู้ใช้ใช้ ภาษาไทยให้เป็นธรรมชาติ สุภาพ กระชับ ไม่แปลตรงตัว
-- อธิบายความรู้ให้ถูกต้อง ถ้าไม่แน่ใจให้บอกตรง ๆ ห้ามแต่งข้อมูล
-- แก้ปัญหาและวิเคราะห์แบบเป็นขั้นตอน สรุปคำตอบให้ชัดเจน
-- เขียนโค้ดให้ใช้งานได้จริง ใส่ในบล็อก ``` พร้อมระบุภาษา และอธิบายสั้น ๆ เมื่อตรวจโค้ดให้ชี้จุดผิดและให้โค้ดที่แก้แล้ว
-- ช่วยวางแผนงานเป็นข้อ ๆ ที่ทำตามได้จริง
-- ใช้ข้อมูลในส่วน "สิ่งที่จำไว้เกี่ยวกับผู้ใช้" เมื่อเกี่ยวข้อง และห้ามเปิดเผยข้อมูลของผู้ใช้คนอื่น"""
+SYSTEM_PROMPT = """คุณคือ Live AI ผู้ช่วยที่พูดภาษาไทยเป็นหลัก
+- ตอบภาษาเดียวกับผู้ใช้ ภาษาไทยให้เป็นธรรมชาติ สุภาพ กระชับ ตรงประเด็น
+- ถ้าไม่แน่ใจให้บอกตรง ๆ ห้ามแต่งข้อมูล
+- โจทย์ที่ต้องคิด ให้คิดเป็นขั้นตอนสั้น ๆ แล้วสรุปคำตอบสุดท้ายให้ชัด
+- เมื่อเขียนโค้ด: ทำตามเงื่อนไขของโจทย์ให้ครบทุกข้อ ใส่โค้ดฉบับสมบูรณ์ในบล็อก ``` เพียงบล็อกเดียว แล้วอธิบายสั้น ๆ
+- เมื่อตรวจโค้ด: ไล่ทีละบรรทัด ระบุบั๊กทุกจุด แล้วให้โค้ดที่แก้แล้วฉบับเดียวที่ถูกต้อง
+- วางแผนงานเป็นข้อ ๆ ที่ทำได้จริง"""
+
+CODE_HINT = re.compile(r"โค้ด|โค๊ด|code|ฟังก์ชัน|function|python|javascript|typescript|java\b|sql|สคริปต์|script|บั๊ก|bug|def |```", re.I)
 
 
 def estimate_tokens(text: str) -> int:
@@ -50,7 +52,7 @@ class Assistant:
         facts = memory.relevant(new_text, self.store.memories(user_id))
         system = SYSTEM_PROMPT
         if facts:
-            system += "\n\nสิ่งที่จำไว้เกี่ยวกับผู้ใช้คนนี้:\n" + "\n".join(f"- {m['content']}" for m in facts)
+            system += "\n\nข้อมูลที่ผู้ใช้คนนี้ขอให้จำไว้ (ใช้เมื่อเกี่ยวข้องเท่านั้น):\n" + "\n".join(f"- {m['content']}" for m in facts)
         system += f"\n\nวันนี้คือ {time.strftime('%Y-%m-%d')}"
         budget = int((self.s.ctx_size - self.s.max_reply_tokens - estimate_tokens(system) - estimate_tokens(new_text) - 64) * budget_scale)
         history = self.store.messages(user_id, conv_id, limit=200)
@@ -125,7 +127,7 @@ class Assistant:
                 while scales:
                     msgs = self.build_messages(user_id, conv_id, text, scales[0])
                     try:
-                        for ev in self.llm.stream_chat(msgs, think=think):
+                        for ev in self.llm.stream_chat(msgs, think=think, code=bool(CODE_HINT.search(text))):
                             if ev["type"] == "token":
                                 reply_parts.append(ev["text"])
                                 yield ev

@@ -9,12 +9,12 @@ ARG LLAMA_TAG
 RUN apt-get update && apt-get install -y --no-install-recommends git cmake g++ make ca-certificates \
     && rm -rf /var/lib/apt/lists/*
 RUN git clone --depth 1 --branch "${LLAMA_TAG}" https://github.com/ggml-org/llama.cpp /src
-# GGML_NATIVE=OFF + all CPU variants: the binary picks the best instructions of whatever CPU it lands on
-RUN cmake -S /src -B /src/build -DCMAKE_BUILD_TYPE=Release -DGGML_NATIVE=OFF -DGGML_BACKEND_DL=ON \
-      -DGGML_CPU_ALL_VARIANTS=ON -DLLAMA_BUILD_TESTS=OFF -DLLAMA_BUILD_EXAMPLES=OFF -DLLAMA_BUILD_APP=OFF \
+# Portable build for any x86-64 server CPU with AVX2 (all current cloud CPUs, incl. Hugging Face Spaces)
+RUN cmake -S /src -B /src/build -DCMAKE_BUILD_TYPE=Release -DGGML_NATIVE=OFF \
+      -DGGML_AVX=ON -DGGML_AVX2=ON -DGGML_FMA=ON -DGGML_F16C=ON -DLLAMA_BUILD_TESTS=OFF -DLLAMA_BUILD_EXAMPLES=OFF -DLLAMA_BUILD_APP=OFF \
       -DLLAMA_USE_PREBUILT_UI=OFF -DLLAMA_BUILD_UI=OFF \
     && cmake --build /src/build --target llama-server -j"$(nproc)" \
-    && mkdir -p /out && cp /src/build/bin/llama-server /out/ && cp /src/build/bin/*.so /out/ 2>/dev/null || true
+    && mkdir -p /out && cp -a /src/build/bin/llama-server /src/build/bin/*.so* /out/ && /out/llama-server --version
 
 FROM python:3.12-slim
 RUN apt-get update && apt-get install -y --no-install-recommends libgomp1 ca-certificates \

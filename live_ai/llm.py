@@ -273,20 +273,28 @@ class LLMClient:
         except Exception:
             return None
 
-    def stream_chat(self, messages: list[dict], think: bool = False, max_tokens: int | None = None) -> Iterator[dict]:
-        """Yields {"type": "token"|"thinking", "text": ...} and finally {"type": "done", "timings": {...}}."""
+    def stream_chat(self, messages: list[dict], think: bool = False, max_tokens: int | None = None,
+                    code: bool = False) -> Iterator[dict]:
+        """Yields {"type": "token"|"thinking", "text": ...} and finally {"type": "done", "timings": {...}}.
+
+        Sampling follows Qwen's recommendations; code requests use a low temperature so the
+        model sticks to the exact requirements. With think=True the thinking gets its own
+        token budget on top of the answer's, so it can't eat the whole reply.
+        """
+        reply_max = max_tokens or self.s.max_reply_tokens
         body = {
             "messages": messages,
             "stream": True,
-            "temperature": 0.6 if think else self.s.temperature,
-            "top_p": 0.95 if think else 0.8,
+            "temperature": 0.2 if code else (0.6 if think else self.s.temperature),
+            "top_p": 0.9 if code else (0.95 if think else 0.8),
             "top_k": 20,
-            "max_tokens": max_tokens or self.s.max_reply_tokens,
+            "max_tokens": reply_max,
             "chat_template_kwargs": {"enable_thinking": bool(think)},
             "timings_per_token": False,
         }
         if think:
-            body["reasoning_budget_tokens"] = 1024
+            body["reasoning_budget_tokens"] = self.s.think_budget
+            body["max_tokens"] = reply_max + self.s.think_budget
         req = urllib.request.Request(self.server.url + "/v1/chat/completions", json.dumps(body).encode(),
                                      {"Content-Type": "application/json"})
         try:
