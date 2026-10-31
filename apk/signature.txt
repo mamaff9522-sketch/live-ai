@@ -1,0 +1,4 @@
+V2 Signer: certificate DN: CN=Live AI, O=Live AI, C=TH
+V2 Signer: certificate SHA-256 digest: d42f3482c3cc690615cbc0abac1b936904098edcabe2431458f910fddd036d6b
+V2 Signer: certificate SHA-1 digest: b2b87ab8cf403c217bcdd9a925f27dc346577850
+V2 Signer: certificate MD5 digest: ff1ea4fee399cd371894e52ce42b18eb
