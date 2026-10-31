@@ -444,11 +444,15 @@ class Studio:
         secs = round(time.time() - started, 1)
         complete = qa["passed"]
         result = {**json.loads(self.store.conn().execute("SELECT result FROM projects WHERE id=?", (pid,)).fetchone()["result"] or "{}"),
-                  "qa": qa, "seconds": secs, "missing": plan["missing"], "issues": plan["issues"] + timeline["issues"],
+                  "qa": qa, "seconds": secs, "missing": plan["missing"],
+                  "issues": plan["issues"] + timeline["issues"] + clip_notes(clips),
                   "timeline": timeline,
                   "complete": complete}
+        unused = [c["name"] for c in clips if c["id"] in {i["clip"] for i in plan["issues"] if i.get("type") == "extra"}]
         if complete:
             msg = f"เสร็จสมบูรณ์ ผ่าน QA ({out['duration']:.1f} วินาที, ใช้เวลา {secs:.0f} วินาที)"
+            if unused:
+                msg += f" — ไม่ได้ใช้ {len(unused)} คลิปที่ไม่ตรงกับบท: {', '.join(unused[:5])} (ดูแท็บ ตรวจข้อผิดพลาด)"
         else:
             msg = "ยังไม่สมบูรณ์: " + "; ".join(qa["problems"][:3])
         self._set(pid, status="done" if complete else "needs_attention", message=msg[:500], result=json.dumps(result, ensure_ascii=False))
@@ -768,8 +772,12 @@ class Studio:
         out = out_dir / f"{os.urandom(12).hex()}.mp4"
         lst = cache.parent / "concat.txt"
         lst.write_text("".join(f"file '{s}'\n" for s in segs), encoding="utf-8")
+        # one loudness for the whole video (social platforms: about -14 LUFS, peaks under -1.5 dB): AI clips
+        # come out at very different levels (seen: -31 LUFS next to -8 LUFS)
         r = subprocess.run(["ffmpeg", "-loglevel", "error", "-nostdin", "-y", "-f", "concat", "-safe", "0", "-i", str(lst),
-                            "-c", "copy", "-movflags", "+faststart", str(out)], capture_output=True, text=True, timeout=7200)
+                            "-map", "0:v:0", "-map", "0:a:0", "-c:v", "copy", "-af", "loudnorm=I=-14:TP=-1.5:LRA=11",
+                            "-ar", "48000", "-c:a", "aac", "-b:a", "160k", "-movflags", "+faststart", str(out)],
+                           capture_output=True, text=True, timeout=7200)
         if r.returncode != 0 or not out.exists():
             raise RuntimeError("รวมคลิปไม่สำเร็จ: " + r.stderr[-300:])
         name = self.store.conn().execute("SELECT name FROM projects WHERE id=?", (pid,)).fetchone()["name"]
@@ -911,15 +919,69 @@ def inspect_clip(path: str) -> dict:
         out["problems"].append(f"ภาพดำ {black:.1f} วินาที")
     if "Error" in r.stderr and "decode" in r.stderr.lower():
         out["problems"].append("มีเฟรมเสีย ถอดรหัสไม่ได้บางส่วน")
+    jumps = picture_jumps(path)
+    out["jumps"] = jumps
+    for a, b in jumps:
+        out["problems"].append(f"ภาพเปลี่ยนกะทันหันช่วง {a:.1f}–{b:.1f} วินาที (ซูม/ภาพกระโดด/ภาพซ้อน — ควรดูช่วงนี้)")
     if info["has_audio"]:
         regions = speech_regions(path, info["duration"])
         out["audio_db"] = list(loudness(path))
+        lufs = integrated_lufs(path)
+        out["lufs"] = lufs
+        if lufs is not None and lufs < -26:
+            out["problems"].append(f"เสียงเบามาก ({lufs:.0f} LUFS) เทียบกับระดับปกติ — วิดีโอที่ส่งออกถูกปรับความดังให้เท่ากันทั้งเรื่อง")
+        if out["audio_db"][1] > -1.0:
+            out["problems"].append(f"เสียงดังจนเกือบแตก (พีก {out['audio_db'][1]:.1f} dB)")
         out["speech_regions"] = regions
         out["speech"] = sum(b - a for a, b in regions) >= 0.4
     else:
         out["speech_regions"], out["speech"] = [], False
         out["problems"].append("ไม่มีเสียง")
     return out
+
+
+def clip_notes(clips: list[dict]) -> list[dict]:
+    """What the clip inspector noticed, per clip, for the error report (does not stop the export)."""
+    out = []
+    for c in clips:
+        for p in (c.get("inspect") or {}).get("problems", []):
+            out.append({"type": "clip", "clip": c["id"], "message": f"คลิป “{c['name']}”: {p}"})
+        if (c.get("inspect") or {}).get("speech") and not c.get("transcript"):
+            out.append({"type": "clip", "clip": c["id"], "message": f"คลิป “{c['name']}”: มีเสียงแต่ไม่พบคำพูด "
+                        "(เป็นเพลง เสียงร้องไห้ หรือบทพูดไม่ออกมาตอนสร้างคลิป)"})
+    return out
+
+
+def picture_jumps(path: str, threshold: float = 0.8) -> list[tuple[float, float]]:
+    """Stretches where the picture changes a lot within half a second (sudden zoom, jump, see-through
+    figure — common in AI-generated clips). Compares tiny 24x24 frames twice per second."""
+    try:
+        raw = subprocess.run(["ffmpeg", "-loglevel", "error", "-nostdin", "-i", path, "-map", "0:v:0", "-vf",
+                              "fps=2,scale=24:24", "-f", "rawvideo", "-pix_fmt", "rgb24", "-"],
+                             capture_output=True, timeout=600).stdout
+    except (OSError, subprocess.TimeoutExpired):
+        return []
+    n = 24 * 24 * 3
+    frames = [raw[i:i + n] for i in range(0, len(raw) - n + 1, n)]
+    bad = [i for i, (a, b) in enumerate(zip(frames, frames[1:])) if 1 - sum(abs(x - y) for x, y in zip(a, b)) / n / 64 < threshold]
+    spans: list[list[float]] = []
+    for i in bad:
+        a, b = i / 2, (i + 1) / 2
+        if spans and a <= spans[-1][1] + 0.5:
+            spans[-1][1] = b
+        else:
+            spans.append([a, b])
+    return [(round(a, 1), round(b, 1)) for a, b in spans]
+
+
+def integrated_lufs(path: str) -> float | None:
+    try:
+        r = subprocess.run(["ffmpeg", "-hide_banner", "-nostdin", "-i", path, "-vn", "-af", "ebur128", "-f", "null", "-"],
+                           capture_output=True, text=True, timeout=600)
+    except (OSError, subprocess.TimeoutExpired):
+        return None
+    m = __import__("re").findall(r"I:\s+(-?[\d.]+) LUFS", r.stderr)
+    return float(m[-1]) if m else None
 
 
 def normalize_segment(c: dict, seg: Path, W: int, H: int, fps: int, dialogue_only: bool = False,

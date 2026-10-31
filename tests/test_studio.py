@@ -337,5 +337,27 @@ class FreeFormScripts(unittest.TestCase):
         self.assertTrue(any("สไตล์ภาพ" in n for n in r["notes"]))
 
 
+class ClipChecks(unittest.TestCase):
+    """Inspector notices sudden picture jumps inside an AI clip and very quiet audio."""
+
+    def test_jump_and_quiet_audio(self):
+        import subprocess
+        import tempfile
+        from live_ai.studio.pipeline import inspect_clip, picture_jumps
+        d = Path(tempfile.mkdtemp())
+        p = d / "jump.mp4"
+        # 3 s steady picture, then a completely different one (like a sudden zoom), quiet tone
+        subprocess.run(["ffmpeg", "-loglevel", "error", "-y", "-f", "lavfi", "-i", "color=c=0x203040:s=360x640:d=3:r=24",
+                        "-f", "lavfi", "-i", "testsrc2=s=360x640:d=3:r=24", "-f", "lavfi", "-i", "sine=f=220:d=6",
+                        "-filter_complex", "[0][1]concat=n=2:v=1:a=0[v];[2]volume=0.01[a]", "-map", "[v]", "-map", "[a]",
+                        "-c:v", "libx264", "-preset", "ultrafast", "-c:a", "aac", str(p)], check=True)
+        jumps = picture_jumps(str(p))
+        self.assertEqual(len(jumps), 1)
+        self.assertTrue(2.0 <= jumps[0][0] <= 3.0, jumps)
+        ins = inspect_clip(str(p))
+        self.assertTrue(any("ภาพเปลี่ยนกะทันหัน" in x for x in ins["problems"]))
+        self.assertTrue(any("เสียงเบามาก" in x for x in ins["problems"]), ins["problems"])
+
+
 if __name__ == "__main__":
     unittest.main(verbosity=2)
