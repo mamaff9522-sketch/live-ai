@@ -37,7 +37,7 @@ jobs:
           sudo apt-get install -y -qq sshpass > /dev/null
           echo 'ssh() { sshpass -e /usr/bin/ssh -o StrictHostKeyChecking=accept-new -o ConnectTimeout=20 -o ServerAliveInterval=30 "$VPS_USER@$VPS_HOST" "$@"; }' > ssh.sh
           . ./ssh.sh
-          ssh 'echo connected to $(hostname)'
+          ssh 'echo connected'
 
       - name: Inspect the machine (changes nothing)
         run: |
@@ -52,14 +52,16 @@ jobs:
           echo "== known_systems"; ls -d /opt/three-junk /opt/*livekit* /etc/livekit* 2>/dev/null || true
           echo "== end"
           EOF
-          cat vps/inspect.txt
-          sec() { awk -v s="== $1" '$0==s{f=1;next} /^== /{f=0} f' vps/inspect.txt; }
+          # the repository is public: only the size summary is shown or kept, never the list of programs
+          mv vps/inspect.txt inspect.full
+          awk '/^== (system|cpu|ram_mb|disk_free_gb)$/{f=1;print;next} /^== /{f=0} f' inspect.full | tee vps/machine.txt
+          sec() { awk -v s="== $1" '$0==s{f=1;next} /^== /{f=0} f' inspect.full; }
           RAM=$(sec ram_mb); DISK=$(sec disk_free_gb); OTHER=$(sec other_containers; sec listening; sec known_systems)
           echo "RAM=${RAM}MB DISK=${DISK}GB"
           if [ "${RAM:-0}" -lt 3300 ]; then echo "::error::RAM ${RAM} MB is too small (need 4 GB or more)"; exit 1; fi
           if [ "${DISK:-0}" -lt 12 ]; then echo "::error::Only ${DISK} GB free disk (need 12 GB or more)"; exit 1; fi
           if [ -n "$(echo "$OTHER" | tr -d '[:space:]')" ] && [ "${{ inputs.force }}" != "true" ]; then
-            echo "::error::This machine already runs other programs - stopped without changing anything:"; echo "$OTHER"; exit 1
+            echo "::error::This machine already runs $(echo "$OTHER" | grep -c .) other programs/services - stopped without changing anything"; exit 1
           fi
 
       - name: Install (one command, same as scripts/install.sh)
