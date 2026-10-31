@@ -77,37 +77,45 @@ DEFAULT_SETTINGS = {"aspect": "9:16", "height": 720, "fps": 30, "subtitles": "fi
                     "speaker_in_subs": False, "range_from": None, "range_to": None}
 VIDEO_EXT = {".mp4", ".mov", ".m4v", ".webm", ".mkv", ".3gp"}
 RNNOISE_MODEL = Path(__file__).resolve().parent.parent / "assets" / "rnnoise-std.rnnn"
-_DENOISE: str | None = None
+_DENOISE: tuple[str, str] | None = None
 
 
 def denoise_filter() -> tuple[str, str]:
-    """(ffmpeg filter, name). RNNoise when this ffmpeg runs it correctly (it hangs in some builds,
-    e.g. ffmpeg 8.0 on Ubuntu 26.04), otherwise ffmpeg's built-in FFT denoiser."""
+    """(ffmpeg filter, name) for Dialogue Only. Each candidate is first tried on exactly the kind of job
+    a real clip gets, because some ffmpeg builds hang on some chains (seen with ffmpeg 8.0.1 on
+    Ubuntu 26.04): RNNoise, else ffmpeg's FFT denoiser, else no denoiser (gap lowering only)."""
     global _DENOISE
     if _DENOISE is None:
-        ok = False
+        cands = []
         if RNNOISE_MODEL.is_file():
-            # the same kind of job as a real clip (video + audio into MP4): a lone audio test can pass
-            # while real clips hang
-            import tempfile
-            with tempfile.TemporaryDirectory() as d:
-                try:   # exactly the job a real clip gets: an MP4 with AAC audio in, the same filter chain
-                    subprocess.run(["ffmpeg", "-loglevel", "error", "-nostdin", "-y", "-f", "lavfi", "-i", "color=c=gray:s=320x240:d=2",
-                                    "-f", "lavfi", "-i", "sine=frequency=300:duration=2", "-c:v", "libx264", "-preset", "ultrafast",
-                                    "-c:a", "aac", "-t", "2", f"{d}/in.mp4"], capture_output=True, timeout=30, check=True)
+            cands.append((f"arnndn=m={RNNOISE_MODEL}", "RNNoise"))
+        cands += [("afftdn=nr=20:nf=-35", "ตัวกรองเสียงรบกวน FFT ของ ffmpeg"), ("anull", "")]
+        import tempfile
+        chosen = cands[-1]
+        with tempfile.TemporaryDirectory() as d:
+            try:
+                subprocess.run(["ffmpeg", "-loglevel", "error", "-nostdin", "-y", "-f", "lavfi", "-i", "color=c=gray:s=320x240:d=2",
+                                "-f", "lavfi", "-i", "sine=frequency=300:duration=2", "-c:v", "libx264", "-preset", "ultrafast",
+                                "-c:a", "aac", "-t", "2", f"{d}/in.mp4"], capture_output=True, timeout=30, check=True)
+            except Exception:
+                cands = cands[-1:]
+            for flt, name in cands[:-1]:
+                try:
                     r = subprocess.run(["ffmpeg", "-loglevel", "error", "-nostdin", "-y", "-i", f"{d}/in.mp4", "-map", "0:v:0", "-map", "0:a:0",
-                                        "-af", f"aresample=48000,aformat=channel_layouts=mono,arnndn=m={RNNOISE_MODEL},"
-                                               "volume='if(gt(between(t,0.2,1.8),0),1,0.1)':eval=frame,aformat=channel_layouts=stereo,apad=whole_dur=2",
+                                        "-af", f"aresample=48000,apad=whole_dur=2,aformat=channel_layouts=mono,{flt},"
+                                               "volume='if(gt(between(t,0.2,1.8),0),1,0.1)':eval=frame,aformat=channel_layouts=stereo",
                                         "-t", "2", "-c:v", "libx264", "-preset", "ultrafast", "-c:a", "aac", f"{d}/t.mp4"],
                                        capture_output=True, timeout=20)
-                    ok = r.returncode == 0
-                except (subprocess.TimeoutExpired, subprocess.CalledProcessError):
-                    ok = False
-        _DENOISE = "rnnoise" if ok else "afftdn"
-        logs.event(log, "speech denoiser", engine=_DENOISE)
-    if _DENOISE == "rnnoise":
-        return f"arnndn=m={RNNOISE_MODEL}", "RNNoise"
-    return "afftdn=nr=20:nf=-35", "ตัวกรองเสียงรบกวน FFT ของ ffmpeg"
+                    if r.returncode == 0:
+                        chosen = (flt, name)
+                        break
+                except subprocess.TimeoutExpired:
+                    continue
+        _DENOISE = chosen
+        logs.event(log, "speech denoiser", engine=chosen[1] or "none")
+    return _DENOISE
+
+
 MAX_RETRIES = 2
 
 
@@ -681,7 +689,8 @@ class Studio:
             self._agent(pid, 13, "done", "ใช้เสียงจากคลิปต้นฉบับตามเดิม")
             return
         engine = denoise_filter()[1]
-        self._agent(pid, 13, "done", f"Dialogue Only: ลดเสียงลม/รถ/ฝน/เสียงรบกวนด้วย {engine} บนเครื่อง และลดเสียงช่วงที่ไม่มีคนพูดลง 20 dB "
+        lead = f"ลดเสียงลม/รถ/ฝน/เสียงรบกวนด้วย {engine} บนเครื่อง และ" if engine else "(ตัวลดเสียงรบกวนใช้กับ ffmpeg เครื่องนี้ไม่ได้) "
+        self._agent(pid, 13, "done" if engine else "warning", f"Dialogue Only: {lead}ลดเสียงช่วงที่ไม่มีคนพูดลง 20 dB "
                     "— เพลงที่ดังซ้อนใต้เสียงพูดพร้อมกันอาจยังได้ยินบ้าง ระบบไม่สร้างหรือแก้คำพูด")
 
     def _match(self, pid, script, clips) -> dict:
@@ -921,18 +930,18 @@ def normalize_segment(c: dict, seg: Path, W: int, H: int, fps: int, dialogue_onl
           f"setsar=1,fps={fps},format=yuv420p")
     if brightness:
         vf += f",eq=brightness={brightness:.3f}"
-    af = "aresample=48000,aformat=channel_layouts=stereo"
+    af = f"aresample=48000,apad=whole_dur={c['duration']:.3f},aformat=channel_layouts=stereo"
     if dialogue_only and c["has_audio"]:
         spans = [(max(0.0, a - 0.25), b + 0.25) for a, b in (regions or [])]
         gate = "+".join(f"between(t,{a:.2f},{b:.2f})" for a, b in spans) or "0"
         # no highpass: in ffmpeg 8.0.1 (Ubuntu 26.04) a highpass in this chain makes the job hang
-        af = (f"aresample=48000,aformat=channel_layouts=mono,{denoise_filter()[0]},volume='if(gt({gate},0),1,0.1)':eval=frame,"
-              f"aformat=channel_layouts=stereo")
+        af = (f"aresample=48000,apad=whole_dur={c['duration']:.3f},aformat=channel_layouts=mono,{denoise_filter()[0]},"
+              f"volume='if(gt({gate},0),1,0.1)':eval=frame,aformat=channel_layouts=stereo")
     args = ["nice", "-n", "10", "ffmpeg", "-loglevel", "error", "-nostdin", "-y", "-i", c["path"]]
     if not c["has_audio"]:
         args += ["-f", "lavfi", "-i", "anullsrc=r=48000:cl=stereo"]
     args += ["-map", "0:v:0", "-map", "0:a:0" if c["has_audio"] else "1:a:0", "-vf", vf,
-             "-af", af + f",apad=whole_dur={c['duration']:.3f}", "-t", f"{c['duration']:.3f}",
+             "-af", af, "-t", f"{c['duration']:.3f}",
              "-c:v", "libx264", "-preset", "veryfast", "-crf", "20", "-g", str(fps * 2), "-c:a", "aac", "-b:a", "160k", "-ar", "48000",
              "-video_track_timescale", "90000", "-movflags", "+faststart", "-threads", os.environ.get("LIVEAI_FFMPEG_THREADS", "2"), str(tmp)]
     r = subprocess.run(args, capture_output=True, text=True, timeout=max(300, int(c["duration"] * 30)))
