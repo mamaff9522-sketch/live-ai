@@ -286,14 +286,68 @@ def _units(s: str) -> int:
     return sum(1 for ch in s if ch not in THAI_MARKS)
 
 
+_THBRK = None
+
+
+def thai_words(text: str) -> list[str]:
+    """Splits Thai text into words with libthai's dictionary (the same word breaker GNOME/Pango use).
+    Returns [text] unchanged when libthai is not installed."""
+    global _THBRK
+    if not re.search(r"[\u0E00-\u0E7F]", text):
+        return [text]
+    try:
+        import ctypes
+        import ctypes.util
+        if _THBRK is None:
+            lib = ctypes.CDLL(ctypes.util.find_library("thai") or "libthai.so.0")
+            lib.th_brk_new.restype = ctypes.c_void_p
+            lib.th_brk_new.argtypes = [ctypes.c_char_p]
+            lib.th_brk_find_breaks.restype = ctypes.c_int
+            lib.th_brk_find_breaks.argtypes = [ctypes.c_void_p, ctypes.c_char_p, ctypes.POINTER(ctypes.c_int), ctypes.c_size_t]
+            brk = lib.th_brk_new(None)
+            _THBRK = (lib, brk) if brk else False
+        if not _THBRK:
+            return [text]
+        lib, brk = _THBRK
+        raw = text.encode("tis_620", errors="replace")          # one byte per character, so positions match
+        pos = (ctypes.c_int * (len(raw) + 1))()
+        n = lib.th_brk_find_breaks(brk, raw, pos, len(raw) + 1)
+        cuts = [0] + [pos[i] for i in range(max(0, n)) if 0 < pos[i] < len(text)] + [len(text)]
+        return [text[a:b] for a, b in zip(cuts, cuts[1:]) if b > a]
+    except Exception:
+        _THBRK = False
+        return [text]
+
+
 def wrap_thai(text: str, max_units: int) -> str:
     """Thai has no spaces between words, and libass only wraps at spaces, so long lines would run
-    off the screen. Break at spaces when possible, otherwise between character clusters (never
-    before a tone mark/vowel sign, never right after a leading vowel)."""
+    off the screen. Break at spaces when possible, then between Thai words (libthai dictionary),
+    and only as a last resort between character clusters (never before a tone mark/vowel sign,
+    never right after a leading vowel)."""
     out = []
     for para in text.split("\n"):
         line = ""
-        for word in para.split(" "):
+        pieces = []
+        for chunk in para.split(" "):
+            if _units(chunk) > max_units:
+                ws = thai_words(chunk)
+                pieces.extend([("", w) for w in ws[:1]] + [("~", w) for w in ws[1:]])   # "~": glue without a space
+            else:
+                pieces.append(("", chunk))
+        merged: list[str] = []
+        for glue, w in pieces:
+            if glue == "~" and merged:
+                cand = merged[-1] + w
+                if _units(cand) <= max_units:
+                    merged[-1] = cand
+                    continue
+                merged.append("\u2060" + w)                    # word joiner marks "no space before this"
+            else:
+                merged.append(w)
+        for word in merged:
+            nospace = word.startswith("\u2060")
+            word = word.lstrip("\u2060")
+            cand = (line + ("" if nospace else " ") + word) if line else word
             cand = (line + " " + word) if line else word
             if _units(cand) <= max_units:
                 line = cand

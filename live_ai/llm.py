@@ -312,9 +312,9 @@ class LLMClient:
         except Exception:
             return None
 
-    def complete_json(self, messages: list[dict], schema: dict, max_tokens: int = 1200) -> dict:
+    def complete_json(self, messages: list[dict], schema: dict, max_tokens: int = 1200, temperature: float = 0.1) -> dict:
         """One non-streamed reply forced to match a JSON schema (llama.cpp turns it into a grammar)."""
-        body = {"messages": messages, "stream": False, "temperature": 0.1, "top_p": 0.9, "top_k": 20,
+        body = {"messages": messages, "stream": False, "temperature": temperature, "top_p": 0.9, "top_k": 20,
                 "max_tokens": max_tokens, "chat_template_kwargs": {"enable_thinking": False},
                 "response_format": {"type": "json_schema", "json_schema": {"name": "plan", "schema": schema}}}
         req = urllib.request.Request(self.server.url + "/v1/chat/completions", json.dumps(body).encode(),

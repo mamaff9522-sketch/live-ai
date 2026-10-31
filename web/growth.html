@@ -1,0 +1,222 @@
+<!doctype html>
+<html lang="th">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>เพิ่มผู้ติดตามเพจ</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans+Thai:wght@400;500;600&family=IBM+Plex+Mono&display=swap" rel="stylesheet">
+<style>
+:root{--bg:#f6f5f1;--panel:#fff;--ink:#1d1f1e;--muted:#6b6f6c;--line:#e3e1da;--accent:#0f7b5f;--accent-ink:#fff;--soft:#e7f2ee;--warn:#a5481b;--warn-soft:#fbeee6}
+@media (prefers-color-scheme:dark){:root:not([data-theme=light]){--bg:#121514;--panel:#1a1e1c;--ink:#e6e9e7;--muted:#9aa29d;--line:#2a302d;--accent:#3bb38d;--accent-ink:#0b1310;--soft:#1d2b26;--warn:#e08a5c;--warn-soft:#2c1f18}}
+:root[data-theme=dark]{--bg:#121514;--panel:#1a1e1c;--ink:#e6e9e7;--muted:#9aa29d;--line:#2a302d;--accent:#3bb38d;--accent-ink:#0b1310;--soft:#1d2b26;--warn:#e08a5c;--warn-soft:#2c1f18}
+*{box-sizing:border-box}
+html,body{margin:0;background:var(--bg);color:var(--ink);font:16px/1.6 "IBM Plex Sans Thai",system-ui,sans-serif}
+button,input,textarea,select{font:inherit;color:inherit}
+.wrap{max-width:860px;margin:0 auto;padding:0 16px 40px}
+header{display:flex;align-items:center;gap:10px;padding:10px 16px;border-bottom:1px solid var(--line);background:var(--panel);position:sticky;top:0;z-index:2}
+header h1{font-size:18px;margin:0;font-weight:600;flex:1}
+a{color:var(--accent)}
+.card{background:var(--panel);border:1px solid var(--line);border-radius:14px;padding:16px;margin-top:14px}
+.card h2{font-size:16px;margin:0 0 10px;font-weight:600}
+.muted{color:var(--muted);font-size:14px}
+.big{font-size:40px;font-weight:600;line-height:1.1;font-variant-numeric:tabular-nums}
+.bar{height:14px;background:var(--soft);border-radius:999px;overflow:hidden;margin:10px 0 6px}
+.bar>div{height:100%;background:var(--accent);border-radius:999px;min-width:3px}
+.row{display:flex;gap:10px;flex-wrap:wrap;align-items:center}
+.kpis{display:grid;grid-template-columns:repeat(auto-fit,minmax(130px,1fr));gap:10px;margin-top:10px}
+.kpi{background:var(--bg);border-radius:10px;padding:10px}.kpi b{display:block;font-size:20px;font-variant-numeric:tabular-nums}
+.btn{background:var(--accent);color:var(--accent-ink);border:0;border-radius:10px;padding:9px 14px;cursor:pointer;font-weight:600}
+.btn2{background:transparent;border:1px solid var(--line);border-radius:10px;padding:7px 12px;cursor:pointer}
+.btn:disabled,.btn2:disabled{opacity:.5}
+.warn{background:var(--warn-soft);color:var(--warn);border:1px solid var(--warn);border-radius:10px;padding:10px 12px;margin-top:14px}
+input[type=text],input[type=number],input[type=password],textarea,select{width:100%;padding:9px 12px;border:1px solid var(--line);border-radius:10px;background:var(--bg)}
+textarea{min-height:80px;resize:vertical}
+label{display:block;margin:10px 0 4px;font-size:14px;color:var(--muted)}
+.item{border-top:1px solid var(--line);padding:12px 0;display:flex;gap:12px}
+.item:first-child{border-top:0}
+.item .media{width:96px;flex:none}
+.item .media img,.item .media video{width:96px;border-radius:8px;background:#000;display:block}
+.item .body{flex:1;min-width:0}
+.cap{white-space:pre-wrap;font-size:14px;max-height:7.5em;overflow:hidden}
+.tag{display:inline-block;font-size:12px;border-radius:999px;padding:1px 8px;background:var(--soft);margin-right:6px}
+.tag.bad{background:var(--warn-soft);color:var(--warn)}
+table{width:100%;border-collapse:collapse;font-size:14px}td,th{text-align:left;padding:6px 4px;border-bottom:1px solid var(--line)}th{color:var(--muted);font-weight:500}
+td.n{text-align:right;font-variant-numeric:tabular-nums}
+ol{padding-left:20px;margin:6px 0}ol li{margin:4px 0}
+ul.plain{padding-left:18px;margin:4px 0}
+svg text{fill:var(--muted);font-size:11px}
+.chk{display:flex;gap:6px;align-items:center;margin:4px 0;color:var(--ink);font-size:15px}
+</style>
+</head>
+<body>
+<header><a href="/" style="text-decoration:none">← แชต</a><h1>เพิ่มผู้ติดตามเพจ</h1><span class="muted" id="upd"></span></header>
+<div class="wrap" id="root"><p class="muted">กำลังโหลด…</p></div>
+<script>
+const $ = (t, a = {}, ...kids) => { const e = document.createElement(t); for (const [k, v] of Object.entries(a)) { if (k.startsWith('on')) e.addEventListener(k.slice(2), v); else if (k === 'class') e.className = v; else if (v !== false && v != null) e.setAttribute(k, v === true ? '' : v); } for (const c of kids.flat()) if (c != null && c !== false) e.append(c); return e; };
+let token = null; try { token = localStorage.getItem('liveai_token'); } catch {}
+const fmt = n => n == null ? '–' : Number(n).toLocaleString('th-TH');
+const when = ts => new Date(ts * 1000).toLocaleString('th-TH', { weekday: 'short', day: 'numeric', month: 'short', hour: '2-digit', minute: '2-digit' });
+async function api(path, opt = {}) {
+  const r = await fetch(path, { ...opt, headers: { 'Content-Type': 'application/json', Authorization: 'Bearer ' + token } });
+  const j = await r.json().catch(() => ({}));
+  if (!r.ok) throw new Error(j.error || r.statusText);
+  return j;
+}
+const root = document.getElementById('root');
+let S = null, editing = false;
+
+async function load() {
+  if (!token) { root.replaceChildren($('div', { class: 'card' }, $('p', {}, 'กรุณาเข้าสู่ระบบที่หน้าแชตก่อน'), $('a', { class: 'btn', href: '/', style: 'text-decoration:none' }, 'ไปหน้าแชต'))); return; }
+  try { S = await api('/api/growth'); } catch (e) { root.replaceChildren($('div', { class: 'warn' }, e.message)); return; }
+  document.getElementById('upd').textContent = new Date().toLocaleTimeString('th-TH', { hour: '2-digit', minute: '2-digit' });
+  if (!editing) render();
+}
+
+// ---------- connect -------------------------------------------------------------------------
+function renderConnect(choose, msg) {
+  const tok = $('textarea', { placeholder: 'วางโทเคน (User หรือ Page access token)', style: 'min-height:90px;font:13px "IBM Plex Mono",monospace' });
+  const appId = $('input', { type: 'text', placeholder: 'App ID (แนะนำ)', inputmode: 'numeric' });
+  const secret = $('input', { type: 'password', placeholder: 'App Secret (แนะนำ ใช้ครั้งเดียว ระบบไม่เก็บ)' });
+  const out = $('div');
+  const go = async pageId => {
+    out.replaceChildren($('p', { class: 'muted' }, 'กำลังตรวจกับ Facebook…'));
+    try {
+      const j = await api('/api/growth/connect', { method: 'POST', body: JSON.stringify({ token: tok.value.trim() || (choose && choose.token), app_id: appId.value.trim(), app_secret: secret.value.trim(), page_id: pageId || '' }) });
+      if (j.choose) { out.replaceChildren($('p', {}, 'บัญชีนี้ดูแลหลายเพจ เลือกเพจที่จะเพิ่มผู้ติดตาม:'), ...j.choose.map(p => $('button', { class: 'btn2', style: 'margin:4px', onclick: () => go(p.id) }, p.name))); return; }
+      out.replaceChildren($('p', {}, `✅ เชื่อมต่อ ${j.page.name} แล้ว (ผู้ติดตาม ${fmt(j.page.followers)} คน)`), ...j.warnings.map(w => $('div', { class: 'warn' }, w)));
+      setTimeout(load, 1500);
+    } catch (e) { out.replaceChildren($('div', { class: 'warn' }, e.message)); }
+  };
+  root.replaceChildren(
+    $('div', { class: 'card' },
+      $('h2', {}, 'เชื่อมต่อเพจ Facebook'),
+      $('p', { class: 'muted' }, 'ใช้ Meta Graph API อย่างเป็นทางการด้วยสิทธิ์ของคุณเอง ระบบโพสต์และอ่านสถิติรวมของเพจเท่านั้น ไม่อ่านข้อมูลส่วนตัวของผู้ติดตาม ไม่ซื้อโฆษณา ไม่ส่งข้อความหาใคร'),
+      $('ol', {},
+        $('li', {}, 'เปิด ', $('a', { href: 'https://developers.facebook.com/tools/explorer/', target: '_blank', rel: 'noopener' }, 'Graph API Explorer'), ' แล้วเลือก Meta App ของคุณ'),
+        $('li', {}, 'กด Add a Permission แล้วเลือก: pages_show_list, pages_read_engagement, pages_manage_posts, read_insights'),
+        $('li', {}, 'กด Generate Access Token แล้วอนุญาตเพจของคุณ'),
+        $('li', {}, 'คัดลอกโทเคนมาวางด้านล่าง พร้อม App ID และ App Secret (อยู่ในหน้า App settings → Basic) เพื่อให้ระบบแลกเป็นโทเคนเพจแบบไม่หมดอายุ')),
+      $('label', {}, 'Access token'), tok,
+      $('label', {}, 'App ID'), appId,
+      $('label', {}, 'App Secret'), secret,
+      $('p', { class: 'muted' }, 'โทเคนเพจถูกเข้ารหัสเก็บบนเซิร์ฟเวอร์ของคุณเท่านั้น App Secret ใช้แลกโทเคนครั้งเดียวแล้วทิ้ง'),
+      $('button', { class: 'btn', onclick: () => go() }, 'เชื่อมต่อ'), out));
+}
+
+// ---------- dashboard ---------------------------------------------------------------------
+function chart(series, goal) {
+  const pts = series.filter(x => x.followers != null);
+  if (pts.length < 2) return $('p', { class: 'muted' }, 'กราฟจะขึ้นเมื่อมีข้อมูลอย่างน้อย 2 วัน (ระบบเก็บยอดทุก 3 ชั่วโมง)');
+  const W = 800, H = 220, P = 34;
+  const ys = pts.map(p => p.followers), lo = Math.min(...ys), hi = Math.max(...ys), span = Math.max(1, hi - lo);
+  const x = i => P + (W - 2 * P) * i / (pts.length - 1), y = v => H - P - (H - 2 * P) * (v - lo) / span;
+  const d = pts.map((p, i) => `${i ? 'L' : 'M'}${x(i).toFixed(1)},${y(p.followers).toFixed(1)}`).join(' ');
+  const svg = document.createElementNS('http://www.w3.org/2000/svg', 'svg');
+  svg.setAttribute('viewBox', `0 0 ${W} ${H}`); svg.setAttribute('width', '100%'); svg.setAttribute('role', 'img');
+  svg.setAttribute('aria-label', 'กราฟจำนวนผู้ติดตามรายวัน');
+  svg.innerHTML = `<line x1="${P}" y1="${H - P}" x2="${W - P}" y2="${H - P}" stroke="var(--line)"/>` +
+    `<path d="${d}" fill="none" stroke="var(--accent)" stroke-width="3" stroke-linejoin="round" stroke-linecap="round"/>` +
+    pts.map((p, i) => `<circle cx="${x(i)}" cy="${y(p.followers)}" r="3.5" fill="var(--accent)"><title>${p.day}: ${p.followers.toLocaleString('th-TH')}</title></circle>`).join('') +
+    `<text x="${P}" y="${H - 10}">${pts[0].day}</text><text x="${W - P}" y="${H - 10}" text-anchor="end">${pts[pts.length - 1].day}</text>` +
+    `<text x="4" y="${y(hi) + 4}">${hi.toLocaleString('th-TH')}</text><text x="4" y="${y(lo) + 4}">${lo.toLocaleString('th-TH')}</text>`;
+  return svg;
+}
+
+function itemEl(it) {
+  const st = { planned: ['รอเขียน', ''], ready: ['พร้อมโพสต์', ''], posting: ['กำลังโพสต์', ''], posted: ['โพสต์แล้ว', ''], failed: ['ไม่สำเร็จ', 'bad'], skipped: ['ข้าม', 'bad'] }[it.status] || [it.status, ''];
+  let media = null;
+  if (it.media_url) media = /\.mp4|video/.test(it.kind) || it.kind.startsWith('reel') ? $('video', { src: it.media_url, controls: true, playsinline: true, preload: 'metadata' }) : $('img', { src: it.media_url, alt: 'ภาพประกอบโพสต์', loading: 'lazy' });
+  const m = it.metrics || {};
+  const acts = [];
+  if (it.status === 'ready') acts.push($('button', { class: 'btn2', onclick: () => act(it.id, 'post') }, 'โพสต์เลย'));
+  if (['planned', 'ready', 'failed'].includes(it.status)) acts.push($('button', { class: 'btn2', onclick: () => act(it.id, 'regenerate') }, 'เขียนใหม่'));
+  if (['planned', 'ready'].includes(it.status)) acts.push($('button', { class: 'btn2', onclick: () => act(it.id, 'skip') }, 'ข้าม'));
+  return $('div', { class: 'item' },
+    $('div', { class: 'media' }, media),
+    $('div', { class: 'body' },
+      $('div', {}, $('span', { class: 'tag' + (st[1] ? ' bad' : '') }, st[0]), $('span', { class: 'tag' }, it.kind_th), $('span', { class: 'muted' }, when(it.posted || it.due))),
+      it.content ? $('div', { class: 'cap' }, it.content.caption) : $('div', { class: 'muted' }, 'AI จะเขียนประมาณ 2 ชั่วโมงก่อนถึงเวลา'),
+      it.status === 'posted' ? $('div', { class: 'muted' }, `👍 ${fmt(m.reactions)} · 💬 ${fmt(m.comments)} · ↗ ${fmt(m.shares)}` + (m.views != null ? ` · 👁 ${fmt(m.views)}` : '') + (it.score != null ? ` · คะแนน ${it.score}` : ' · รอวัดผล'), it.permalink ? [' · ', $('a', { href: it.permalink, target: '_blank', rel: 'noopener' }, 'ดูโพสต์')] : null) : null,
+      it.error ? $('div', { class: 'muted', style: 'color:var(--warn)' }, it.error) : null,
+      acts.length ? $('div', { class: 'row', style: 'margin-top:6px' }, acts) : null));
+}
+async function act(id, a) { try { await api(`/api/growth/items/${id}/${a}`, { method: 'POST' }); } catch (e) { alert(e.message); } setTimeout(load, 800); }
+
+function render() {
+  if (!S.connected) return renderConnect();
+  const st = S.settings, perf = S.performance;
+  const upcoming = S.items.filter(i => ['planned', 'ready', 'posting'].includes(i.status)).sort((a, b) => a.due - b.due);
+  const done = S.items.filter(i => !['planned', 'ready', 'posting'].includes(i.status)).sort((a, b) => (b.posted || b.due) - (a.posted || a.due));
+  const kindRows = Object.entries(S.kinds_th).map(([k, th]) => { const p = perf.kinds[k]; return $('tr', {}, $('td', {}, th), $('td', { class: 'n' }, p ? p.n : 0), $('td', { class: 'n' }, p ? p.avg : '–')); });
+  const bestHours = Object.entries(perf.hours).filter(([, v]) => v.n >= 1).sort((a, b) => b[1].avg - a[1].avg).slice(0, 3).map(([h]) => `${h}:00`);
+  const plan = S.plan;
+  root.replaceChildren(
+    S.page.status !== 'ok' ? $('div', { class: 'warn' }, '⚠️ ', S.page.last_error || 'เชื่อมต่อเพจมีปัญหา', S.page.status === 'token' ? [' ', $('button', { class: 'btn2', onclick: () => renderConnect() }, 'เชื่อมต่อใหม่')] : null) : null,
+    $('div', { class: 'card' },
+      $('div', { class: 'muted' }, S.page.link ? $('a', { href: S.page.link, target: '_blank', rel: 'noopener' }, S.page.name) : S.page.name, S.page.category ? ' · ' + S.page.category : ''),
+      $('div', { class: 'big' }, fmt(S.followers), $('span', { class: 'muted', style: 'font-size:18px;font-weight:400' }, ` / ${fmt(S.goal)} ผู้ติดตาม`)),
+      $('div', { class: 'bar', role: 'progressbar', 'aria-valuenow': Math.round(S.progress * 100), 'aria-valuemin': 0, 'aria-valuemax': 100 }, $('div', { style: `width:${(S.progress * 100).toFixed(2)}%` })),
+      $('div', { class: 'muted' }, `${(S.progress * 100).toFixed(2)}% ของเป้าหมาย · เหลืออีก ${fmt(Math.max(0, S.goal - S.followers))} คน`),
+      $('div', { class: 'kpis' },
+        $('div', { class: 'kpi' }, $('span', { class: 'muted' }, 'เพิ่มต่อวัน (7 วัน)'), $('b', {}, S.per_day == null ? 'กำลังเก็บข้อมูล' : (S.per_day > 0 ? '+' : '') + fmt(S.per_day))),
+        $('div', { class: 'kpi' }, $('span', { class: 'muted' }, 'ถึงเป้าในอีก'), $('b', {}, S.days_to_goal ? `~${fmt(S.days_to_goal)} วัน` : '–')),
+        $('div', { class: 'kpi' }, $('span', { class: 'muted' }, 'โพสต์ที่วัดผลแล้ว'), $('b', {}, fmt(perf.posts))),
+        $('div', { class: 'kpi' }, $('span', { class: 'muted' }, 'ช่วงเวลาที่ดีที่สุด'), $('b', {}, bestHours.join(', ') || '–'))),
+      $('p', { class: 'muted', style: 'margin-bottom:0' }, 'ตัวเลขทั้งหมดมาจาก Facebook จริง คาดการณ์วันถึงเป้าจากอัตราเติบโต 7 วันล่าสุด จึงเปลี่ยนได้ตามผลงานจริง')),
+    $('div', { class: 'card' }, $('h2', {}, 'ผู้ติดตามรายวัน'), chart(S.series, S.goal)),
+    $('div', { class: 'card' }, $('h2', {}, `คิวโพสต์ถัดไป (${upcoming.length})`),
+      $('p', { class: 'muted' }, st.auto ? `โพสต์อัตโนมัติวันละไม่เกิน ${st.posts_per_day} ครั้ง ห่างกันอย่างน้อย ${st.min_gap_hours} ชั่วโมง ช่วง ${st.window[0]}:00–${st.window[1]}:00` : 'ปิดโพสต์อัตโนมัติอยู่'),
+      upcoming.length ? upcoming.map(itemEl) : $('p', { class: 'muted' }, 'ระบบจะวางแผนโพสต์ให้ภายในไม่กี่นาที'),
+      $('div', { class: 'row', style: 'margin-top:8px' }, $('span', { class: 'muted' }, 'สร้างเพิ่มตอนนี้:'), Object.entries(S.kinds_th).map(([k, th]) => $('button', { class: 'btn2', onclick: async () => { try { await api('/api/growth/items', { method: 'POST', body: JSON.stringify({ kind: k }) }); setTimeout(load, 800); } catch (e) { alert(e.message); } } }, th)))),
+    $('div', { class: 'card' }, $('h2', {}, 'ผลลัพธ์แต่ละรูปแบบ'),
+      $('table', {}, $('tr', {}, $('th', {}, 'รูปแบบ'), $('th', { class: 'n' }, 'โพสต์'), $('th', { class: 'n' }, 'คะแนนเฉลี่ย')), kindRows),
+      $('p', { class: 'muted' }, 'คะแนน = (รีแอคชัน + 2×คอมเมนต์ + 3×แชร์ + ยอดดู/50) ต่อผู้ติดตาม 1,000 คน ระบบจะเลือกรูปแบบและเวลาที่ได้คะแนนดีบ่อยขึ้น และยังลองแบบอื่น 20% เพื่อไม่พลาดสิ่งใหม่')),
+    $('div', { class: 'card' }, $('h2', {}, 'วิเคราะห์กลุ่มเป้าหมายและแผนโปรโมต'),
+      plan ? [
+        $('div', { class: 'muted' }, `วิเคราะห์เมื่อ ${when(S.plan_created)} จากโพสต์ที่วัดผลแล้ว ${plan.based_on?.posts_measured ?? 0} โพสต์ ข้อมูล ${plan.based_on?.days_of_data ?? 0} วัน`),
+        $('h2', { style: 'margin-top:10px' }, 'กลุ่มเป้าหมาย'), $('ul', { class: 'plain' }, plan.audience.map(x => $('li', {}, x))),
+        $('h2', {}, 'แนวคอนเทนต์หลัก'), $('ul', { class: 'plain' }, plan.content_pillars.map(x => $('li', {}, x))),
+        $('h2', {}, 'ช่องทางโปรโมตฟรี'), $('ul', { class: 'plain' }, plan.channels.map(x => $('li', {}, x))),
+        $('h2', {}, 'ปรับสัปดาห์นี้'), $('ul', { class: 'plain' }, plan.this_week.map(x => $('li', {}, x)))]
+        : $('p', { class: 'muted' }, 'ยังไม่มีบทวิเคราะห์ (ระบบทำให้อัตโนมัติทุกสัปดาห์)'),
+      $('button', { class: 'btn2', onclick: async e => { e.target.disabled = true; e.target.textContent = 'AI กำลังวิเคราะห์…'; try { await api('/api/growth/analyze', { method: 'POST' }); } catch (x) { alert(x.message); } load(); } }, 'วิเคราะห์ใหม่ตอนนี้'),
+      S.trends.length ? [$('h2', { style: 'margin-top:14px' }, 'คนไทยค้นหามากวันนี้ (Google Trends)'), $('p', { class: 'muted' }, S.trends.map(t => t.title).join(' · ')), $('p', { class: 'muted' }, 'AI จะหยิบมาใช้เฉพาะเมื่อเข้ากับเรื่องของเพจอย่างเป็นธรรมชาติ')] : null),
+    $('div', { class: 'card' }, $('h2', {}, `โพสต์ล่าสุด (${done.length})`), done.length ? done.slice(0, 30).map(itemEl) : $('p', { class: 'muted' }, 'ยังไม่มีโพสต์')),
+    settingsCard(st),
+    S.unavailable_metrics.length ? $('p', { class: 'muted' }, 'สถิติที่ Facebook ไม่ให้ใช้แล้วหรือยังไม่มีสิทธิ์: ' + S.unavailable_metrics.join(', ')) : null);
+}
+
+function settingsCard(st) {
+  const auto = $('input', { type: 'checkbox', checked: st.auto });
+  const ppd = $('input', { type: 'number', min: 1, max: 6, value: st.posts_per_day });
+  const gap = $('input', { type: 'number', min: 2, max: 12, step: 0.5, value: st.min_gap_hours });
+  const w0 = $('input', { type: 'number', min: 0, max: 23, value: st.window[0] }), w1 = $('input', { type: 'number', min: 1, max: 24, value: st.window[1] });
+  const goal = $('input', { type: 'number', min: 100, value: st.goal });
+  const story = $('textarea', { placeholder: 'เล่าเรื่องของเพจ: ชื่อเรื่อง ตัวละคร ความสัมพันธ์ จุดเด่น แนวอารมณ์ (ยิ่งละเอียด AI ยิ่งเขียนตรงเรื่อง)' }, st.story);
+  const label = $('input', { type: 'checkbox', checked: st.ai_label });
+  const kinds = Object.fromEntries(Object.keys(S.kinds_th).map(k => [k, $('input', { type: 'checkbox', checked: st.kinds[k] })]));
+  const msg = $('span', { class: 'muted' });
+  [auto, ppd, gap, w0, w1, goal, story, label, ...Object.values(kinds)].forEach(e => { e.addEventListener('focus', () => editing = true); e.addEventListener('input', () => editing = true); });
+  return $('div', { class: 'card' }, $('h2', {}, 'ตั้งค่า'),
+    $('label', { class: 'chk' }, auto, 'โพสต์อัตโนมัติตามเวลา'),
+    $('div', { class: 'kpis' }, $('div', {}, $('label', {}, 'โพสต์ต่อวัน (สูงสุด 6)'), ppd), $('div', {}, $('label', {}, 'ห่างกันอย่างน้อย (ชม.)'), gap),
+      $('div', {}, $('label', {}, 'เริ่มโพสต์ได้ (โมง)'), w0), $('div', {}, $('label', {}, 'หยุดโพสต์ (โมง)'), w1), $('div', {}, $('label', {}, 'เป้าหมายผู้ติดตาม'), goal)),
+    $('label', {}, 'รูปแบบโพสต์ที่ใช้'), Object.entries(kinds).map(([k, el]) => $('label', { class: 'chk' }, el, S.kinds_th[k])),
+    $('p', { class: 'muted' }, S.clip_sources.length ? `Reels ตัดจากคลิป: ใช้วิดีโอที่ตัดต่อเสร็จในสตูดิโอ ${S.clip_sources.length} เรื่อง` : 'Reels ตัดจากคลิป: ยังไม่มีวิดีโอที่ตัดต่อเสร็จในสตูดิโอ ระบบจะใช้ Reels เล่าเรื่องแทน'),
+    $('label', {}, 'เรื่องของเพจ'), story,
+    $('label', { class: 'chk' }, label, 'ระบุว่า Reels สร้างด้วย AI (แนะนำ ตามนโยบาย Meta)'),
+    $('div', { class: 'row', style: 'margin-top:10px' },
+      $('button', { class: 'btn', onclick: async () => {
+        try { await api('/api/growth/settings', { method: 'PATCH', body: JSON.stringify({ auto: auto.checked, posts_per_day: +ppd.value, min_gap_hours: +gap.value, window: [+w0.value, +w1.value], goal: +goal.value, story: story.value, ai_label: label.checked, kinds: Object.fromEntries(Object.entries(kinds).map(([k, e]) => [k, e.checked])) }) });
+          msg.textContent = 'บันทึกแล้ว ระบบวางแผนใหม่ตามค่าที่ตั้ง'; editing = false; setTimeout(load, 800);
+        } catch (e) { msg.textContent = e.message; } } }, 'บันทึก'),
+      $('button', { class: 'btn2', onclick: async () => { await api('/api/growth/refresh', { method: 'POST' }).catch(e => alert(e.message)); load(); } }, 'อัปเดตสถิติตอนนี้'),
+      $('button', { class: 'btn2', onclick: async () => { if (confirm('ยกเลิกการเชื่อมต่อเพจ? โพสต์ที่รออยู่จะถูกยกเลิก (สถิติเดิมยังอยู่)')) { await api('/api/growth/connect', { method: 'DELETE' }); load(); } } }, 'ยกเลิกการเชื่อมต่อ'), msg));
+}
+
+load();
+setInterval(() => { if (!editing && document.visibilityState === 'visible') load(); }, 30000);
+</script>
+</body>
+</html>

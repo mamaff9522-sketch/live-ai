@@ -26,6 +26,8 @@ from .assistant import Assistant
 from .editor import EditError, Editor
 from .media import MediaError, MediaStore
 from .studio.pipeline import Studio
+from .growth.engine import Growth
+from .growth.meta import MetaError, thai_reason
 from .config import Settings
 from .llm import LlamaServer
 from .store import NotFound, Store
@@ -48,6 +50,9 @@ class App:
         self.media.start_cleanup()
         self.editor = Editor(self.store, self.media, self.assistant)
         self.studio = Studio(self.store, self.media, s, self.assistant)
+        self.growth = Growth(self.store, self.media, s, self.assistant)
+        if os.environ.get("LIVEAI_GROWTH_LOOP", "1") == "1":
+            self.growth.start()
         self.max_upload = int(os.environ.get("LIVEAI_MAX_UPLOAD_MB", "500")) * 2**20
         self.cpu = sysinfo.CpuMeter()
         self.started = time.time()
@@ -146,6 +151,8 @@ class Handler(BaseHTTPRequestHandler):
                     self._err(404, "ไม่พบข้อมูล")
                 except (MediaError, EditError) as e:
                     self._err(400, str(e))
+                except MetaError as e:
+                    self._err(400, thai_reason(e))
                 except (ValueError, json.JSONDecodeError) as e:
                     self._err(400, f"คำขอไม่ถูกต้อง: {e}")
                 except (BrokenPipeError, ConnectionResetError):
@@ -480,6 +487,61 @@ class Handler(BaseHTTPRequestHandler):
         p = backup.snapshot(self.app.s, "manual")
         saved = persist.save(self.app.s.db_path, "manual")
         self._send(200, {"file": p.name if p else None, "saved_remote": saved})
+
+    # Facebook Page growth --------------------------------------------------------------
+    @route("GET", "/growth")
+    def growth_page(self):
+        self._send(200, ctype="text/html; charset=utf-8", body=(WEB_DIR / "growth.html").read_bytes())
+
+    @route("GET", "/api/growth")
+    def growth_state(self):
+        if (u := self._auth()):
+            self._send(200, self.app.growth.state(u["id"]))
+
+    @route("POST", "/api/growth/connect")
+    def growth_connect(self):
+        if (u := self._auth()):
+            d = self._json()
+            self._send(200, self.app.growth.connect(u["id"], str(d.get("token", "")), str(d.get("app_id", "")),
+                                                    str(d.get("app_secret", "")), str(d.get("page_id", ""))))
+
+    @route("DELETE", "/api/growth/connect")
+    def growth_disconnect(self):
+        if (u := self._auth()):
+            self.app.growth.disconnect(u["id"])
+            self._send(200, {"ok": True})
+
+    @route("PATCH", "/api/growth/settings")
+    def growth_settings(self):
+        if (u := self._auth()):
+            self._send(200, self.app.growth.update_settings(u["id"], self._json()))
+
+    @route("POST", "/api/growth/analyze")
+    def growth_analyze(self):
+        if (u := self._auth()):
+            try:
+                self._send(200, self.app.growth.analyze(u["id"]))
+            except RuntimeError as e:
+                self._err(503, str(e))
+
+    @route("POST", "/api/growth/refresh")
+    def growth_refresh(self):
+        if (u := self._auth()):
+            self.app.growth.snapshot(u["id"])
+            self.app.growth.measure_posts(u["id"])
+            self._send(200, {"ok": True})
+
+    @route("POST", "/api/growth/items")
+    def growth_new_item(self):
+        if (u := self._auth()):
+            self._send(201, {"id": self.app.growth.create_now(u["id"], str(self._json().get("kind", "")))})
+
+    @route("POST", r"/api/growth/items/(\d+)/(post|regenerate|skip)")
+    def growth_item_action(self, iid, action):
+        if (u := self._auth()):
+            {"post": self.app.growth.post_now, "regenerate": self.app.growth.regenerate,
+             "skip": self.app.growth.skip}[action](u["id"], int(iid))
+            self._send(200, {"ok": True})
 
 
 def serve(s: Settings | None = None, start_model: bool = True) -> tuple[ThreadingHTTPServer, App]:

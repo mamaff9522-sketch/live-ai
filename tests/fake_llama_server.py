@@ -42,6 +42,29 @@ class H(BaseHTTPRequestHandler):
             with open(LOG, "a", encoding="utf-8") as f:
                 f.write(json.dumps(body, ensure_ascii=False) + "\n")
         last = body["messages"][-1]["content"]
+        props = (body.get("response_format") or {}).get("json_schema", {}).get("schema", {}).get("properties", {})
+        if "caption" in props or "audience" in props:          # Facebook page growth (posts / plan)
+            import random as _r
+            words = ["แค้น", "รัก", "ทรยศ", "ความลับ", "แม่สามี", "ลูกสะใภ้", "น้ำตา", "หักหลัง", "คืนนั้น", "พินัยกรรม", "ตระกูล",
+                     "บ้านใหญ่", "สร้อยคอ", "จดหมาย", "งานแต่ง", "โรงพยาบาล", "ฝนตก", "สัญญา", "ลูกชาย", "มรดก", "ทะเล", "ภาพถ่าย",
+                     "เงินกู้", "แหวน", "ประตูหลัง", "เสียงร้อง", "รถคันแดง", "ไร่องุ่น", "เพื่อนสนิท", "คำโกหก"]
+            story = " ".join(_r.sample(words, 12)) + f" {_r.randint(100000, 999999)}"
+            if "caption" in props:
+                out = {"caption": f"เธอไม่เคยรู้เลยว่า {story} ถ้าเป็นคุณจะทำอย่างไร? กดติดตามเพจเพื่อดูตอนต่อไป",
+                       "lines": [f"ความลับของ {story}", "A ให้อภัย", "B เอาคืน"], "hashtags": ["ละครสั้น", "ดราม่า"]}
+            else:
+                out = {"audience": ["ผู้หญิงวัยทำงานที่ชอบละครดราม่า", "คนดูคลิปสั้นช่วงเย็น"],
+                       "content_pillars": ["ฉากเด็ดจากละคร", "คำถามชวนคุย"],
+                       "channels": ["แชร์ Reels ไป TikTok", "ปักหมุดโพสต์ที่ดีที่สุด"],
+                       "this_week": ["กำลังเก็บข้อมูล", "โพสต์ Reels ช่วงสองทุ่ม"]}
+            b = json.dumps({"choices": [{"message": {"role": "assistant", "content": json.dumps(out, ensure_ascii=False)}}]},
+                           ensure_ascii=False).encode()
+            self.send_response(200)
+            self.send_header("Content-Type", "application/json")
+            self.send_header("Content-Length", str(len(b)))
+            self.end_headers()
+            self.wfile.write(b)
+            return
         if "response_format" in body:
             plan = os.environ.get("FAKE_PLAN") or json.dumps({
                 "clips": [{"file": 1, "start": 0, "end": 2, "speed": 1, "mute": False},

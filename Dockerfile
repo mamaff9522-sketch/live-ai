@@ -32,7 +32,7 @@ RUN if [ "$(uname -m)" = "x86_64" ]; then CPU="-DGGML_AVX=ON -DGGML_AVX2=ON -DGG
     && cmake --build /src/build --target whisper-cli -j"$(nproc)" && cp /src/build/bin/whisper-cli /whisper-cli
 
 FROM python:3.12-slim
-RUN apt-get update && apt-get install -y --no-install-recommends libgomp1 ca-certificates ffmpeg fonts-tlwg-loma-otf \
+RUN apt-get update && apt-get install -y --no-install-recommends libgomp1 ca-certificates ffmpeg fonts-tlwg-loma-otf libthai0 \
     && rm -rf /var/lib/apt/lists/* && useradd -m -u 1000 user
 COPY --from=build /out/ /opt/llama/
 COPY --from=whisper /whisper-cli /opt/whisper/whisper-cli
