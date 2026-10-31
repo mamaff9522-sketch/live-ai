@@ -207,7 +207,10 @@ jobs:
           TAG=$(curl -fsSL -H "Authorization: Bearer $GH_TOKEN" https://api.github.com/repos/ggml-org/llama.cpp/releases/latest | jq -r .tag_name)
           echo "LLAMA_TAG=$TAG" >> "$GITHUB_ENV"
       - name: Build image
-        run: docker build --build-arg LLAMA_TAG="$LLAMA_TAG" -t live-ai .
+        run: |
+          mkdir -p dreport
+          set -o pipefail
+          docker build --progress=plain --build-arg LLAMA_TAG="$LLAMA_TAG" -t live-ai . 2>&1 | tee dreport/build.log | tail -40
       - name: Run on 2 CPUs and ask one Thai question
         run: |
           docker run -d --name liveai --cpus 2 -p 7860:7860 -e LIVEAI_THREADS=2 live-ai
