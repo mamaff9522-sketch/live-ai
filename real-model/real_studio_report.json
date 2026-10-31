@@ -3,7 +3,7 @@
     {
       "name": "อัปโหลด ZIP 12 ไฟล์",
       "passed": true,
-      "detail": "{'added': 12, 'skipped': [], 'project': {'id': 1, 'name': 'CI เสียงพูดไทยจริง', 'status': 'draft', 'message': '', 'created': 1793466776.9138632, 'updated': 1793466776.9169562, 'pause': 0, 'settings': {'aspect': '9:16', 'height': 720, 'fps': 30, 'subtitles': 'burn', 'audio': 'dialogue_only', 'match_light': False, 'speaker_in_subs': False, 'range_from': None, 'range_to': None}, 'agents': {'1': {'name': 'ผู้กำกับใหญ่', 'en': 'Master Director', 'status': 'waiting', 'message': '', 'updated': 0}, '2': {'name': 'วิเคราะห์บทละคร', 'en': 'Script Analyzer', 'status': 'waiting', 'message': '', 'updated': 0}, '3': {'name': 'จัดการฉากและลำดับเรื่อง', 'en': 'Scene Manager', 'status': 'waiting', 'message': '', 'updated': 0}, '4': {'name': 'วิเคราะห์ภาพวิดีโอ', 'en': 'Visual Analyzer', 'status': 'waiting'"
+      "detail": "{'added': 12, 'skipped': [], 'project': {'id': 1, 'name': 'CI เสียงพูดไทยจริง', 'status': 'draft', 'message': '', 'created': 1793472105.087328, 'updated': 1793472105.090548, 'pause': 0, 'settings': {'aspect': '9:16', 'height': 720, 'fps': 30, 'subtitles': 'burn', 'audio': 'dialogue_only', 'match_light': False, 'speaker_in_subs': False, 'range_from': None, 'range_to': None}, 'agents': {'1': {'name': 'ผู้กำกับใหญ่', 'en': 'Master Director', 'status': 'waiting', 'message': '', 'updated': 0}, '2': {'name': 'วิเคราะห์บทละคร', 'en': 'Script Analyzer', 'status': 'waiting', 'message': '', 'updated': 0}, '3': {'name': 'จัดการฉากและลำดับเรื่อง', 'en': 'Scene Manager', 'status': 'waiting', 'message': '', 'updated': 0}, '4': {'name': 'วิเคราะห์ภาพวิดีโอ', 'en': 'Visual Analyzer', 'status': 'waiting', "
     },
     {
       "name": "รอบ 1: ถอดเสียงไทยจริงและจับคู่คลิปกับช็อตถูกต้อง",
@@ -23,7 +23,7 @@
     {
       "name": "รอบ 1: พบคลิปซ้ำ",
       "passed": true,
-      "detail": "[{'type': 'extra', 'clip': 'e3cf7a6fca06d432a36a6a6c', 'message': 'คลิป “download_715917.mp4” ไม่มีเสียงพูด และไม่มีช็อตเงียบที่ว่างให้ใส่ — อาจเป็นคลิปเกิน'}, {'type': 'duplicate', 'clip': 'f1b9d7af0a1613ee19ab548e', 'of': '3c6b63bb25c7e000d88ac00a', 'message': 'คลิป “same_again.mp4” เป็นไฟล์เดียวกับ “download_998485.mp4” จะไม่ถูกใช้ซ้ำ'}, {'type': 'continuity', 'clip': '3d15bc74ba10a49e850ba423', 'message': 'รอยต่อ คลิป 006 → คลิป 008 ภาพเปลี่ยนมาก (คล้ายกัน 0%) ทั้งที่อยู่ฉากเดียวกัน — ตรวจหน้า/ชุด/สถานที่ ว่าต่อเนื่องหรือไม่'}, {'type': 'continuity', 'clip': '4e2d5bcf89b735d8ea57cffd', 'message': 'รอยต่อ คลิป 008 → คลิป 010 ภาพเปลี่ยนมาก (คล้ายกัน 0%) ทั้งที่อยู่ฉากเดียวกัน — ตรวจหน้า/ชุด/สถานที่ ว่าต่อเนื่องหรือไม่'}, {'type': 'light', 'clip': '88af317ccc4a4d6a6c83e42b', 'message': \"“"
+      "detail": "[{'type': 'extra', 'clip': '553bfda2514e5e289e2cb73c', 'message': 'คลิป “download_715917.mp4” ไม่มีเสียงพูด และไม่มีช็อตเงียบที่ว่างให้ใส่ — อาจเป็นคลิปเกิน'}, {'type': 'duplicate', 'clip': '68113ddfd9272271faf77cbe', 'of': '422ecf9ce97e4cbaf9b6da43', 'message': 'คลิป “same_again.mp4” เป็นไฟล์เดียวกับ “download_998485.mp4” จะไม่ถูกใช้ซ้ำ'}, {'type': 'continuity', 'clip': '4d675596997a95a8d84000d4', 'message': 'รอยต่อ คลิป 006 → คลิป 008 ภาพเปลี่ยนมาก (คล้ายกัน 0%) ทั้งที่อยู่ฉากเดียวกัน — ตรวจหน้า/ชุด/สถานที่ ว่าต่อเนื่องหรือไม่'}, {'type': 'continuity', 'clip': '55a024688ef980bd2fa3b72c', 'message': 'รอยต่อ คลิป 008 → คลิป 010 ภาพเปลี่ยนมาก (คล้ายกัน 0%) ทั้งที่อยู่ฉากเดียวกัน — ตรวจหน้า/ชุด/สถานที่ ว่าต่อเนื่องหรือไม่'}, {'type': 'light', 'clip': 'bcfbe2f838e53fae8e6cd4bc', 'message': \"“"
     },
     {
       "name": "รอบ 1: ไม่รายงานว่าเสร็จสมบูรณ์เมื่อยังขาดช็อต",
@@ -38,7 +38,7 @@
     {
       "name": "รอบ 2: ทำต่อจากผลที่บันทึกไว้ (เร็วกว่ารอบแรก)",
       "passed": true,
-      "detail": "33.1s vs 192.4s"
+      "detail": "33.1s vs 198.4s"
     },
     {
       "name": "รอบ 2: ครบ 12 ช็อตตามลำดับ",
@@ -58,7 +58,7 @@
     {
       "name": "คลิปที่ไม่มีเสียงพูด วางถูกที่ด้วยความต่อเนื่องของภาพ (มั่นใจสูง)",
       "passed": true,
-      "detail": "[{'clip': '2fde59a6bb0bc5acbea324b4', 'name': 'download_588269.mp4', 'shots': [4], 'lines': [], 'start': 32.253, 'in': 0.0, 'out': 4.0, 'confidence': 'สูง', 'how': 'silent-visual', 'join_similarity': 1.0}, {'clip': '4e2d5bcf89b735d8ea57cffd', 'name': 'download_299126.mp4', 'shots': [9], 'lines': [], 'start': 57.74, 'in': 0.0, 'out': 4.0, 'confidence': 'สูง', 'how': 'silent-visual', 'join_similarity': 0.0}]"
+      "detail": "[{'clip': '0ff466757a215f08b6ae234d', 'name': 'download_588269.mp4', 'shots': [4], 'lines': [], 'start': 32.253, 'in': 0.0, 'out': 4.0, 'confidence': 'สูง', 'how': 'silent-visual', 'join_similarity': 1.0}, {'clip': '55a024688ef980bd2fa3b72c', 'name': 'download_299126.mp4', 'shots': [9], 'lines': [], 'start': 57.74, 'in': 0.0, 'out': 4.0, 'confidence': 'สูง', 'how': 'silent-visual', 'join_similarity': 0.0}]"
     },
     {
       "name": "AI ดูภาพ (Qwen3.5-2B vision) เลือกช็อตเงียบได้ถูกจากสีในภาพ",
@@ -67,31 +67,31 @@
     }
   ],
   "speech_source": "google/fleurs th_th dev (10 utterances)",
-  "run1_seconds": 192.4,
+  "run1_seconds": 198.4,
   "transcripts": [
     {
       "clip": "download_574354.mp4",
       "expected": "ในเขตส่วนใหญ่มีรถโดยสารแจแปนิสโคสเตอร์ขนาดเล็กซึ่งสะดวกสบายและมั่นคงคอยให้บริการ",
       "heard": "ในเคตส่วนใหญ่มีรถโดยสาร จับปันนิส โคตสติ ขนาดเล็ก ซึ่งสดงสบาย และมันคงคอยให้บริการ",
-      "seconds": 14.9
+      "seconds": 14.8
     },
     {
       "clip": "download_686963.mp4",
       "expected": "สมาชิกของวัฒนธรรมย่อยมักแสดงความเป็นสมาชิกของตนผ่านการใช้สไตล์โดดเด่นที่เป็นสัญลักษณ์เฉพาะ เช่น แฟชั่น กิริยามารยาท และศัพท์เฉพาะกลุ่ม เป็นต้น",
       "heard": "สมาชิคของวัทธาธรรมยอยมาก สาแดงความเป็นสมาชิคของต้นผันการใช้สตายโดดเดนที่เป็นสัยอาชาพอชินฟรชน์ คุยาวรยาตร์ และสับชาพอคุณเป็นต้น",
-      "seconds": 16.1
+      "seconds": 15.9
     },
     {
       "clip": "download_998485.mp4",
       "expected": "ชาวสเปนเป็นผู้ก่อให้เกิดยุคล่าอาณานิคมที่มีระยะเวลายาวนานถึงสามศตวรรษ",
       "heard": "ชาวสเป็นเป็นผู้กอให้เกิดยุกล่าอานานิคมที่มีรายาวเวลาเดานั้น ถึง 3 สตวัติ",
-      "seconds": 14.6
+      "seconds": 14.4
     },
     {
       "clip": "download_919166.mp4",
       "expected": "พวกเขายังคงพยายามหาข้อสรุปว่าการชนครั้งนี้มีขนาดใหญ่แค่ไหนและจะส่งผลกระทบต่อโลกอย่างไรบ้าง",
       "heard": "พวกเขายังคงพยายามหาควัติสรุปว่า คารชนครั้งนี้มีขนาดใหญ่แค่ไหนและจะส่งผลต่อกระทบต่อลูกอย่างไรบ้าง",
-      "seconds": 15.1
+      "seconds": 14.9
     },
     {
       "clip": "download_588269.mp4",
@@ -103,19 +103,19 @@
       "clip": "download_573780.mp4",
       "expected": "น้ำท่วมทะลักเขื่อนกั้นน้ำในส่วนที่มีความกว้าง 100 ฟุต",
       "heard": "น้ำทมทลักขืนกันน้ำในส่วนที่มีความกว้าง 100 ฟูตร",
-      "seconds": 14.1
+      "seconds": 14.0
     },
     {
       "clip": "download_996580.mp4",
       "expected": "ประธานาธิบดีสหรัฐอเมริกาจอร์จ ดับเบิลยู. บุช ได้ยินดีกับการประกาศดังกล่าว",
       "heard": "พิธานาที่บริสหารัฐอเมริกา โจส ตัวบิวบุษย์ ดายินดี ขับการประกาศดังเกราว",
-      "seconds": 14.8
+      "seconds": 14.7
     },
     {
       "clip": "download_715917.mp4",
       "expected": "อำนาจที่แผ่ขยายออกไปนั้นส่งผลกระทบต่อทุกหมู่เหล่าตั้งแต่พระมหากษัตริย์ไปจนถึงสามัญชน",
       "heard": "",
-      "seconds": 13.1
+      "seconds": 13.0
     },
     {
       "clip": "download_299126.mp4",
@@ -127,13 +127,13 @@
       "clip": "download_293630.mp4",
       "expected": "หากต้องการแก้ไขหรือร้องขอสื่งใด ควรดำเนินการผ่านตัวแทนการท่องเที่ยว ไม่ควรติดต่อไปที่โรงแรมโดยตรง",
       "heard": "หากต้องการแก้ไขหรือร้องขอสิ่งใด ควรดำเนินการผ่านตัวแทนการท้องเที่ยว ไม่ควรติดต่อไปที่รงแรมด้วยตรง",
-      "seconds": 15.3
+      "seconds": 15.1
     },
     {
       "clip": "download_942950.mp4",
       "expected": "ตัวเลือกที่ได้รับความนิยมมากขึ้นสำหรับผู้ที่วางแผนหยุดพักหนึ่งปี คือการเดินทางและเรียนรู้",
       "heard": "ตัวเลิกที่ได้รับความนี้ย่อมมากขึ้นสำหรับพูดที่วางแผ่นหยุดพัก 1 ปี คือการเดินทางและเรียนรู้",
-      "seconds": 15.0
+      "seconds": 14.8
     }
   ],
   "timeline_run1": [
