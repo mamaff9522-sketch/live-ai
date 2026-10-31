@@ -1,18 +1,19 @@
-0.00.000.813 I srv  llama_server: initializing ...
-0.00.001.779 I cmn  common_param: common_params_print_info: verbosity = 3 (adjust with the `-lv N` CLI arg)
-0.00.001.847 I srv  init_listene: The UI is disabled
-0.00.001.850 I srv  init_listene: Use --ui/--no-ui (or deprecated --webui/--no-webui) to enable/disable
-0.00.001.912 W srv  server_setup: security: no API key is set and CORS allows all origins (see https://github.com/ggml-org/llama.cpp/pull/25655)
-0.00.003.256 I srv    load_model: loading model '/data/models/Qwen3.5-2B-Q4_K_M.gguf'
-0.01.035.082 I cmn          init: llama threadpool init, n_threads = 2
-0.01.184.443 I srv    load_model: initializing, n_slots = 1, n_ctx_slot = 16384, kv_unified = 'false'
-0.01.187.912 I srv  server_run_i: model loaded
-0.01.187.928 I srv  server_on_li: listening on http://127.0.0.1:8081
-0.05.507.985 I slot get_availabl: id  0 | task -1 | selected slot by LRU, n_tokens = 0, t_last = -1
-0.05.508.043 I slot launch_slot_: id  0 | task 0 | processing task, is_child = 0
-0.09.857.993 I slot print_timing: id  0 | task 0 | prompt eval time =    2601.96 ms /   175 tokens (   14.87 ms per token,    67.26 tokens per second)
-0.09.858.004 I slot print_timing: id  0 | task 0 |        eval time =    1747.94 ms /    43 tokens (   41.62 ms per token,    24.03 tokens per second)
-0.09.858.004 I slot print_timing: id  0 | task 0 |       total time =    4349.90 ms /   218 tokens
-0.09.858.010 I slot print_timing: id  0 | task 0 |    graphs reused =         42
-0.09.858.011 I slot print_timing: id  0 | task 0 |   graph reallocs =          0    /     0        (same size) / (changed size)
-0.09.858.063 I slot      release: id  0 | task 0 | stop processing: n_tokens = 217, truncated = 0
+0.00.000.953 I srv  llama_server: initializing ...
+0.00.002.077 I cmn  common_param: common_params_print_info: verbosity = 3 (adjust with the `-lv N` CLI arg)
+0.00.002.151 I srv  init_listene: The UI is disabled
+0.00.002.156 I srv  init_listene: Use --ui/--no-ui (or deprecated --webui/--no-webui) to enable/disable
+0.00.002.237 W srv  server_setup: security: no API key is set and CORS allows all origins (see https://github.com/ggml-org/llama.cpp/pull/25655)
+0.00.003.633 I srv    load_model: loading model '/data/models/Qwen3.5-2B-Q4_K_M.gguf'
+0.01.376.642 I cmn          init: llama threadpool init, n_threads = 2
+0.01.594.669 I srv    load_model: initializing, n_slots = 1, n_ctx_slot = 16384, kv_unified = 'false'
+0.01.598.883 I srv  server_run_i: model loaded
+0.01.598.899 I srv  server_on_li: listening on http://127.0.0.1:8081
+0.05.674.939 I slot get_availabl: id  0 | task -1 | selected slot by LRU, n_tokens = 0, t_last = -1
+0.05.675.049 I slot launch_slot_: id  0 | task 0 | processing task, is_child = 0
+0.08.925.943 I slot print_timing: id  0 | task 0 | prompt processing, n_tokens =    171, progress = 0.98, t =   3.25 s / 52.60 tokens per second
+0.12.898.339 I slot print_timing: id  0 | task 0 | prompt eval time =    3401.36 ms /   175 tokens (   19.44 ms per token,    51.45 tokens per second)
+0.12.898.350 I slot print_timing: id  0 | task 0 |        eval time =    3821.88 ms /    66 tokens (   58.80 ms per token,    17.01 tokens per second)
+0.12.898.351 I slot print_timing: id  0 | task 0 |       total time =    7223.24 ms /   241 tokens
+0.12.898.357 I slot print_timing: id  0 | task 0 |    graphs reused =         65
+0.12.898.358 I slot print_timing: id  0 | task 0 |   graph reallocs =          0    /     0        (same size) / (changed size)
+0.12.898.411 I slot      release: id  0 | task 0 | stop processing: n_tokens = 240, truncated = 0
