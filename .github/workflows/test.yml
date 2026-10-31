@@ -19,12 +19,23 @@ jobs:
     name: Offline tests (fake model)
     runs-on: ubuntu-latest
     timeout-minutes: 20
+    permissions:
+      contents: write
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-python@v5
         with: { python-version: "3.12" }
       - run: sudo apt-get install -y -qq ffmpeg fonts-tlwg-loma-otf > /dev/null
-      - run: python -m unittest tests.test_offline tests.test_studio -v
+      - name: Offline + studio tests
+        run: |
+          mkdir -p offline-report
+          set -o pipefail
+          timeout -s INT 900 python -X faulthandler -u -m unittest tests.test_offline tests.test_studio -v 2>&1 \
+            | grep -v '"level": "INFO"' | tee offline-report/unittest.log
+      - name: Publish test log
+        if: always()
+        env: { GH_TOKEN: "${{ github.token }}" }
+        run: bash scripts/publish_report.sh offline-report offline
 
   real-model:
     name: Real Qwen3.5-2B on 2 free CPU cores
