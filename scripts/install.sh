@@ -65,11 +65,13 @@ curl -fsS "http://127.0.0.1:${PORT}/api/health" || true; echo
 say "เปิดลิงก์ HTTPS ฟรี…"
 $DOCKER rm -f live-ai-link >/dev/null 2>&1 || true
 $DOCKER run -d --name live-ai-link --restart unless-stopped --network host \
-  cloudflare/cloudflared:latest tunnel --no-autoupdate --url "http://127.0.0.1:${PORT}" >/dev/null
+  cloudflare/cloudflared:latest tunnel --no-autoupdate --url "http://127.0.0.1:${PORT}" </dev/null >/dev/null
+echo "รอลิงก์…"
 URL=""
 for i in $(seq 1 60); do
-  URL=$($DOCKER logs live-ai-link 2>&1 | grep -o 'https://[a-z0-9-]*\.trycloudflare\.com' | head -1 || true)
-  [ -n "$URL" ] && break; sleep 2
+  URL=$(timeout 10 $DOCKER logs live-ai-link 2>&1 | grep -o 'https://[a-z0-9-]*\.trycloudflare\.com' | head -1 || true)
+  if [ -n "$URL" ]; then break; fi
+  sleep 2
 done
 
 say "เสร็จแล้ว"

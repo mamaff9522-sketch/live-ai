@@ -69,8 +69,11 @@ jobs:
           . ./ssh.sh
           ssh 'cat > /tmp/live-ai-install.sh' < scripts/install.sh
           set -o pipefail
-          ssh 'bash /tmp/live-ai-install.sh' < /dev/null 2>&1 | tee vps/install.log
-          grep -o 'https://[a-z0-9-]*\.trycloudflare\.com' vps/install.log | head -1 > vps/url.txt
+          timeout 2400 bash -c ". ./ssh.sh; ssh 'bash /tmp/live-ai-install.sh' < /dev/null" 2>&1 | tee vps/install.log || echo "installer did not finish by itself - checking the machine"
+          set +o pipefail
+          URL=$(grep -o 'https://[a-z0-9-]*\.trycloudflare\.com' vps/install.log | head -1)
+          [ -n "$URL" ] || URL=$(ssh 'docker logs live-ai-link 2>&1' < /dev/null | grep -o 'https://[a-z0-9-]*\.trycloudflare\.com' | tail -1)
+          echo "$URL" > vps/url.txt
           cat vps/url.txt
 
       - name: Test through the public link (Thai chat, memory, isolation, studio page)
