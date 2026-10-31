@@ -12,6 +12,10 @@ on:
         description: "Install even if other programs are found (only if you are sure the machine is free)"
         type: boolean
         default: false
+      test_only:
+        description: "Only test the running Live AI (no install)"
+        type: boolean
+        default: false
 
 permissions:
   contents: write
@@ -40,6 +44,7 @@ jobs:
           ssh 'echo connected'
 
       - name: Inspect the machine (changes nothing)
+        if: ${{ !inputs.test_only }}
         run: |
           . ./ssh.sh; mkdir -p vps
           ssh 'bash -s' > vps/inspect.txt <<'EOF'
@@ -65,6 +70,7 @@ jobs:
           fi
 
       - name: Install (one command, same as scripts/install.sh)
+        if: ${{ !inputs.test_only }}
         run: |
           . ./ssh.sh
           ssh 'cat > /tmp/live-ai-install.sh' < scripts/install.sh
@@ -77,23 +83,36 @@ jobs:
           cat vps/url.txt
 
       - name: Test through the public link (Thai chat, memory, isolation, studio page)
+        shell: bash
         run: |
+          set -u; mkdir -p vps; . ./ssh.sh
+          [ -s vps/url.txt ] || ssh 'docker logs live-ai-link 2>&1' < /dev/null | grep -o 'https://[a-z0-9-]*\.trycloudflare\.com' | tail -1 > vps/url.txt
           URL=$(cat vps/url.txt); [ -n "$URL" ] || { echo "::error::no public link"; exit 1; }
+          echo "$URL"
           for i in $(seq 1 30); do curl -fsS "$URL/api/health" -o vps/health.json && break; sleep 5; done
           cat vps/health.json; echo
-          reg() { curl -fsS -X POST "$URL/api/register" -H 'Content-Type: application/json' -d "{\"name\":\"$1\"}" | jq -r .token; }
-          ask() { curl -fsS -X POST "$URL/api/chat" -H "Authorization: Bearer $1" -H 'Content-Type: application/json' -d "{\"message\":\"$2\",\"stream\":false}"; }
-          A=$(reg vps-check-a); B=$(reg vps-check-b)
-          s=$(date +%s.%N); ask "$A" "สวัสดีครับ แนะนำตัวสั้น ๆ" | tee vps/hello.json; echo
+          # every request records its HTTP status, so a failure shows exactly what the server answered
+          call() { local out=$1; shift; local code; code=$(curl -sS -o "vps/$out" -w "%{http_code}" "$@"); echo "$out HTTP $code: $(head -c 400 "vps/$out")"; echo "$out $code" >> vps/status.txt; }
+          call reg_a.json -X POST "$URL/api/register" -H 'Content-Type: application/json' -d '{"name":"ทดสอบ A"}'
+          call reg_b.json -X POST "$URL/api/register" -H 'Content-Type: application/json' -d '{"name":"ทดสอบ B"}'
+          A=$(jq -r .token vps/reg_a.json); B=$(jq -r .token vps/reg_b.json)
+          ask() { call "$1" -X POST "$URL/api/chat" -H "Authorization: Bearer $2" -H 'Content-Type: application/json' -d "{\"message\":\"$3\",\"stream\":false}"; }
+          s=$(date +%s.%N); ask hello.json "$A" "สวัสดีครับ แนะนำตัวสั้น ๆ"
           echo "hello_seconds $(echo "$(date +%s.%N) - $s" | bc)" | tee vps/timing.txt
-          ask "$A" "จำไว้ว่า สีโปรดของฉันคือสีเขียว" > /dev/null
-          ask "$A" "สีโปรดของฉันคือสีอะไร" | tee vps/recall.json; echo
-          ask "$B" "สีโปรดของฉันคือสีอะไร" | tee vps/other_user.json; echo
-          curl -fsS -o /dev/null -w "studio_page %{http_code}\n" "$URL/studio" | tee -a vps/timing.txt
-          . ./ssh.sh; ssh 'docker stats --no-stream live-ai; free -m' | tee vps/resources.txt
-          jq -e '.reply | length > 5' vps/hello.json
-          jq -e '.reply | contains("เขียว")' vps/recall.json
-          jq -e '.reply | contains("เขียว") | not' vps/other_user.json
+          ask remember.json "$A" "จำไว้ว่า สีโปรดของฉันคือสีเขียว"
+          ask recall.json "$A" "สีโปรดของฉันคือสีอะไร"
+          ask other_user.json "$B" "สีโปรดของฉันคือสีอะไร"
+          s=$(date +%s.%N); ask code.json "$A" "เขียนฟังก์ชัน Python หาค่าเฉลี่ยของลิสต์ตัวเลข สั้น ๆ"
+          echo "code_seconds $(echo "$(date +%s.%N) - $s" | bc)" | tee -a vps/timing.txt
+          curl -sS -o /dev/null -w "studio_page %{http_code}\n" "$URL/studio" | tee -a vps/timing.txt
+          ssh 'docker stats --no-stream live-ai; free -m' < /dev/null | tee vps/resources.txt
+          ok=1
+          jq -e '.reply | length > 5' vps/hello.json >/dev/null || { echo "::error::hello failed"; ok=0; }
+          jq -e '.reply | contains("เขียว")' vps/recall.json >/dev/null || { echo "::error::memory recall failed"; ok=0; }
+          jq -e '(.reply | type == "string") and (.reply | contains("เขียว") | not)' vps/other_user.json >/dev/null || { echo "::error::second user check failed"; ok=0; }
+          jq -e '.reply | contains("def ")' vps/code.json >/dev/null || { echo "::error::code answer failed"; ok=0; }
+          grep -q "studio_page 200" vps/timing.txt || { echo "::error::studio page failed"; ok=0; }
+          [ $ok = 1 ] && echo "ALL CHECKS PASSED" | tee vps/result.txt || { echo "SOME CHECKS FAILED" | tee vps/result.txt; exit 1; }
 
       - name: Publish result to the ci-reports branch
         if: always()
