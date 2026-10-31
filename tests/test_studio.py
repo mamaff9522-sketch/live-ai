@@ -320,6 +320,22 @@ class FreeFormScripts(unittest.TestCase):
         r = parse("ทุยเดินไปตลาด\nทุยซื้อกล้วย\nทุยกลับบ้าน")
         self.assertEqual(r["stats"]["shots"], 3)
 
+    def test_speaker_heading_sections_and_style_note(self):
+        """The user's own format: a title, labelled sections, 'ชื่อ (อารมณ์):' then quoted lines with stage
+        directions in brackets between them, an ending and a style line."""
+        from live_ai.studio.script import parse
+        r = parse("ฉากรักที่ยังรอ — พี่ทุย\n\nสถานที่: ริมทะเลสาบยามพระอาทิตย์ตก\n\nการแสดง: พี่ทุยยืนอยู่ปลายสะพานไม้เพียงลำพัง\n\n"
+                  "พี่ทุย (ร้องไห้ไปด้วย พูดไปด้วย):\n\n\"คนหนึ่ง... ไปไกลแล้ว...\"\n\n(น้ำตาไหลอาบแก้ม หายใจสะอื้น)\n\n"
+                  "\"แต่อีกคน... ยังอยู่ที่เดิม...\"\n\n(ฝืนยิ้มทั้งน้ำตา)\n\n\"ยังรออยู่ตรงนี้นะ... ยังไม่ได้ไปไหน...\"\n\n"
+                  "ตอนจบ: พี่ทุยก้มหน้าร้องไห้เงียบ ๆ กล้องค่อย ๆ ถอยออก\n\nสไตล์ภาพ: Cinematic Photorealistic, 9:16")
+        self.assertEqual(r["title"], "ฉากรักที่ยังรอ — พี่ทุย")
+        self.assertEqual([(d["speaker"], d["text"]) for s in r["shots"] for d in s["dialogue"]],
+                         [("พี่ทุย", "คนหนึ่ง... ไปไกลแล้ว..."), ("พี่ทุย", "แต่อีกคน... ยังอยู่ที่เดิม..."),
+                          ("พี่ทุย", "ยังรออยู่ตรงนี้นะ... ยังไม่ได้ไปไหน...")])
+        self.assertEqual(r["stats"]["shots"], 3)                       # no extra shots for ending / style
+        self.assertTrue(any("ตอนจบ" in a for a in r["shots"][-1]["action"]))
+        self.assertTrue(any("สไตล์ภาพ" in n for n in r["notes"]))
+
 
 if __name__ == "__main__":
     unittest.main(verbosity=2)

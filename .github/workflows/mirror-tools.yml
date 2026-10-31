@@ -1,0 +1,31 @@
+name: mirror open models for offline use
+
+# Copies the open whisper.cpp speech model (MIT licence, from ggerganov/whisper.cpp on Hugging Face) into
+# the release "tools" of this repository, with its SHA-256 checked against Hugging Face's record, so
+# machines that cannot reach huggingface.co can still use it.
+
+on:
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  mirror:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Download and verify
+        run: |
+          F=ggml-small-q5_1.bin
+          curl -fsSL -o "$F" "https://huggingface.co/ggerganov/whisper.cpp/resolve/main/$F"
+          WANT=$(curl -fsSL "https://huggingface.co/api/models/ggerganov/whisper.cpp/tree/main" | jq -r ".[] | select(.path==\"$F\") | .lfs.oid")
+          GOT=$(sha256sum "$F" | cut -d' ' -f1)
+          echo "want $WANT got $GOT"; [ "$WANT" = "$GOT" ]
+          echo "$GOT  $F" > "$F.sha256"
+      - name: Publish to release "tools"
+        env: { GH_TOKEN: "${{ github.token }}" }
+        run: |
+          gh release view tools >/dev/null 2>&1 || gh release create tools --title "Open models (mirror)" \
+            --notes "whisper.cpp small q5_1 (MIT, ggerganov/whisper.cpp) — mirrored with SHA-256 check" --latest=false
+          gh release upload tools ggml-small-q5_1.bin ggml-small-q5_1.bin.sha256 --clobber

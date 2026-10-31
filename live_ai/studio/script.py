@@ -38,7 +38,15 @@ RE_DIALOGUE_BRACKET = re.compile(r"^(?:บทพูด|บท)\s*\[([^\]]+)\]\s*
 RE_DIALOGUE_PREFIX = re.compile(r"^(?:บทพูด|บท)\s*[:：]\s*(.+)$")
 RE_DIALOGUE = re.compile(r"^([^\s:：“\"‘(][^:：“\"‘]{0,40}?)\s*(?:\(([^)]*)\))?\s*[:：]\s*(.+)$")
 NOT_SPEAKERS = {"ฉาก", "ภาพ", "การกระทำ", "มุมกล้อง", "เวลา", "สถานที่", "หมายเหตุ", "แนว", "อัตราส่วนภาพ", "ความยาวเป้าหมาย",
-                "คุณภาพภาพที่ต้องการ", "ตัวละครในฉาก", "บรรยากาศ", "เพลง", "เสียง", "ข้อกำหนด", "note", "สไตล์"}
+                "คุณภาพภาพที่ต้องการ", "ตัวละครในฉาก", "บรรยากาศ", "เพลง", "เสียง", "ข้อกำหนด", "note", "สไตล์",
+                "การแสดง", "ตอนจบ", "ตอนต้น", "ตอนกลาง", "ฉากจบ", "สไตล์ภาพ", "แสง", "ฉากหลัง", "กล้อง", "เพลงประกอบ",
+                "เสียงประกอบ", "ภาพรวม", "คำแนะนำ", "อารมณ์", "โทน", "โทนภาพ", "ความยาว", "อัตราส่วน", "คุณภาพ", "รายละเอียด",
+                "เครื่องแต่งกาย", "ชุด", "การเคลื่อนกล้อง", "เอฟเฟกต์", "ซีน", "plot", "style", "camera", "location", "ending"}
+# labelled lines that describe the whole video, not one shot: kept as notes
+NOTE_LABELS = {"สไตล์ภาพ", "สไตล์", "คุณภาพ", "คุณภาพภาพที่ต้องการ", "อัตราส่วน", "อัตราส่วนภาพ", "ความยาว", "ความยาวเป้าหมาย",
+               "หมายเหตุ", "คำแนะนำ", "โทนภาพ", "style", "note"}
+# "พี่ทุย (ร้องไห้ไปด้วย พูดไปด้วย):" on its own line: the quoted lines that follow are this person's
+RE_SPEAKER_HEAD = re.compile(r"^([^\s:：“\"‘(][^:：“\"‘]{0,30}?)\s*(?:\(([^)]*)\))?\s*[:：]\s*$")
 
 
 def norm(s: str) -> str:
@@ -114,12 +122,14 @@ def _parse(text: str, free: bool) -> dict:
     cur_scene = None
     cur_shot = None
     pending_actions: list[str] = []
+    speaker_head: tuple[str, str | None] | None = None
     in_chars = False
     chars_in_block = 0
     started = free                 # story content begins at the first scene/clip (free: at once)
     if free:
         # plain "ชื่อ: คำพูด" lines: names used this way are speakers even without quotation marks
-        names = [m.group(1).strip() for x in lines if (m := RE_DIALOGUE.match(x.lstrip("#*•- ").strip()))]
+        names = [m.group(1).strip() for x in lines if (m := RE_DIALOGUE.match(x.lstrip("#*•- ").strip()))
+                 and (len(m.group(3)) <= 120 or m.group(3).strip()[:1] in OPEN_Q)]
         names = [n for n in names if n not in NOT_SPEAKERS and len(n) <= 20]
         if len(names) >= 2:
             known.update(names)
@@ -179,7 +189,8 @@ def _parse(text: str, free: bool) -> dict:
                     known.add(name)
             sc.notes.append(line)
             continue
-        if not sc.title and not started and i == next(k for k, x in enumerate(lines) if x) and len(bare) <= 60 \
+        if not sc.title and (not started or (free and i + 1 < len(lines) and not lines[i + 1])) \
+                and i == next(k for k, x in enumerate(lines) if x) and len(bare) <= 60 \
                 and not RE_TITLE.match(bare) and not RE_CLIP.match(bare) and ":" not in bare and "ตัวละคร" != bare:
             sc.title = bare.strip("“”\"' ")
             continue
@@ -254,6 +265,19 @@ def _parse(text: str, free: bool) -> dict:
             if cur_shot is not None:
                 cur_shot["declared_silent"] = True
             continue
+        lab = re.match(r"^([^:：]{1,30})[:：]\s*(.+)$", bare)
+        if lab and lab.group(1).strip() in NOTE_LABELS:
+            sc.notes.append(line)
+            continue
+        if (m := RE_SPEAKER_HEAD.match(bare)) and m.group(1).strip() not in NOT_SPEAKERS:
+            speaker_head = (m.group(1).strip(), m.group(2))
+            known.add(speaker_head[0])
+            continue
+        if speaker_head and bare[:1] in OPEN_Q:
+            if add_dialogue(speaker_head[0], speaker_head[1], bare):
+                continue
+        elif speaker_head and not re.fullmatch(r"[(（].*[)）]", bare):
+            speaker_head = None                 # anything but a stage direction ends this person's lines
         if (m := RE_NARRATION.match(bare)):
             q, after = split_quoted(m.group(1))
             target = cur_shot if sc.format == "clips" else None
@@ -301,7 +325,9 @@ def _parse(text: str, free: bool) -> dict:
             pending_actions.append(line)
 
     if pending_actions:
-        if free and sc.format == "story" and not any(x["dialogue"] for x in sc.shots):
+        if free and sc.format == "story" and any(x["dialogue"] for x in sc.shots):
+            sc.shots[-1]["action"] += pending_actions        # how the scene ends happens in the last shot
+        elif free and sc.format == "story" and not any(x["dialogue"] for x in sc.shots):
             for a in pending_actions:          # prose only: one paragraph = one shot
                 new_shot()
                 cur_shot["action"].append(a)
