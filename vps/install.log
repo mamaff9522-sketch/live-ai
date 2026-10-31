@@ -1,0 +1,172 @@
+
+[1mติดตั้ง Docker (ครั้งแรกครั้งเดียว)…[0m
+# Executing docker install script, commit: ada7a567e59b3935bd601bb21e422da50e80e376
++ sh -c apt-get -qq update >/dev/null
++ sh -c DEBIAN_FRONTEND=noninteractive apt-get -y -qq install ca-certificates curl >/dev/null
++ sh -c install -m 0755 -d /etc/apt/keyrings
++ sh -c curl -fsSL "https://download.docker.com/linux/ubuntu/gpg" -o /etc/apt/keyrings/docker.asc
++ sh -c chmod a+r /etc/apt/keyrings/docker.asc
++ sh -c echo "deb [arch=amd64 signed-by=/etc/apt/keyrings/docker.asc] https://download.docker.com/linux/ubuntu jammy stable" > /etc/apt/sources.list.d/docker.list
++ sh -c apt-get -qq update >/dev/null
++ apt_flags=-y -qq
++ [ -n  ]
++ sh -c DEBIAN_FRONTEND=noninteractive apt-get -y -qq install docker-ce docker-ce-cli containerd.io docker-compose-plugin docker-ce-rootless-extras docker-buildx-plugin docker-model-plugin >/dev/null
+Using systemd to manage Docker service
++ sh -c systemctl enable --now docker.service 2>/dev/null
+INFO: Docker daemon enabled and started
+
++ sh -c docker version
+Client: Docker Engine - Community
+ Version:           29.9.2
+ API version:       1.56
+ Go version:        go1.26.10
+ Git commit:        a82e528
+ Built:             Tue Oct 20 19:40:48 2026
+ OS/Arch:           linux/amd64
+ Context:           default
+
+Server: Docker Engine - Community
+ Engine:
+  Version:          29.9.2
+  API version:      1.56 (minimum version 1.40)
+  Go version:       go1.26.10
+  Git commit:       0367cbe
+  Built:            Tue Oct 20 19:40:48 2026
+  OS/Arch:          linux/amd64
+  Experimental:     false
+ containerd:
+  Version:          v2.4.2
+  GitCommit:        b7a25261e029d68978bbf290df0a62fc819b3c51
+ runc:
+  Version:          1.5.2
+  GitCommit:        v1.5.2-0-g29dd3dc2
+ docker-init:
+  Version:          0.19.0
+  GitCommit:        de40ad0
+
+================================================================================
+
+To run Docker as a non-privileged user, consider setting up the
+Docker daemon in rootless mode for your user:
+
+    dockerd-rootless-setuptool.sh install
+
+Visit https://docs.docker.com/go/rootless/ to learn about rootless mode.
+
+
+To run the Docker daemon as a fully privileged service, but granting non-root
+users access, refer to https://docs.docker.com/go/daemon-access/
+
+WARNING: Access to the remote API on a privileged Docker daemon is equivalent
+         to root access on the host. Refer to the 'Docker daemon attack surface'
+         documentation for details: https://docs.docker.com/go/attack-surface/
+
+================================================================================
+
+
+[1mเพิ่มหน่วยความจำสำรอง (swap) 4 GB สำหรับเครื่อง RAM 3911 MB…[0m
+
+[1mดึงโปรแกรม Live AI รุ่นล่าสุด…[0m
+latest: Pulling from mamaff9522-sketch/live-ai
+64e18a508338: Pulling fs layer
+6fc242d221a6: Pulling fs layer
+6a9106dabfb6: Pulling fs layer
+8d43a8aff0ac: Pulling fs layer
+3eb771151506: Pulling fs layer
+f574edac59d9: Pulling fs layer
+acca7542dfc7: Pulling fs layer
+f8d95f3b962f: Pulling fs layer
+026f16a407a4: Pulling fs layer
+996b7532cb9d: Pulling fs layer
+5bf7b6c1033a: Pulling fs layer
+026f16a407a4: Download complete
+6a9106dabfb6: Download complete
+f574edac59d9: Download complete
+6fc242d221a6: Download complete
+acca7542dfc7: Download complete
+8d43a8aff0ac: Download complete
+6fc242d221a6: Pull complete
+64e18a508338: Download complete
+996b7532cb9d: Download complete
+5bf7b6c1033a: Download complete
+3eb771151506: Download complete
+3eb771151506: Pull complete
+48e25545d5f3: Download complete
+f574edac59d9: Pull complete
+acca7542dfc7: Pull complete
+f8d95f3b962f: Download complete
+f8d95f3b962f: Pull complete
+6a9106dabfb6: Pull complete
+8d43a8aff0ac: Pull complete
+996b7532cb9d: Pull complete
+026f16a407a4: Pull complete
+64e18a508338: Pull complete
+5bf7b6c1033a: Pull complete
+Digest: sha256:75245f7bfd81ca21734cab4df24ebb0d52e8070469f11dedb4f7241268c44ce1
+Status: Downloaded newer image for ghcr.io/mamaff9522-sketch/live-ai:latest
+ghcr.io/mamaff9522-sketch/live-ai:latest
+
+[1mเริ่มระบบ…[0m
+
+[1mรอโมเดลโหลด (ครั้งแรกต้องดาวน์โหลด ~1.3 GB อาจใช้ 2–10 นาที)…[0m
+{"ok": true, "model": {"state": "ready", "restarts": 0, "error": "", "vision": true, "model": "Qwen3.5-2B-Q4_K_M.gguf", "pid": 65}, "uptime_s": 44, "threads": 4, "ctx": 4096, "ram_mb": {"model": 2306.6, "app": 20.1, "total": 3911, "available": 1990}, "cpu_percent": {"model": null, "cores": 4}, "disk_free_mb": 66215}
+
+[1mเปิดลิงก์ HTTPS ฟรี…[0m
+Unable to find image 'cloudflare/cloudflared:latest' locally
+latest: Pulling from cloudflare/cloudflared
+b839dfae01f6: Pulling fs layer
+2cc7ee286bf3: Pulling fs layer
+52630fc75a18: Pulling fs layer
+c172f21841df: Pulling fs layer
+617b009a71d6: Pulling fs layer
+a99dd1dd5eaf: Pulling fs layer
+dd64bf2dd177: Pulling fs layer
+ebddc55facdc: Pulling fs layer
+d6b1b89eccac: Pulling fs layer
+ec1b04bf2eb2: Pulling fs layer
+2780920e5dbf: Pulling fs layer
+7c12895b777b: Pulling fs layer
+3214acf345c0: Pulling fs layer
+d8ac674fae01: Pulling fs layer
+b96fe2995f90: Pulling fs layer
+810e2b405a08: Pulling fs layer
+bd8962e29291: Pulling fs layer
+cac2ae0193cb: Pulling fs layer
+c172f21841df: Download complete
+52630fc75a18: Download complete
+2cc7ee286bf3: Download complete
+617b009a71d6: Download complete
+dd64bf2dd177: Download complete
+c172f21841df: Pull complete
+2cc7ee286bf3: Pull complete
+617b009a71d6: Pull complete
+a99dd1dd5eaf: Download complete
+d6b1b89eccac: Download complete
+a99dd1dd5eaf: Pull complete
+d6b1b89eccac: Pull complete
+2780920e5dbf: Download complete
+2780920e5dbf: Pull complete
+ebddc55facdc: Download complete
+ec1b04bf2eb2: Download complete
+7c12895b777b: Download complete
+3214acf345c0: Download complete
+b839dfae01f6: Download complete
+52630fc75a18: Pull complete
+dd64bf2dd177: Pull complete
+ebddc55facdc: Pull complete
+7c12895b777b: Pull complete
+3214acf345c0: Pull complete
+b839dfae01f6: Pull complete
+ec1b04bf2eb2: Pull complete
+810e2b405a08: Download complete
+bd8962e29291: Download complete
+d8ac674fae01: Download complete
+b96fe2995f90: Download complete
+cac2ae0193cb: Download complete
+810e2b405a08: Pull complete
+b96fe2995f90: Pull complete
+bd8962e29291: Pull complete
+cac2ae0193cb: Pull complete
+d8ac674fae01: Pull complete
+Digest: sha256:4955524aeaa379e154023d5a027c250f7b35041a2e7e950cf13f144bc9b9c5ba
+Status: Downloaded newer image for cloudflare/cloudflared:latest
