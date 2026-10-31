@@ -1,0 +1,138 @@
+name: test
+
+on:
+  push:
+    branches: [main]
+    paths-ignore: ["**.md"]
+  pull_request:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: test-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  offline:
+    name: Offline tests (fake model)
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with: { python-version: "3.12" }
+      - run: python -m unittest tests.test_offline -v
+
+  real-model:
+    name: Real Qwen3.5-2B on 2 free CPU cores
+    needs: offline
+    runs-on: ubuntu-latest
+    timeout-minutes: 120
+    env:
+      LIVEAI_DATA_DIR: ${{ github.workspace }}/data
+      LIVEAI_PORT: "7860"
+      LIVEAI_HOST: 127.0.0.1
+      LIVEAI_THREADS: "2"          # same as a free 2-vCPU machine (Hugging Face Space CPU basic)
+      LIVEAI_SIGNUPS_PER_HOUR: "100"
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with: { python-version: "3.12" }
+
+      - name: Machine
+        run: |
+          nproc; free -m; df -h . | tail -1
+          grep -m1 'model name' /proc/cpuinfo
+          echo "CPU_KEY=$(grep -m1 'model name' /proc/cpuinfo | md5sum | cut -c1-8)" >> "$GITHUB_ENV"
+
+      - name: llama.cpp release
+        env: { GH_TOKEN: "${{ github.token }}" }
+        run: |
+          TAG=$(curl -fsSL -H "Authorization: Bearer $GH_TOKEN" https://api.github.com/repos/ggml-org/llama.cpp/releases/latest | jq -r .tag_name)
+          echo "LLAMA_TAG=$TAG" >> "$GITHUB_ENV"; echo "llama.cpp $TAG"
+
+      - name: Cache llama.cpp build
+        id: llcache
+        uses: actions/cache@v4
+        with:
+          path: llama-bin
+          key: llama-server-${{ env.LLAMA_TAG }}-${{ env.CPU_KEY }}
+
+      - name: Build llama-server (CPU)
+        if: steps.llcache.outputs.cache-hit != 'true'
+        run: |
+          git clone --depth 1 --branch "$LLAMA_TAG" https://github.com/ggml-org/llama.cpp llama.cpp
+          cmake -S llama.cpp -B llama.cpp/build -DCMAKE_BUILD_TYPE=Release -DBUILD_SHARED_LIBS=OFF \
+            -DLLAMA_BUILD_TESTS=OFF -DLLAMA_BUILD_EXAMPLES=OFF -DLLAMA_BUILD_APP=OFF \
+            -DLLAMA_USE_PREBUILT_UI=OFF -DLLAMA_BUILD_UI=OFF
+          cmake --build llama.cpp/build --target llama-server -j"$(nproc)"
+          mkdir -p llama-bin && cp llama.cpp/build/bin/llama-server llama-bin/
+
+      - name: Find the model (trusted source + SHA-256)
+        run: |
+          python -m live_ai.modelsource | tee model_source.json
+          echo "--- link given in the task (checked only, not used unless trusted):"
+          curl -sS -o /dev/null -w "gguf/Qwen3.5-2B-GGUF -> HTTP %{http_code}\n" -I -L \
+            https://huggingface.co/gguf/Qwen3.5-2B-GGUF/resolve/main/qwen3.5-2b-Q4_K_M.gguf || true
+
+      - name: Cache model
+        uses: actions/cache@v4
+        with:
+          path: data/models
+          key: model-${{ hashFiles('model_source.json') }}
+
+      - name: Start Live AI (pinned to 2 CPU cores)
+        run: |
+          export LIVEAI_LLAMA_SERVER="$PWD/llama-bin/llama-server"
+          "$LIVEAI_LLAMA_SERVER" --version || true
+          nohup taskset -c 0,1 python -m live_ai > liveai_stdout.log 2>&1 &
+          echo $! > liveai.pid
+
+      - name: Real-model tests
+        run: python tests/real_model_test.py http://127.0.0.1:7860 reports
+
+      - name: Report
+        if: always()
+        run: |
+          cat reports/real_model_report.md >> "$GITHUB_STEP_SUMMARY" || echo "no report" >> "$GITHUB_STEP_SUMMARY"
+          mkdir -p reports/logs && cp -r data/logs/. reports/logs/ 2>/dev/null || true
+          cp liveai_stdout.log model_source.json reports/ 2>/dev/null || true
+          kill "$(cat liveai.pid)" 2>/dev/null || true
+
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: real-model-report
+          path: reports/
+
+  docker:
+    name: Docker image (for Hugging Face Space / VPS) starts and answers
+    needs: offline
+    runs-on: ubuntu-latest
+    timeout-minutes: 90
+    steps:
+      - uses: actions/checkout@v4
+      - name: llama.cpp release
+        env: { GH_TOKEN: "${{ github.token }}" }
+        run: |
+          TAG=$(curl -fsSL -H "Authorization: Bearer $GH_TOKEN" https://api.github.com/repos/ggml-org/llama.cpp/releases/latest | jq -r .tag_name)
+          echo "LLAMA_TAG=$TAG" >> "$GITHUB_ENV"
+      - name: Build image
+        run: docker build --build-arg LLAMA_TAG="$LLAMA_TAG" -t live-ai .
+      - name: Run on 2 CPUs and ask one Thai question
+        run: |
+          docker run -d --name liveai --cpus 2 -p 7860:7860 -e LIVEAI_THREADS=2 live-ai
+          for i in $(seq 1 180); do
+            if curl -fsS http://127.0.0.1:7860/api/health > h.json 2>/dev/null; then cat h.json; echo; break; fi
+            sleep 5
+          done
+          curl -fsS http://127.0.0.1:7860/api/health
+          TOKEN=$(curl -fsS -X POST http://127.0.0.1:7860/api/register -H 'Content-Type: application/json' -d '{"name":"docker"}' | jq -r .token)
+          curl -fsS -X POST http://127.0.0.1:7860/api/chat -H "Authorization: Bearer $TOKEN" -H 'Content-Type: application/json' \
+            -d '{"message":"สวัสดีครับ แนะนำตัวสั้น ๆ","stream":false}' | tee reply.json
+          jq -e '.reply | length > 5' reply.json
+      - name: Container logs
+        if: always()
+        run: docker logs liveai 2>&1 | tail -60

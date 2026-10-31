@@ -1,0 +1,7 @@
+data/
+reports/
+__pycache__/
+*.pyc
+llama-bin/
+llama.cpp/
+*.gguf
