@@ -1,6 +1,7 @@
 name: deploy to Hugging Face Space
 
-# Puts Live AI on a free Hugging Face Space (Docker, CPU basic: 2 vCPU / 16 GB) and tests it there.
+# Puts Live AI on a Hugging Face Space (Docker on the free "CPU basic" hardware: 2 vCPU / 16 GB) and tests it there.
+# Hugging Face requires the account to have PRO for Docker Spaces; the hardware is always cpu-basic (no hourly charge).
 # Needs one repository secret: HF_TOKEN (a Hugging Face token with "Write" access).
 
 on:
@@ -45,7 +46,7 @@ jobs:
         run: |
           code=$(curl -sS -o create.json -w "%{http_code}" -X POST https://huggingface.co/api/repos/create \
             -H "Authorization: Bearer $HF_TOKEN" -H "Content-Type: application/json" \
-            -d "{\"type\":\"space\",\"name\":\"$SPACE_NAME\",\"sdk\":\"docker\",\"private\":false}")
+            -d "{\"type\":\"space\",\"name\":\"$SPACE_NAME\",\"sdk\":\"docker\",\"hardware\":\"cpu-basic\",\"private\":false}")
           cat create.json; echo
           mkdir -p deploy && cp create.json deploy/create_response.json
           case "$code" in 200|201) echo "Space created";; 409) echo "Space already exists";; *) echo "::error::create failed ($code)"; exit 1;; esac
