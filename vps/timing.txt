@@ -1,3 +1,3 @@
-hello_seconds 6.825527101
-code_seconds 14.172421025
+hello_seconds 6.264928778
+code_seconds 14.251351435
 studio_page 200
