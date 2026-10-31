@@ -21,7 +21,7 @@ from pathlib import Path
 
 from urllib.parse import parse_qs, unquote, urlparse
 
-from . import backup, logs, sysinfo
+from . import backup, logs, persist, sysinfo
 from .assistant import Assistant
 from .editor import EditError, Editor
 from .media import MediaError, MediaStore
@@ -38,6 +38,7 @@ class App:
     def __init__(self, s: Settings, start_model: bool = True):
         self.s = s
         logs.setup(s.log_dir)
+        persist.restore(s.db_path)                 # free hosts: bring back the saved database first
         backup.snapshot(s, "startup")              # back up before anything can change
         self.store = Store(s.db_path)
         self.llm = LlamaServer(s)
@@ -55,6 +56,7 @@ class App:
         if start_model:
             self.llm.start(background=True)
         backup.start_daily(s)
+        persist.start(s.db_path)
 
     def health(self) -> dict:
         st = self.llm.status()
@@ -475,7 +477,8 @@ class Handler(BaseHTTPRequestHandler):
         if not self.app.admin_key or not secrets.compare_digest(key, self.app.admin_key):
             return self._err(403, "forbidden")
         p = backup.snapshot(self.app.s, "manual")
-        self._send(200, {"file": p.name if p else None})
+        saved = persist.save(self.app.s.db_path, "manual")
+        self._send(200, {"file": p.name if p else None, "saved_remote": saved})
 
 
 def serve(s: Settings | None = None, start_model: bool = True) -> tuple[ThreadingHTTPServer, App]:
@@ -494,6 +497,7 @@ def main() -> None:
     def shutdown(*_):
         logs.event(log, "shutting down")
         app.llm.stop()
+        persist.save(app.s.db_path, "shutdown")
         threading.Thread(target=httpd.shutdown, daemon=True).start()
 
     signal.signal(signal.SIGTERM, shutdown)

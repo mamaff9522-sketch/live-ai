@@ -49,6 +49,21 @@ jobs:
           cat create.json; echo
           case "$code" in 200|201) echo "Space created";; 409) echo "Space already exists";; *) echo "::error::create failed ($code)"; exit 1;; esac
 
+      - name: Private dataset for saving the database + Space secrets
+        run: |
+          # free Spaces lose their disk on restart: the database is saved to a private dataset
+          curl -sS -o /dev/null -w "dataset create: %{http_code}\n" -X POST https://huggingface.co/api/repos/create \
+            -H "Authorization: Bearer $HF_TOKEN" -H "Content-Type: application/json" \
+            -d "{\"type\":\"dataset\",\"name\":\"$SPACE_NAME-data\",\"private\":true}"
+          ADMIN_KEY=$(openssl rand -hex 16); echo "::add-mask::$ADMIN_KEY"; echo "ADMIN_KEY=$ADMIN_KEY" >> "$GITHUB_ENV"
+          for kv in "HF_TOKEN=$HF_TOKEN" "LIVEAI_PERSIST_REPO=$HF_USER/$SPACE_NAME-data" "LIVEAI_ADMIN_KEY=$ADMIN_KEY"; do
+            k="${kv%%=*}"; v="${kv#*=}"
+            jq -n --arg k "$k" --arg v "$v" '{key:$k, value:$v}' > secret.json
+            curl -sS -o /dev/null -w "secret $k: %{http_code}\n" -X POST "https://huggingface.co/api/spaces/$HF_USER/$SPACE_NAME/secrets" \
+              -H "Authorization: Bearer $HF_TOKEN" -H "Content-Type: application/json" --data @secret.json
+          done
+          rm -f secret.json
+
       - name: Push the app to the Space
         env: { GH_TOKEN: "${{ github.token }}" }
         run: |
@@ -106,6 +121,9 @@ jobs:
           jq -e '.reply | length > 5' deploy/hello.json
           jq -e '.reply | contains("เขียว")' deploy/recall.json
           jq -e '.reply | contains("เขียว") | not' deploy/other_user.json
+          # the database is saved to the private dataset (survives Space restarts)
+          curl -fsS -X POST "$SPACE_URL/api/admin/backup" -H "X-Admin-Key: $ADMIN_KEY" -H 'Content-Type: application/json' -d '{}' | tee deploy/backup.json
+          jq -e '.saved_remote == true' deploy/backup.json
 
       - name: Publish result to the ci-reports branch
         if: always()
