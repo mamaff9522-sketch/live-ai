@@ -1,1 +1,2 @@
-3b9c21ffff393e8179c392b2b428944659ecec530de158a0319e8dfbc4760b6b  apk/live-ai.apk
+792b4a8da3434812d8860fe0fa168afc891376d796a05f1232d9cf11b681c28b  apk/live-ai-studio.apk
+c0f46fe2ba194ea4ebb35b27bb26bdb6bf517d9cbffb93654aedcb6f66370668  apk/live-ai.apk
