@@ -1,5 +1,5 @@
-CONTAINER ID   NAME      CPU %     MEM USAGE / LIMIT    MEM %     NET I/O           BLOCK I/O       PIDS
-fb189c2dd60b   live-ai   0.18%     1.566GiB / 3.82GiB   40.99%    50.1kB / 42.2kB   472MB / 770kB   20
+CONTAINER ID   NAME      CPU %     MEM USAGE / LIMIT    MEM %     NET I/O           BLOCK I/O        PIDS
+fb189c2dd60b   live-ai   0.02%     1.654GiB / 3.82GiB   43.31%    58.2kB / 74.5kB   472MB / 1.04MB   20
                total        used        free      shared  buff/cache   available
-Mem:            3911        1785         135           1        1990        1876
-Swap:           4095          31        4064
+Mem:            3911        1843         129           1        1938        1819
+Swap:           4095          33        4062
