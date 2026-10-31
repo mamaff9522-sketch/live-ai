@@ -97,12 +97,22 @@ def match(script: dict, clips: list[dict]) -> dict:
     assign: dict[str, dict] = {}
     issues: list[dict] = []
 
-    # 1. clips with speech -> line windows
+    # 1. clips with speech -> line windows. Strongest matches first; a clip whose lines are already
+    #    taken tries the remaining lines (the script may repeat a sentence word for word) and only
+    #    shares a line when nothing else fits nearly as well (a line continuing into the next clip).
     speaking = [c for c in clips if c.get("speech") and c.get("transcript") and not c.get("duplicate_of")]
-    for c in speaking:
-        w = best_window(c["transcript"], lines)
-        if w["score"] >= MATCH_WEAK and w["lines"]:
-            assign[c["id"]] = {"lines": w["lines"], "score": w["score"], "margin": w["margin"], "how": "dialogue"}
+    full = {c["id"]: best_window(c["transcript"], lines) for c in speaking}
+    taken: set[int] = set()
+    for c in sorted(speaking, key=lambda c: (-full[c["id"]]["score"], c["order"])):
+        w = full[c["id"]]
+        if w["score"] < MATCH_WEAK or not w["lines"]:
+            continue
+        if taken & set(w["lines"]):
+            free = best_window(c["transcript"], lines, exclude=taken)
+            if free["lines"] and free["score"] >= max(MATCH_WEAK, 0.85 * w["score"]):
+                w = free
+        assign[c["id"]] = {"lines": w["lines"], "score": w["score"], "margin": w["margin"], "how": "dialogue"}
+        taken |= set(w["lines"])
 
     # 2. conflicts: several clips on the same first line
     by_line: dict[int, list[str]] = {}

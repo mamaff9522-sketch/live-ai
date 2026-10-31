@@ -52,10 +52,11 @@ def fleurs_thai(n=10):
     tsv = get(f"{HF}/datasets/google/fleurs/resolve/main/data/th_th/{split}.tsv").decode("utf-8")
     rows = list(csv.reader(io.StringIO(tsv), delimiter="\t"))
     # columns: id, file name, raw transcription, normalized, words, num_samples, gender
-    want = {}
-    for r in rows:
-        if len(r) >= 6 and 4 <= int(r[5]) / 16000 <= 9 and r[1] not in want:
+    want, texts = {}, set()
+    for r in rows:     # FLEURS has several speakers per sentence: keep each sentence once
+        if len(r) >= 6 and 4 <= int(r[5]) / 16000 <= 9 and r[1] not in want and r[2].strip() not in texts:
             want[r[1]] = r[2].strip()
+            texts.add(r[2].strip())
     tar = get(f"{HF}/datasets/google/fleurs/resolve/main/data/th_th/audio/{split}.tar.gz", timeout=1800)
     out = []
     with tarfile.open(fileobj=io.BytesIO(tar), mode="r:gz") as t:
