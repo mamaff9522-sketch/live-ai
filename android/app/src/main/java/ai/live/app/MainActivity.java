@@ -6,6 +6,7 @@ import android.app.DownloadManager;
 import android.content.ActivityNotFoundException;
 import android.content.Intent;
 import android.content.SharedPreferences;
+import android.content.pm.PackageManager;
 import android.graphics.Bitmap;
 import android.net.Uri;
 import android.os.Bundle;
@@ -36,6 +37,7 @@ public class MainActivity extends Activity {
     private static final String PREFS = "liveai";
 
     private WebView web;
+    private VoiceBridge voice;
     private ProgressBar bar;
     private ValueCallback<Uri[]> pending;
     private boolean errorShown;
@@ -64,6 +66,8 @@ public class MainActivity extends Activity {
         s.setAllowFileAccess(false);
         s.setUserAgentString(s.getUserAgentString() + " LiveAIApp/" + BuildConfig.VERSION_NAME);
         CookieManager.getInstance().setAcceptCookie(true);
+        voice = new VoiceBridge(this, web);
+        web.addJavascriptInterface(voice, "LiveAIVoice");   // 🎤 voice conversation on the chat page
 
         web.setWebViewClient(new WebViewClient() {
             @Override
@@ -183,6 +187,26 @@ public class MainActivity extends Activity {
         }
         pending.onReceiveValue(uris);
         pending = null;
+    }
+
+    @Override
+    public void onRequestPermissionsResult(int req, String[] perms, int[] results) {
+        if (req == VoiceBridge.MIC_REQUEST) voice.onMicPermission(results.length > 0 && results[0] == PackageManager.PERMISSION_GRANTED);
+    }
+
+    @Override
+    protected void onPause() {
+        super.onPause();
+        // leaving the app ends a voice conversation (the page resets its 🎤 button)
+        web.evaluateJavascript("window.voiceStop&&voiceOn&&voiceStop()", null);
+        voice.stop();
+    }
+
+    @Override
+    protected void onDestroy() {
+        voice.release();
+        web.destroy();
+        super.onDestroy();
     }
 
     @Override

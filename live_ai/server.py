@@ -270,7 +270,8 @@ class Handler(BaseHTTPRequestHandler):
         conv = int(conv) if conv not in (None, "") else None
         if conv is not None:
             self.app.store.get_conversation(u["id"], conv)  # 404 before streaming starts
-        events = self.app.assistant.reply(u["id"], conv, str(data.get("message", "")), bool(data.get("think")))
+        events = self.app.assistant.reply(u["id"], conv, str(data.get("message", "")), bool(data.get("think")),
+                                          voice=bool(data.get("voice")))
         if not data.get("stream", True):
             out, final = [], {}
             for ev in events:

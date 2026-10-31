@@ -23,6 +23,15 @@ SYSTEM_PROMPT = """คุณคือ Live AI ผู้ช่วยที่พ�
 - เมื่อตรวจโค้ด: ไล่ทีละบรรทัด ระบุบั๊กทุกจุด แล้วให้โค้ดที่แก้แล้วฉบับเดียวที่ถูกต้อง
 - วางแผนงานเป็นข้อ ๆ ที่ทำได้จริง"""
 
+# Spoken conversation (voice mode in the app): the answer is read aloud by the phone, so keep it short and
+# free of formatting that cannot be spoken.
+VOICE_HINT = """
+
+ตอนนี้ผู้ใช้คุยด้วยเสียง คำตอบจะถูกอ่านออกเสียง:
+- ตอบสั้นแบบพูดคุย 1–3 ประโยค เว้นแต่ผู้ใช้ขอให้อธิบายยาว
+- ห้ามใช้ตาราง หัวข้อ สัญลักษณ์ markdown หรืออีโมจิ เขียนตัวเลขให้อ่านออกเสียงได้
+- ถ้าต้องเขียนโค้ด ให้ใส่โค้ดในบล็อก ``` ตามปกติ แล้วพูดสรุปสั้น ๆ ว่าโค้ดทำอะไร"""
+
 CODE_HINT = re.compile(r"โค้ด|โค๊ด|code|ฟังก์ชัน|function|python|javascript|typescript|java\b|sql|สคริปต์|script|บั๊ก|bug|def |```", re.I)
 
 
@@ -48,9 +57,10 @@ class Assistant:
         self._user_busy: set[int] = set()
 
     # prompt ----------------------------------------------------------------
-    def build_messages(self, user_id: int, conv_id: int, new_text: str, budget_scale: float = 1.0) -> list[dict]:
+    def build_messages(self, user_id: int, conv_id: int, new_text: str, budget_scale: float = 1.0,
+                       voice: bool = False) -> list[dict]:
         facts = memory.relevant(new_text, self.store.memories(user_id))
-        system = SYSTEM_PROMPT
+        system = SYSTEM_PROMPT + (VOICE_HINT if voice else "")
         if facts:
             system += "\n\nข้อมูลที่ผู้ใช้คนนี้ขอให้จำไว้ (ใช้เมื่อเกี่ยวข้องเท่านั้น):\n" + "\n".join(f"- {m['content']}" for m in facts)
         system += f"\n\nวันนี้คือ {time.strftime('%Y-%m-%d')}"
@@ -70,7 +80,8 @@ class Assistant:
         return [{"role": "system", "content": system}, *kept, {"role": "user", "content": new_text}]
 
     # one turn --------------------------------------------------------------
-    def reply(self, user_id: int, conv_id: int | None, text: str, think: bool = False) -> Iterator[dict]:
+    def reply(self, user_id: int, conv_id: int | None, text: str, think: bool = False,
+              voice: bool = False) -> Iterator[dict]:
         """Yields events: meta, token, thinking, done, error. Saves both messages."""
         text = text.strip()
         if not text:
@@ -125,7 +136,7 @@ class Assistant:
                 scales = [1.0, 0.5, 0.0]
                 recovered = False
                 while scales:
-                    msgs = self.build_messages(user_id, conv_id, text, scales[0])
+                    msgs = self.build_messages(user_id, conv_id, text, scales[0], voice=voice)
                     try:
                         for ev in self.llm.stream_chat(msgs, think=think, code=bool(CODE_HINT.search(text))):
                             if ev["type"] == "token":

@@ -344,5 +344,20 @@ class RestoreTest(unittest.TestCase):
         self.assertTrue(any("before-restore" in f.name for f in backup.list_backups(s)))
 
 
+class VoiceModeTest(unittest.TestCase):
+    """Voice conversation asks for short, speakable answers; normal chat is unchanged."""
+
+    def test_voice_hint_only_in_voice_mode(self):
+        from live_ai import assistant
+        a = assistant.Assistant.__new__(assistant.Assistant)
+        a.s = type("S", (), {"ctx_size": 4096, "max_reply_tokens": 512})()
+        a.store = type("St", (), {"memories": lambda self, u: [], "messages": lambda self, u, c, limit=200: []})()
+        normal = a.build_messages(1, 1, "สวัสดี")[0]["content"]
+        spoken = a.build_messages(1, 1, "สวัสดี", voice=True)[0]["content"]
+        self.assertNotIn("คุยด้วยเสียง", normal)
+        self.assertIn("คุยด้วยเสียง", spoken)
+        self.assertTrue(spoken.startswith(assistant.SYSTEM_PROMPT))
+
+
 if __name__ == "__main__":
     unittest.main(verbosity=2)

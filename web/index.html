@@ -47,6 +47,10 @@ label.think{font-size:13px;color:var(--muted);display:flex;align-items:center;ga
 .login input{width:100%;padding:10px 12px;border:1px solid var(--line);border-radius:10px;background:var(--bg);margin:6px 0 12px}
 .login p{color:var(--muted);font-size:14px}
 .token{font:13px "IBM Plex Mono",monospace;word-break:break-all;background:var(--bg);padding:8px;border-radius:8px}
+.icon.mic.on{background:var(--accent);color:var(--accent-ink);border-color:var(--accent)}
+.voicebar{display:none;align-items:center;gap:10px;padding:10px 16px;border-top:1px solid var(--line);background:var(--me);font-size:15px}
+.voicebar.on{display:flex}.voicebar span{flex:1}
+.voicebar button{border:0;border-radius:10px;padding:8px 14px;background:var(--warn);color:#fff;font-weight:600;cursor:pointer}
 </style>
 </head>
 <body>
@@ -113,12 +117,16 @@ function renderApp() {
   els.file = $('input', { type: 'file', multiple: true, accept: 'video/*,audio/*,image/*', style: 'display:none', onchange: e => attach([...e.target.files]) });
   els.clip = $('button', { class: 'icon', type: 'button', title: 'แนบวิดีโอ/เสียง/ภาพ เพื่อให้ตัดต่อ', onclick: () => els.file.click() }, '📎');
   els.chips = $('div', { class: 'chips' });
+  els.mic = Voice.can ? $('button', { class: 'icon mic', type: 'button', title: 'คุยด้วยเสียง', 'aria-label': 'คุยด้วยเสียง', onclick: voiceToggle }, '🎤') : null;
+  els.voiceText = $('span', {}, '');
+  els.voice = $('div', { class: 'voicebar' }, els.voiceText, $('button', { type: 'button', onclick: voiceStop }, 'หยุดคุย'));
   els.drawer = $('div', { class: 'drawer', onclick: e => { if (e.target === els.drawer) els.drawer.classList.remove('open'); } }, els.sheet = $('div', { class: 'sheet' }));
   root.append($('div', { class: 'app' },
     $('header', {}, $('button', { class: 'icon', 'aria-label': 'เมนู', onclick: openDrawer }, '☰'), $('h1', {}, 'Live AI'), els.status, $('button', { class: 'icon', onclick: () => openConv(null) }, '＋ แชตใหม่')),
     els.main,
     els.chips,
-    $('form', { class: 'composer', onsubmit: e => { e.preventDefault(); send(); } }, els.clip, els.file, els.input, $('label', { class: 'think', title: 'ให้คิดก่อนตอบ ช้ากว่าแต่ละเอียดกว่า' }, els.think, 'คิดละเอียด'), els.send)), els.drawer);
+    els.voice,
+    $('form', { class: 'composer', onsubmit: e => { e.preventDefault(); send(); } }, els.clip, els.file, els.mic, els.input, $('label', { class: 'think', title: 'ให้คิดก่อนตอบ ช้ากว่าแต่ละเอียดกว่า' }, els.think, 'คิดละเอียด'), els.send)), els.drawer);
   openConv(conv); pollHealth();
 }
 
@@ -173,8 +181,8 @@ async function sendEdit(text) {
     $('div', { class: 'stats' }, 'พิมพ์คำสั่งเพิ่มเพื่อแก้ต่อได้ เช่น "ตัดให้สั้นลง" หรือ "เปลี่ยนเป็นแนวนอน" (เริ่มคำสั่งด้วย แก้:)'));
 }
 
-async function send() {
-  const text = els.input.value.trim(); if (!text || busy) return;
+async function send(voice = false) {
+  const text = els.input.value.trim(); if (!text || busy) return '';
   if (attached.length || (lastEdit && /^แก้\s*[:：]/.test(text))) {
     busy = true; els.send.disabled = true; els.input.value = '';
     els.main.querySelector('.empty')?.remove(); els.main.append($('div', { class: 'msg user' }, '🎬 ' + text));
@@ -187,7 +195,7 @@ async function send() {
   const box = $('div', { class: 'msg assistant' }, '…'); els.main.append(box); els.main.scrollTop = els.main.scrollHeight;
   let answer = '', thinking = '', thinkEl = null;
   try {
-    const r = await fetch('/api/chat', { method: 'POST', headers: { 'Content-Type': 'application/json', Authorization: 'Bearer ' + token }, body: JSON.stringify({ message: text, conversation_id: conv, think: els.think.checked }) });
+    const r = await fetch('/api/chat', { method: 'POST', headers: { 'Content-Type': 'application/json', Authorization: 'Bearer ' + token }, body: JSON.stringify({ message: text, conversation_id: conv, think: els.think.checked, voice }) });
     if (!r.ok) { const j = await r.json().catch(() => ({})); throw new Error(j.error || r.statusText); }
     const reader = r.body.getReader(), dec = new TextDecoder(); let buf = '';
     for (;;) {
@@ -207,8 +215,71 @@ async function send() {
         els.main.scrollTop = els.main.scrollHeight;
       }
     }
-  } catch (e) { box.className = 'msg error'; box.textContent = e.message; }
-  busy = false; els.send.disabled = false; els.input.focus();
+  } catch (e) { box.className = 'msg error'; box.textContent = e.message; answer = ''; }
+  busy = false; els.send.disabled = false; if (!voice) els.input.focus();
+  return box.classList.contains('error') ? '' : answer;
+}
+
+// Voice conversation ----------------------------------------------------------
+// In the Android app the phone's own speech recognizer and Thai voice are used (window.LiveAIVoice);
+// in Chrome the browser's Web Speech API. Either way only the text goes to Live AI.
+const Voice = (() => {
+  const B = window.LiveAIVoice, SR = window.SpeechRecognition || window.webkitSpeechRecognition;
+  let cb = {}, rec = null;
+  window.__liveaiVoice = (ev, text) => { const f = cb[ev]; if (f) f(text || ''); };
+  const listen = () => new Promise((ok, bad) => {
+    if (B) { cb = { result: ok, error: e => bad(new Error(e)) }; B.listen(); return; }
+    const r = rec = new SR(); let got = false;
+    r.lang = 'th-TH'; r.interimResults = false; r.maxAlternatives = 1;
+    r.onresult = e => { got = true; ok(e.results[0][0].transcript); };
+    r.onerror = e => { got = true; bad(new Error(e.error)); };
+    r.onend = () => { if (!got) bad(new Error('no-speech')); };
+    r.start();
+  });
+  const speak = text => new Promise(ok => {
+    if (!text) return ok();
+    if (B) { cb = { spoken: ok, error: e => { if (/tts-th-missing/.test(e)) alert('มือถือยังไม่มีเสียงพูดภาษาไทย: ไปที่ การตั้งค่า > การเข้าถึง/ภาษา > เอาต์พุตการอ่านออกเสียง แล้วดาวน์โหลดภาษาไทย'); ok(); } }; B.speak(text); return; }
+    const u = new SpeechSynthesisUtterance(text); u.lang = 'th-TH';
+    const v = speechSynthesis.getVoices().find(x => /^th/i.test(x.lang)); if (v) u.voice = v;
+    u.onend = ok; u.onerror = ok; speechSynthesis.cancel(); speechSynthesis.speak(u);
+  });
+  const stop = () => { cb = {}; if (B) B.stop(); else { try { rec && rec.abort(); } catch {} try { speechSynthesis.cancel(); } catch {} } };
+  return { can: !!(B || (SR && window.speechSynthesis)), listen, speak, stop };
+})();
+
+function spoken(t) {
+  return t.replace(/```[\s\S]*?(```|$)/g, ' (โค้ดอยู่บนหน้าจอ) ').replace(/\[\[video:[a-f0-9]{24}\]\]/g, '')
+          .replace(/[*#_`>|~]/g, '').replace(/\s+/g, ' ').trim();
+}
+let voiceOn = false;
+function voiceSay(t) { els.voiceText.textContent = t; }
+function voiceStop() {
+  voiceOn = false; Voice.stop(); els.voice.classList.remove('on'); els.mic && els.mic.classList.remove('on');
+}
+async function voiceToggle() {
+  if (voiceOn) return voiceStop();
+  voiceOn = true; els.voice.classList.add('on'); els.mic.classList.add('on');
+  let misses = 0;
+  while (voiceOn) {
+    voiceSay('🎤 กำลังฟัง… พูดได้เลย');
+    let text = '';
+    try { text = (await Voice.listen()).trim(); }
+    catch (e) {
+      if (!voiceOn) break;
+      if (/permission|not-allowed/.test(e.message)) { voiceSay('ต้องอนุญาตให้ใช้ไมโครโฟนก่อน'); voiceOn = false; break; }
+      if (/unavailable|service-not-allowed/.test(e.message)) { voiceSay('มือถือเครื่องนี้ไม่มีระบบแปลงเสียงพูดเป็นข้อความ'); voiceOn = false; break; }
+    }
+    if (!voiceOn) break;
+    if (!text) { if (++misses < 2) continue; voiceSay('ไม่ได้ยินเสียง แตะ 🎤 เพื่อคุยต่อ'); voiceOn = false; break; }
+    misses = 0; els.input.value = text; voiceSay('💭 กำลังคิด…');
+    const answer = await send(true);
+    if (!voiceOn) break;
+    if (answer) { voiceSay('🔊 กำลังตอบ… (แตะ หยุดคุย เพื่อหยุด)'); await Voice.speak(spoken(answer)); }
+  }
+  // a message explaining why voice stopped stays visible for a few seconds; otherwise the bar closes
+  els.mic && els.mic.classList.remove('on');
+  const why = !/^[🎤💭🔊]/u.test(els.voiceText.textContent);
+  setTimeout(() => { if (!voiceOn) els.voice.classList.remove('on'); }, why ? 5000 : 0);
 }
 
 async function pollHealth() {
