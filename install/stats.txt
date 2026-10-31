@@ -1,2 +1,2 @@
 CONTAINER ID   NAME      CPU %     MEM USAGE / LIMIT     MEM %     NET I/O           BLOCK I/O         PIDS
-dce85dfee1c9   live-ai   0.02%     2.259GiB / 15.57GiB   14.51%    1.96GB / 5.31MB   65.5kB / 1.95GB   21
+920d46542824   live-ai   0.02%     2.258GiB / 15.57GiB   14.50%    1.97GB / 13.3MB   65.5kB / 1.95GB   21
