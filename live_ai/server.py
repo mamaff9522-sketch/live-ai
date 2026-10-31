@@ -125,11 +125,18 @@ class Handler(BaseHTTPRequestHandler):
     def _err(self, code: int, msg: str):
         self._send(code, {"error": msg})
 
-    def _json(self) -> dict:
+    def _body(self, limit: int) -> bytes:
+        """The JSON request body (read once; _dispatch may already have read a small one)."""
+        if getattr(self, "_pre", None) is not None:
+            return self._pre
         n = int(self.headers.get("Content-Length") or 0)
-        if n > 200_000:
+        if n > limit:
             raise ValueError("body too large")
-        raw = self.rfile.read(n) if n else b"{}"
+        self._pre = self.rfile.read(n) if n else b""
+        return self._pre
+
+    def _json(self) -> dict:
+        raw = self._body(200_000)
         data = json.loads(raw or b"{}")
         if not isinstance(data, dict):
             raise ValueError("expected a JSON object")
@@ -142,6 +149,13 @@ class Handler(BaseHTTPRequestHandler):
 
     def _dispatch(self, method: str):
         path = self.path.split("?", 1)[0]
+        self._pre = None
+        # A small JSON body is read up front even when the handler ignores it (e.g. POST .../start with
+        # "{}"): closing a connection with unread request bytes makes the OS reset it, and the client
+        # can lose the response. Uploads (video, ZIP) are not JSON and are still streamed by their handler.
+        n = int(self.headers.get("Content-Length") or 0)
+        if 0 < n <= 65536 and self.headers.get("Content-Type", "").startswith("application/json"):
+            self._pre = self.rfile.read(n)
         for m, rx, name in ROUTES:
             if m == method and (mt := rx.match(path)):
                 started = time.time()
@@ -470,10 +484,11 @@ class Handler(BaseHTTPRequestHandler):
             self._send(200, f(u["id"], int(pid)))
 
     def _json_big(self) -> dict:
-        n = int(self.headers.get("Content-Length") or 0)
-        if n > 6_000_000:
-            raise ValueError("ข้อมูลใหญ่เกินไป")
-        data = json.loads(self.rfile.read(n) or b"{}")
+        try:
+            raw = self._body(6_000_000)
+        except ValueError:
+            raise ValueError("ข้อมูลใหญ่เกินไป") from None
+        data = json.loads(raw or b"{}")
         if not isinstance(data, dict):
             raise ValueError("expected a JSON object")
         return data
