@@ -23,8 +23,6 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
-      - name: Offline tests must pass first
-        run: python3 -m unittest tests.test_offline
 
       - name: Check the token
         run: |
@@ -37,6 +35,11 @@ jobs:
           echo "HF_USER=$HF_USER" >> "$GITHUB_ENV"
           HOST=$(echo "$HF_USER-$SPACE_NAME" | tr '[:upper:]' '[:lower:]' | tr '._' '--')
           echo "SPACE_URL=https://$HOST.hf.space" >> "$GITHUB_ENV"
+
+      - name: Offline tests must pass first
+        run: |
+          sudo apt-get install -y -qq ffmpeg fonts-tlwg-loma-otf > /dev/null
+          python3 -m unittest tests.test_offline tests.test_studio
 
       - name: Create the Space (once)
         run: |
