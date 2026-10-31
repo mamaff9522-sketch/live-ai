@@ -277,6 +277,55 @@ def _ass_time(t: float) -> str:
     return f"{cs // 360000}:{cs // 6000 % 60:02d}:{cs // 100 % 60:02d}.{cs % 100:02d}"
 
 
+THAI_MARKS = set(chr(c) for c in [0x0E31, *range(0x0E34, 0x0E3B), *range(0x0E47, 0x0E4F)])
+THAI_LEADING = set("เแโใไ")
+THAI_FOLLOWING = set("ะาำๅฯ")
+
+
+def _units(s: str) -> int:
+    return sum(1 for ch in s if ch not in THAI_MARKS)
+
+
+def wrap_thai(text: str, max_units: int) -> str:
+    """Thai has no spaces between words, and libass only wraps at spaces, so long lines would run
+    off the screen. Break at spaces when possible, otherwise between character clusters (never
+    before a tone mark/vowel sign, never right after a leading vowel)."""
+    out = []
+    for para in text.split("\n"):
+        line = ""
+        for word in para.split(" "):
+            cand = (line + " " + word) if line else word
+            if _units(cand) <= max_units:
+                line = cand
+                continue
+            if line:
+                out.append(line)
+                line = ""
+            while _units(word) > max_units:
+                cut, good, n = 0, 0, 0
+                for i, ch in enumerate(word):
+                    if ch not in THAI_MARKS:
+                        n += 1
+                    if n > max_units:
+                        break
+                    nxt = word[i + 1] if i + 1 < len(word) else ""
+                    nxt2 = word[i + 2] if i + 2 < len(word) else ""
+                    if nxt and nxt not in THAI_MARKS and nxt not in THAI_FOLLOWING and ch not in THAI_LEADING and nxt2 != "์":
+                        cut = i + 1
+                        # a leading vowel always starts a syllable: the nicest place to break
+                        if nxt in THAI_LEADING and n >= max_units * 0.6:
+                            good = i + 1
+                cut = good or cut
+                if cut <= 0:
+                    break
+                out.append(word[:cut])
+                word = word[cut:]
+            line = word
+        if line:
+            out.append(line)
+    return "\n".join(out)
+
+
 def write_ass(texts: list[dict], w: int, h: int, path: Path) -> None:
     sizes = {"small": 0.035, "medium": 0.05, "large": 0.07}
     align = {"bottom": 2, "center": 5, "top": 8}
@@ -289,7 +338,10 @@ def write_ass(texts: list[dict], w: int, h: int, path: Path) -> None:
                           f"100,100,0,0,1,{max(2, fs // 14)},1,{a},{int(w * 0.06)},{int(w * 0.06)},{int(h * 0.08)},1")
     events = []
     for t in texts:
-        txt = t["text"].replace("\\", "＼").replace("{", "(").replace("}", ")").replace("\n", "\\N")
+        fs = max(16, int(base * sizes[t["size"]] * (1.6 if w <= h else 1.0)))
+        usable = w - 2 * int(w * 0.06)
+        wrapped = wrap_thai(t["text"], max(6, int(usable / (fs * 0.56))))
+        txt = wrapped.replace("\\", "＼").replace("{", "(").replace("}", ")").replace("\n", "\\N")
         events.append(f"Dialogue: 0,{_ass_time(t['start'])},{_ass_time(t['end'])},{t['position']}_{t['size']},,0,0,0,,{txt}")
     path.write_text("[Script Info]\nScriptType: v4.00+\nWrapStyle: 0\nScaledBorderAndShadow: yes\n"
                     f"PlayResX: {w}\nPlayResY: {h}\n\n[V4+ Styles]\n"
