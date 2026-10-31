@@ -1,3 +1,4 @@
-Error response from daemon: No such container: liveai
+CONTAINER ID   NAME      CPU %     MEM USAGE / LIMIT     MEM %     NET I/O           BLOCK I/O    PIDS
+eb01a8b091ca   liveai    0.01%     1.558GiB / 15.61GiB   9.98%     1.97GB / 13.6MB   0B / 600MB   17
 x86_64
 4
