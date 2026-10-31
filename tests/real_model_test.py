@@ -120,8 +120,8 @@ def run_python(code, test, timeout=15):
         return r.returncode == 0, (r.stdout + r.stderr)[-400:]
 
 
-def code_task(token, label, prompt, test):
-    code, j = ask(token, prompt, label=label)
+def code_task(token, label, prompt, test, think=False):
+    code, j = ask(token, prompt, think=think, label=label)
     reply = j.get("reply", "")
     blocks = code_blocks(reply)
     ok, out = False, "no code block in reply"
@@ -185,6 +185,9 @@ def main():
     code_task(a, "เขียนโค้ด: นับคำ",
               "เขียนฟังก์ชัน Python ชื่อ word_count(text) ที่คืน dict นับจำนวนครั้งของแต่ละคำ (แยกคำด้วยช่องว่าง ไม่สนตัวพิมพ์เล็กใหญ่)",
               "assert word_count('a b A c b a') == {'a':3,'b':2,'c':1}\nprint('ok')")
+    code_task(a, "เขียนโค้ด: นับคำ (โหมดคิดละเอียด)",
+              "เขียนฟังก์ชัน Python ชื่อ word_count(text) ที่คืน dict นับจำนวนครั้งของแต่ละคำ (แยกคำด้วยช่องว่าง ไม่สนตัวพิมพ์เล็กใหญ่)",
+              "assert word_count('a b A c b a') == {'a':3,'b':2,'c':1}\nprint('ok')", think=True)
     code_task(a, "ตรวจและแก้โค้ด",
               "โค้ดนี้มีบั๊ก ช่วยตรวจและส่งโค้ดที่แก้แล้ว:\n```python\ndef average(nums):\n    total = 0\n    for n in nums:\n        total += n\n    return total / len(nums) - 1\n```\nและต้องคืน 0 เมื่อลิสต์ว่าง",
               "assert average([2,4,6]) == 4\nassert average([]) == 0\nprint('ok')")
