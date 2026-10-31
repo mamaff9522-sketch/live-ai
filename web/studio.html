@@ -201,7 +201,8 @@ function tExport() {
         $('div', {}, $('label', {}, 'ความละเอียด'), sel('height', [[720, '720p'], [1080, '1080p'], [1440, '2K (ช้ามากบน CPU)'], [2160, '4K (ช้ามากบน CPU)']])),
         $('div', {}, $('label', {}, 'FPS'), sel('fps', [[24, '24'], [25, '25'], [30, '30'], [60, '60']])),
         $('div', {}, $('label', {}, 'ซับไตเติล'), sel('subtitles', [['file', 'ไฟล์ .srt แยก'], ['burn', 'ไฟล์แยก + ฝังลงวิดีโอ'], ['none', 'ไม่ใส่ซับ']])),
-        $('div', {}, $('label', {}, 'ระบบเสียง'), sel('audio', [['original', 'เสียงต้นฉบับ'], ['dialogue_only', 'Dialogue Only (ยังไม่พร้อม)']])),
+        $('div', {}, $('label', {}, 'ระบบเสียง'), sel('audio', [['dialogue_only', 'Dialogue Only (เฉพาะเสียงพูด)'], ['original', 'เสียงต้นฉบับทั้งหมด']])),
+        $('div', {}, $('label', {}, 'แสงระหว่างคลิป'), sel('match_light', [['false', 'รักษาต้นฉบับ'], ['true', 'ปรับแสงให้ใกล้กัน']])),
         $('div', {}, $('label', {}, 'ใส่ชื่อผู้พูดในซับ'), sel('speaker_in_subs', [['false', 'ไม่ใส่'], ['true', 'ใส่']])),
         $('div', {}, $('label', {}, 'ตัดต่อตั้งแต่คลิป/ช็อตที่'), num('range_from')),
         $('div', {}, $('label', {}, 'ถึงคลิป/ช็อตที่'), num('range_to'))),
@@ -211,7 +212,7 @@ function tExport() {
       $('div', { class: 'row', style: 'margin-top:8px' }, file(r.video, 'MP4'), file(r.video_subs, 'MP4 มีซับ'), file(r.srt, 'ซับ .srt'), file(r.review, 'ฉบับตรวจสอบ')),
       r.seconds ? $('p', { class: 'muted' }, `ใช้เวลาประมวลผล ${Math.round(r.seconds)} วินาที`) : null));
 }
-async function save(settings) { if (settings.speaker_in_subs !== undefined) settings.speaker_in_subs = settings.speaker_in_subs === 'true' || settings.speaker_in_subs === true; try { P = await api('/api/studio/projects/' + P.id, { method: 'PATCH', body: JSON.stringify({ settings }) }); render(); } catch (e) { alert(e.message); } }
+async function save(settings) { for (const k of ['speaker_in_subs', 'match_light']) if (settings[k] !== undefined) settings[k] = settings[k] === 'true' || settings[k] === true; try { P = await api('/api/studio/projects/' + P.id, { method: 'PATCH', body: JSON.stringify({ settings }) }); render(); } catch (e) { alert(e.message); } }
 
 const q = new URLSearchParams(location.search).get('p'); q ? open_(+q).catch(home) : home();
 </script>

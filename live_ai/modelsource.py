@@ -48,6 +48,28 @@ def find(repos: list[str] | None = None, quant: str = QUANT) -> dict:
     raise LookupError("; ".join(tried))
 
 
+def find_mmproj(repo: str) -> dict | None:
+    """The vision projector (lets the same Qwen3.5-2B look at pictures) from the same repo."""
+    try:
+        files = _get(f"https://huggingface.co/api/models/{repo}/tree/main?recursive=true")
+    except Exception:
+        return None
+    cands = [f for f in files if "mmproj" in f.get("path", "").lower() and f["path"].endswith(".gguf")]
+    def rank(p: str) -> int:
+        p = p.lower()
+        for i, pat in enumerate((r"[-_.]f16", r"bf16", r"q8_0", r"f32")):
+            if re.search(pat, p):
+                return i
+        return 9
+    cands.sort(key=lambda f: rank(f["path"]))
+    if not cands:
+        return None
+    f = cands[0]
+    lfs = f.get("lfs") or {}
+    return {"repo": repo, "file": f["path"], "size": lfs.get("size") or f.get("size"), "sha256": lfs.get("oid", ""),
+            "url": f"https://huggingface.co/{repo}/resolve/main/{f['path']}"}
+
+
 if __name__ == "__main__":
     try:
         print(json.dumps(find(), indent=2))

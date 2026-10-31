@@ -119,7 +119,9 @@ class WhisperASR:
             subprocess.run(["ffmpeg", "-loglevel", "error", "-nostdin", "-y", "-i", path, "-vn", "-ac", "1", "-ar", "16000",
                             "-c:a", "pcm_s16le", str(wav)], check=True, timeout=300)
             out = Path(d) / "out"
-            cmd = [self.bin, "-m", str(model), "-l", self.lang, "-t", str(self.threads), "-oj", "-of", str(out), "-np", "-f", str(wav)]
+            beam = os.environ.get("LIVEAI_WHISPER_BEAM", "1")      # 1 = greedy: ~2x faster, enough to match lines
+            cmd = [self.bin, "-m", str(model), "-l", self.lang, "-t", str(self.threads), "-oj", "-of", str(out), "-np",
+                   "-bs", beam, "-bo", beam, "-f", str(wav)]
             if names:
                 cmd += ["--prompt", " ".join(names[:12])]
             r = subprocess.run(cmd, capture_output=True, text=True, timeout=1800)

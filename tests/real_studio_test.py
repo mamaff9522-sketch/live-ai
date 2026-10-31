@@ -70,18 +70,27 @@ def fleurs_thai(n=10):
     return out
 
 
-def make_clip(path: Path, color: str, audio: bytes | None, seconds: float = 4.0):
+def make_clip(path: Path, color: str, audio: bytes | None, seconds: float = 4.0, next_color: str | None = None):
+    """Coloured picture (+ a recorded sentence). With next_color the picture ends in the next clip's
+    colour, the way generated clips continue from the previous clip's last frame."""
     if audio:
         wav = path.with_suffix(".wav")
         wav.write_bytes(audio)
         dur = float(subprocess.run(["ffprobe", "-v", "error", "-show_entries", "format=duration", "-of", "csv=p=0", str(wav)],
                                    capture_output=True, text=True).stdout.strip() or 5)
         seconds = dur + 0.8
-        args = ["-f", "lavfi", "-i", f"color=c={color}:size=720x1280:rate=30:duration={seconds}", "-i", str(wav),
-                "-af", "adelay=400|400,apad"]
+        aud = ["-i", str(wav)]
+        af = "adelay=400|400,apad"
     else:
-        args = ["-f", "lavfi", "-i", f"color=c={color}:size=720x1280:rate=30:duration={seconds}",
-                "-f", "lavfi", "-i", f"anoisesrc=a=0.0005:d={seconds}"]
+        aud = ["-f", "lavfi", "-i", f"anoisesrc=a=0.0005:d={seconds}"]
+        af = "apad"
+    vid = ["-f", "lavfi", "-i", f"color=c={color}:size=720x1280:rate=30:duration={seconds}"]
+    if next_color:
+        vid += ["-f", "lavfi", "-i", f"color=c={next_color}:size=720x1280:rate=30:duration={seconds}"]
+        graph = f"[0][1]xfade=transition=fade:duration=0.8:offset={seconds - 1.4:.2f}[v];[2:a]{af}[a]"
+        args = [*vid, *aud, "-filter_complex", graph, "-map", "[v]", "-map", "[a]"]
+    else:
+        args = [*vid, *aud, "-af", af]
     subprocess.run(["ffmpeg", "-loglevel", "error", "-y", *args, "-c:v", "libx264", "-preset", "ultrafast", "-c:a", "aac",
                     "-t", f"{seconds:.2f}", str(path)], check=True)
     path.with_suffix(".wav").unlink(missing_ok=True)
@@ -108,6 +117,35 @@ def wait(token, pid, timeout=3600):
     raise TimeoutError("studio did not finish")
 
 
+def vision_test(tok, utts):
+    """Silent clips with NO picture continuity: only Qwen looking at the picture can tell them apart."""
+    lines = ["ทดสอบการดูภาพ", "", "ฉาก 1: ห้องสี", "วันที่ 1 กลางวัน / ห้องทดสอบ", ""]
+    plan = [("พูด", utts[0]), ("ภาพพื้นสีแดงสดทั้งจอ ไม่มีวัตถุอื่น", None), ("พูด", utts[1]),
+            ("ภาพพื้นสีน้ำเงินเข้มทั้งจอ ไม่มีวัตถุอื่น", None)]
+    for i, (act, u) in enumerate(plan, 1):
+        lines += [f"คลิป {i:03d}/004 | 5 วินาที | 9:16", f"ภาพ/การกระทำ: {act if not u else 'ฉากสีเทา'}",
+                  f"บทพูด [พิธีกร]: “{u[1]}”" if u else "บทพูด: ไม่มี", ""]
+    names = {}
+    for i, (act, u) in enumerate(plan):
+        n = f"v_{i}.mp4"
+        make_clip(WORK / n, ["gray", "red", "gray", "navy"][i], u[0] if u else None)
+        names[n] = i
+    code, p = call("POST", "/api/studio/projects", {"name": "CI ดูภาพ"}, tok)
+    pid = p["id"]
+    call("PATCH", f"/api/studio/projects/{pid}", {"script_text": "\n".join(lines)}, tok)
+    buf = io.BytesIO()
+    with zipfile.ZipFile(buf, "w") as z:
+        for n in ["v_3.mp4", "v_2.mp4", "v_1.mp4", "v_0.mp4"]:       # silent ones in the wrong order on purpose
+            z.write(WORK / n, n)
+    call("POST", f"/api/studio/projects/{pid}/zip", token=tok, raw=buf.getvalue(), ctype="application/zip")
+    call("POST", f"/api/studio/projects/{pid}/start", {}, tok)
+    p, secs = wait(tok, pid)
+    tl = [(v["name"], v["shots"], v["how"], v["confidence"]) for v in (p.get("result") or {}).get("timeline", {}).get("video", [])]
+    REPORT["vision_test"] = {"timeline": tl, "seconds": secs, "agent4": p["agents"]["4"]["message"]}
+    check("AI ดูภาพ (Qwen3.5-2B vision) เลือกช็อตเงียบได้ถูกจากสีในภาพ",
+          [(n, s) for n, s, _, _ in tl] == [("v_0.mp4", [0]), ("v_1.mp4", [1]), ("v_2.mp4", [2]), ("v_3.mp4", [3])], tl)
+
+
 def main():
     utts = fleurs_thai(10)
     colors = ["red", "green", "blue", "yellow", "purple", "orange", "cyan", "white", "gray", "pink", "brown", "olive"]
@@ -131,7 +169,7 @@ def main():
     files = {}
     for i, u in enumerate(plan):
         name = f"download_{rnd.randint(100000, 999999)}.mp4"
-        make_clip(WORK / name, colors[i], u[0] if u else None)
+        make_clip(WORK / name, colors[i], u[0] if u else None, next_color=colors[i + 1] if i + 1 < len(colors) else None)
         files[i] = name
     missing_idx = 6                                      # clip 007 left out on the first run
     upload = [files[i] for i in range(12) if i != missing_idx]
@@ -194,7 +232,11 @@ def main():
         (OUT / "studio_with_subs.mp4").write_bytes(get(BASE + res["video_subs"]["url"]))
         subprocess.run(["ffmpeg", "-loglevel", "error", "-y", "-i", str(OUT / "studio_with_subs.mp4"), "-vf",
                         "select='eq(n\\,60)+eq(n\\,400)',scale=360:-2,tile=2x1", "-frames:v", "1", str(OUT / "studio_frames.png")])
+    sil = [v for v in (res.get("timeline") or {}).get("video", []) if v["how"].startswith("silent")]
+    check("คลิปที่ไม่มีเสียงพูด วางถูกที่ด้วยความต่อเนื่องของภาพ (มั่นใจสูง)",
+          len(sil) == 2 and all(v["confidence"] == "สูง" for v in sil), sil)
     REPORT["qa"] = res.get("qa")
+    vision_test(tok, utts)
     REPORT["agents"] = {k: {"status": a["status"], "message": a["message"]} for k, a in p["agents"].items()}
     passed = sum(c["passed"] for c in REPORT["checks"])
     REPORT["summary"] = {"passed": passed, "total": len(REPORT["checks"])}

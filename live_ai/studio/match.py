@@ -88,7 +88,7 @@ def best_window(transcript: str, lines: list[dict], exclude: set[int] = frozense
     return best
 
 
-def match(script: dict, clips: list[dict]) -> dict:
+def match(script: dict, clips: list[dict], visual: dict | None = None, vl_votes: dict | None = None) -> dict:
     """clips: [{"id","name","order","duration","speech": bool, "transcript": str, "duplicate_of": id|None}]
     Returns {"assign": {clip_id: {...}}, "timeline": [...], "missing": [...], "extra": [...], "issues": [...]}"""
     shots = script["shots"]
@@ -158,41 +158,29 @@ def match(script: dict, clips: list[dict]) -> dict:
     rest = [c for c in clips if c["id"] not in assign and not c.get("duplicate_of")]
     order = sorted(clips, key=lambda c: (c["order"],))
     rank = {c["id"]: i for i, c in enumerate(order)}
-    placed_silent: set[int] = set()
-    silent_clips = [c for c in rest if not (c.get("speech") and c.get("transcript"))]
-    if len(silent_clips) == 1 and len(silent_shots) == 1:      # only one possible place: no guessing needed
-        c, sidx = silent_clips[0], silent_shots[0]
-        assign[c["id"]] = {"lines": [], "shots": [sidx], "score": 0.0, "margin": 0.0, "how": "silent-only-gap", "confidence": "กลาง"}
-        issues.append({"type": "check_silent", "clip": c["id"],
-                       "message": f"คลิป “{c['name']}” ไม่มีเสียงพูด และเป็นช่องเงียบช่องเดียวที่เหลือ จึงวางไว้ที่ {label(shots[sidx])} "
-                                  f"({' '.join(shots[sidx]['action'])[:60]}) — กรุณาตรวจภาพ"})
-        rest = [x for x in rest if x["id"] != c["id"]]
+    silent_clips = []
     for c in sorted(rest, key=lambda c: rank[c["id"]]):
         if c.get("speech") and c.get("transcript"):
             issues.append({"type": "unmatched", "clip": c["id"],
                            "message": f"คลิป “{c['name']}” มีเสียงพูด (“{c['transcript'][:50]}”) แต่ไม่ตรงกับบทใดเลย — อาจเป็นคลิปที่สร้างผิดหรือไม่ใช่ของเรื่องนี้"})
-            continue
-        before = [assign[x]["shots"][-1] for x in assign if rank[x] < rank[c["id"]]]
-        after = [assign[x]["shots"][0] for x in assign if rank[x] > rank[c["id"]]]
-        lo = max(before) if before else -1
-        hi = min(after) if after else len(shots)
-        cands = [s for s in silent_shots if lo < s < hi and s not in placed_silent]
-        if not cands:
-            cands = [s for s in silent_shots if s not in placed_silent]
-            how = "silent-any"
         else:
-            how = "silent-between"
-        if not cands:
+            silent_clips.append(c)
+    placements = place_silent(silent_clips, silent_shots, assign, clip_by_id, rank, shots, visual or {}, vl_votes or {})
+    candidates = {}
+    for c in silent_clips:
+        p = placements.get(c["id"])
+        candidates[c["id"]] = p["candidates"] if p else silent_shots[:6]
+        if not p or p.get("shot") is None:
             issues.append({"type": "extra", "clip": c["id"],
                            "message": f"คลิป “{c['name']}” ไม่มีเสียงพูด และไม่มีช็อตเงียบที่ว่างให้ใส่ — อาจเป็นคลิปเกิน"})
             continue
-        s = cands[0]
-        placed_silent.add(s)
-        assign[c["id"]] = {"lines": [], "shots": [s], "score": 0.0, "margin": 0.0, "how": how,
-                           "confidence": "ต่ำ" if how == "silent-any" or len(cands) > 1 else "กลาง"}
-        issues.append({"type": "check_silent", "clip": c["id"],
-                       "message": f"คลิป “{c['name']}” ไม่มีเสียงพูด จึงวางไว้ที่ {label(shots[s])} ({' '.join(shots[s]['action'])[:60]}) "
-                                  f"ตามตำแหน่งระหว่างคลิปข้างเคียง — กรุณาตรวจภาพ"})
+        sidx = p["shot"]
+        assign[c["id"]] = {"lines": [], "shots": [sidx], "score": p["score"], "margin": p["margin"], "how": p["how"],
+                           "confidence": p["confidence"], "evidence": p["evidence"]}
+        if p["confidence"] != "สูง":
+            issues.append({"type": "check_silent", "clip": c["id"],
+                           "message": f"คลิป “{c['name']}” ไม่มีเสียงพูด วางไว้ที่ {label(shots[sidx])} "
+                                      f"({' '.join(shots[sidx]['action'])[:60]}) จาก{p['evidence']} — ความมั่นใจ{p['confidence']} กรุณาตรวจภาพ"})
 
     # 4. timeline + missing shots
     timeline = sorted(assign, key=lambda cid: (assign[cid]["shots"][0], assign[cid]["lines"][0] if assign[cid]["lines"] else -1,
@@ -211,7 +199,7 @@ def match(script: dict, clips: list[dict]) -> dict:
             continue
         missing.append({"shot": s["index"], "label": label(s), "partial": False, "action": s["action"],
                         "dialogue": s["dialogue"], "scene": s["scene"], "camera": s.get("camera", "")})
-    return {"assign": assign, "timeline": timeline, "missing": missing, "issues": issues}
+    return {"assign": assign, "timeline": timeline, "missing": missing, "issues": issues, "silent_candidates": candidates}
 
 
 def label(shot: dict) -> str:
@@ -235,3 +223,79 @@ def regen_prompt(shot: dict, script: dict) -> str:
     if shot.get("duration"):
         parts.append(f"ความยาว {shot['duration']:g} วินาที")
     return "\n".join(parts)
+
+
+def place_silent(silent_clips, silent_shots, assign, clip_by_id, rank, shots, visual, vl_votes) -> dict:
+    """Puts clips without speech into silent shots.
+
+    Evidence, strongest first: the picture continues from the clip before / into the clip after
+    (generated clips start from the previous clip's last frame), what the picture shows (the vision
+    model picked this shot's description), and only then upload / file-name order."""
+    from .visual import similarity
+    shot_clip = {}
+    for cid, a in assign.items():
+        for s in a["shots"]:
+            shot_clip.setdefault(s, cid)
+    remaining_shots = list(silent_shots)
+    out = {}
+    if not silent_clips:
+        return out
+
+    def neighbours(s):
+        prev = next((shot_clip[k] for k in range(s - 1, -1, -1) if k in shot_clip), None)
+        nxt = next((shot_clip[k] for k in range(s + 1, len(shots)) if k in shot_clip), None)
+        return prev, nxt
+
+    def score(c, s):
+        ev, parts = [], []
+        prev, nxt = neighbours(s)
+        v = visual.get(c["id"])
+        if v:
+            if prev is not None and shot_clip.get(s - 1) == prev and visual.get(prev):
+                parts.append(similarity(visual[prev]["last"], v["first"]))
+            if nxt is not None and shot_clip.get(s + 1) == nxt and visual.get(nxt):
+                parts.append(similarity(v["last"], visual[nxt]["first"]))
+        cont = max(parts) if parts else None
+        sc = 0.0
+        if cont is not None:
+            sc += cont
+            ev.append(f"ภาพต่อเนื่องกับคลิปข้างเคียง {int(cont * 100)}%")
+        if vl_votes.get(c["id"]) == s:
+            sc += 0.5
+            ev.append("AI ดูภาพแล้วตรงกับคำบรรยายช็อตนี้")
+        lo = max([rank[x] for x in ([prev] if prev else [])] or [-1])
+        hi = min([rank[x] for x in ([nxt] if nxt else [])] or [10**9])
+        if lo < rank[c["id"]] < hi:
+            sc += 0.1
+            ev.append("ลำดับไฟล์อยู่ระหว่างคลิปข้างเคียง")
+        return sc, cont, ev
+
+    # greedy over the best (clip, shot) pairs; recompute after each placement because a placed
+    # silent clip becomes the neighbour of the next silent shot
+    pending = list(silent_clips)
+    for _ in range(len(silent_clips)):
+        if not pending or not remaining_shots:
+            break
+        table = []
+        for c in pending:
+            row = sorted(((score(c, s), s) for s in remaining_shots), key=lambda x: -x[0][0])
+            best, second = row[0], (row[1] if len(row) > 1 else ((0.0, None, []), None))
+            table.append((best[0][0], best[0][0] - second[0][0], c, best, [s for _, s in row[:6]]))
+        table.sort(key=lambda t: (-t[0], -t[1]))
+        sc, margin, c, ((_, cont, ev), s), cands = table[0]
+        only_one = len(remaining_shots) == 1 and len(pending) == 1
+        if (cont is not None and cont >= 0.85 and margin >= 0.15) or (vl_votes.get(c["id"]) == s and (cont or 0) >= 0.5):
+            conf = "สูง"
+        elif only_one or margin >= 0.1 or vl_votes.get(c["id"]) == s:
+            conf = "กลาง"
+        else:
+            conf = "ต่ำ"
+        if only_one and not ev:
+            ev = ["เป็นช่องเงียบช่องเดียวที่เหลือ"]
+        out[c["id"]] = {"shot": s, "score": round(sc, 3), "margin": round(margin, 3), "confidence": conf,
+                        "how": "silent-visual" if cont is not None else "silent-order", "evidence": ", ".join(ev) or "ลำดับไฟล์",
+                        "candidates": cands}
+        shot_clip[s] = c["id"]
+        remaining_shots.remove(s)
+        pending.remove(c)
+    return out

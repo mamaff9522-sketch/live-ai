@@ -46,7 +46,7 @@ class App:
                                 ttl_hours=float(os.environ.get("LIVEAI_MEDIA_TTL_HOURS", "72")))
         self.media.start_cleanup()
         self.editor = Editor(self.store, self.media, self.assistant)
-        self.studio = Studio(self.store, self.media, s)
+        self.studio = Studio(self.store, self.media, s, self.assistant)
         self.max_upload = int(os.environ.get("LIVEAI_MAX_UPLOAD_MB", "500")) * 2**20
         self.cpu = sysinfo.CpuMeter()
         self.started = time.time()

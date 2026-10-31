@@ -72,14 +72,11 @@ AGENTS = [
     (14, "สร้างคำบรรยาย", "Subtitle Generator"),
     (15, "ตรวจคุณภาพขั้นสุดท้าย", "Final QA"),
 ]
-NOT_YET = {
-    4: "ยังไม่เปิดใช้ (ระยะ 2): ตอนนี้ใช้เสียงพูดเป็นหลักในการจับคู่",
-    9: "ยังไม่เปิดใช้ (ระยะ 2)",
-    10: "ยังไม่เปิดใช้ (ระยะ 2): ใช้ความยาวคลิปตามต้นฉบับ ไม่ตัดจังหวะเพิ่ม",
-}
-DEFAULT_SETTINGS = {"aspect": "9:16", "height": 720, "fps": 30, "subtitles": "file", "audio": "original",
+NOT_YET: dict[int, str] = {}
+DEFAULT_SETTINGS = {"aspect": "9:16", "height": 720, "fps": 30, "subtitles": "file", "audio": "dialogue_only", "match_light": False,
                     "speaker_in_subs": False, "range_from": None, "range_to": None}
 VIDEO_EXT = {".mp4", ".mov", ".m4v", ".webm", ".mkv", ".3gp"}
+RNNOISE_MODEL = Path(__file__).resolve().parent.parent / "assets" / "rnnoise-std.rnnn"
 MAX_RETRIES = 2
 
 
@@ -119,16 +116,20 @@ def srt_time(t: float) -> str:
 
 
 class Studio:
-    def __init__(self, store, media, s):
+    def __init__(self, store, media, s, assistant=None):
         self.store = store
         self.media = media
         self.s = s
+        self.assistant = assistant
         self.root = s.data_dir / "studio"
         self.root.mkdir(parents=True, exist_ok=True)
         self.q: queue.Queue[int] = queue.Queue()
         self.asr = make_asr(s.data_dir, s.threads)
         with store.conn() as c:
             c.executescript(SCHEMA)
+            cols = {r["name"] for r in c.execute("PRAGMA table_info(project_clips)")}
+            if "visual" not in cols:
+                c.execute("ALTER TABLE project_clips ADD COLUMN visual TEXT")
             rows = c.execute("SELECT id FROM projects WHERE status IN ('queued','running')").fetchall()
         for r in rows:   # resume after a restart, from the saved checkpoints
             self.q.put(r["id"])
@@ -210,7 +211,7 @@ class Studio:
                     cur[k] = v
                 elif k == "audio" and v in ("original", "dialogue_only"):
                     cur[k] = v
-                elif k == "speaker_in_subs":
+                elif k in ("speaker_in_subs", "match_light"):
                     cur[k] = bool(v)
                 elif k in ("range_from", "range_to"):
                     cur[k] = int(v) if v not in (None, "", 0) else None
@@ -382,13 +383,14 @@ class Studio:
             script = self._step(pid, 2, self._script, p)
             self._step(pid, 3, self._scenes, script)
             clips = self._step(pid, 8, self._inspect, uid)
+            clips = self._step(pid, 4, self._visual, clips)
             clips = self._step(pid, 5, self._dialogue, uid, clips, script)
             plan = self._step(pid, 6, self._match, script, clips)
             timeline = self._step(pid, 7, self._sequence, script, clips, plan)
-            self._agent(pid, 12, "done", "ค่าเริ่มต้น: รักษาภาพต้นฉบับ ต่อแบบ Hard Cut ไม่ครอป ไม่ปรับสี (ปรับภาพอัตโนมัติ: ระยะ 2)")
-            self._agent(pid, 13, "done" if json.loads(p["settings"])["audio"] == "original" else "warning",
-                        "ใช้เสียงจากคลิปต้นฉบับตามเดิม" if json.loads(p["settings"])["audio"] == "original" else
-                        "โหมด Dialogue Only ยังแยกเสียงพูดออกจากเสียงอื่นไม่ได้ (ระยะ 3) — ใช้เสียงต้นฉบับไปก่อน ไม่ได้ลบหรือสร้างเสียงใหม่")
+            self._step(pid, 9, self._continuity, script, clips, timeline)
+            self._step(pid, 10, self._emotion, script)
+            self._step(pid, 12, self._cinematic, script, clips, timeline)
+            self._step(pid, 13, self._audio, clips, timeline)
             out = self._step(pid, 11, self._render, uid, clips, timeline)
             subs = self._step(pid, 14, self._subtitles, uid, script, clips, timeline, out)
             qa = self._step(pid, 15, self._qa, uid, script, clips, timeline, out, subs, plan)
@@ -521,11 +523,149 @@ class Studio:
         self._agent(pid, 5, "done", f"มีเสียงพูด {spoken}/{len(clips)} คลิป (ถอดเสียงใหม่ {done} คลิป, ที่เหลือใช้ผลที่บันทึกไว้)")
         return clips
 
+    def _visual(self, pid, clips) -> list[dict]:
+        """AI 4: first/middle/last frame thumbnails (cached), used for continuity and silent clips."""
+        from .visual import thumbs
+        for i, c in enumerate(clips):
+            self._check_pause(pid)
+            v = c["row"].get("visual")
+            v = json.loads(v) if v else None
+            if v is None:
+                v = thumbs(c["path"], c["duration"])
+                with self.store.conn() as cn:
+                    cn.execute("UPDATE project_clips SET visual=? WHERE project_id=? AND media_id=?", (json.dumps(v), pid, c["id"]))
+            c["visual"] = v
+            if i % 10 == 0:
+                self._agent(pid, 4, "running", f"อ่านภาพ {i + 1}/{len(clips)}")
+        vision = bool(self.assistant and self.assistant.server.mmproj)
+        self._agent(pid, 4, "done", f"เก็บภาพต้นและท้ายของ {len(clips)} คลิปไว้ตรวจความต่อเนื่อง"
+                    + ("; Qwen ดูภาพได้ ใช้ช่วยวางคลิปที่ไม่มีเสียงพูด" if vision else "; ยังไม่ได้เปิดโหมดดูภาพของ Qwen"))
+        return clips
+
+    def _vl_votes(self, pid, script, clips, cands: dict) -> dict:
+        """Ask Qwen (vision) which silent shot a silent clip shows, among its few candidates."""
+        if not (self.assistant and self.assistant.server.mmproj) or not cands:
+            return {}
+        from .visual import keyframe_jpeg
+        by_id = {c["id"]: c for c in clips}
+        votes = {}
+        gate = self.assistant._gen
+        for k, (cid, shot_ids) in enumerate(cands.items()):
+            if len(shot_ids) < 2:
+                continue
+            self._check_pause(pid)
+            c = by_id[cid]
+            opts = [" ".join(script["shots"][si]["action"])[:160] or label(script["shots"][si]) for si in shot_ids[:6]]
+            if not gate.acquire(timeout=900):
+                break
+            try:
+                t0 = time.time()
+                choice = self.assistant.llm.choose_for_image(keyframe_jpeg(c["path"], c["duration"]),
+                                                             "ภาพนี้มาจากช็อตไหนของละคร", opts)
+                if choice is not None:
+                    votes[cid] = shot_ids[choice]
+                logs.event(log, "vision vote", project=pid, clip=cid, choice=choice, seconds=round(time.time() - t0, 1))
+            except Exception as e:
+                logs.event(log, "vision vote failed", logging.WARNING, project=pid, error=str(e)[:200])
+            finally:
+                gate.release()
+            self._agent(pid, 6, "running", f"ให้ AI ดูภาพคลิปที่ไม่มีเสียงพูด {k + 1}/{len(cands)}")
+        return votes
+
+    def _continuity(self, pid, script, clips, timeline) -> None:
+        """AI 9: consecutive clips in the same scene should continue visually; big jumps are flagged."""
+        from .visual import similarity
+        by_id = {c["id"]: c for c in clips}
+        flagged = []
+        v = timeline["video"]
+        for a, b in zip(v, v[1:]):
+            sa, sb = script["shots"][a["shots"][-1]], script["shots"][b["shots"][0]]
+            if sa["scene"] != sb["scene"]:
+                continue
+            sim = similarity((by_id[a["clip"]].get("visual") or {}).get("last"), (by_id[b["clip"]].get("visual") or {}).get("first"))
+            b["join_similarity"] = sim
+            if sim < 0.35:
+                flagged.append({"type": "continuity", "clip": b["clip"],
+                                "message": f"รอยต่อ {label(sa)} → {label(sb)} ภาพเปลี่ยนมาก (คล้ายกัน {int(sim * 100)}%) ทั้งที่อยู่ฉากเดียวกัน "
+                                           f"— ตรวจหน้า/ชุด/สถานที่ ว่าต่อเนื่องหรือไม่"})
+        timeline["issues"] += flagged
+        self._agent(pid, 9, "warning" if flagged else "done",
+                    (f"พบรอยต่อที่ภาพเปลี่ยนมาก {len(flagged)} จุด (ดูแท็บตรวจข้อผิดพลาด)" if flagged else "รอยต่อในฉากเดียวกันต่อเนื่องดี")
+                    + " — ตรวจจากภาพรวม ยังแยกแยะใบหน้า/เสื้อผ้าทีละจุดไม่ได้")
+
+    EMOTIONS = {"เศร้า": ("ร้องไห้", "น้ำตา", "เสียใจ", "สะอื้น", "เศร้า", "อาลัย"),
+                "โกรธ": ("โกรธ", "ตะคอก", "ชี้หน้า", "ตบ", "ด่า", "เกรี้ยวกราด", "ขึ้นเสียง"),
+                "ระทึก": ("ตกใจ", "วิ่ง", "หนี", "ไล่", "สะดุ้ง", "ตำรวจ", "ชะงัก", "ระทึก"),
+                "โรแมนติก": ("กอด", "จับมือ", "หอม", "รัก", "สบตา"),
+                "ตลก": ("หัวเราะ", "ขำ", "ตลก", "แซว", "ยิ้มขำ")}
+
+    def _emotion(self, pid, script) -> None:
+        """AI 10: mood of each scene from the words of the script. Clips are never trimmed, so dialogue
+        and reactions keep their full length; the mood is shown for the editor and QA."""
+        moods = {}
+        for sc in script["scenes"]:
+            text = " ".join(" ".join(sh["action"]) + " ".join(d["text"] for d in sh["dialogue"])
+                            for sh in script["shots"] if sh["scene"] == sc["id"])
+            score = {m: sum(text.count(w) for w in ws) for m, ws in self.EMOTIONS.items()}
+            best = max(score, key=score.get)
+            moods[sc["id"]] = best if score[best] else "ปกติ"
+            sc["mood"] = moods[sc["id"]]
+        counts = {}
+        for m in moods.values():
+            counts[m] = counts.get(m, 0) + 1
+        self._agent(pid, 10, "done", "อารมณ์รายฉาก: " + ", ".join(f"{k} {v}" for k, v in counts.items())
+                    + " — ไม่ตัดคลิปให้สั้นลง จึงรักษาจังหวะการแสดงและปฏิกิริยาตามต้นฉบับ")
+
+    def _cinematic(self, pid, script, clips, timeline) -> None:
+        """AI 12: brightness of each clip vs the rest of its scene; optional gentle correction."""
+        st = json.loads(self.store.conn().execute("SELECT settings FROM projects WHERE id=?", (pid,)).fetchone()["settings"])
+        by_id = {c["id"]: c for c in clips}
+        scene_l: dict[str, list] = {}
+        for it in timeline["video"]:
+            l = (by_id[it["clip"]].get("visual") or {}).get("luma")
+            if l is not None:
+                scene_l.setdefault(script["shots"][it["shots"][0]]["scene"], []).append((it, l))
+        off = 0
+        for sc, items in scene_l.items():
+            if len(items) < 3:
+                continue
+            med = sorted(l for _, l in items)[len(items) // 2]
+            for it, l in items:
+                diff = l - med
+                if abs(diff) > 25:
+                    off += 1
+                    if st.get("match_light"):
+                        it["brightness"] = round(max(-0.15, min(0.15, -diff / 255)), 3)
+                    timeline["issues"].append({"type": "light", "clip": it["clip"], "message":
+                        f"“{it['name']}” {'สว่าง' if diff > 0 else 'มืด'}กว่าคลิปอื่นในฉากเดียวกัน ({int(l)} เทียบ {int(med)})"
+                        + (" — ปรับให้ใกล้เคียงแล้ว" if st.get("match_light") else " — เปิด 'ปรับแสงให้ใกล้กัน' ได้ในหน้าตั้งค่า")})
+        self._agent(pid, 12, "warning" if off and not st.get("match_light") else "done",
+                    "ต่อแบบ Hard Cut ไม่ครอป ไม่เพิ่มเอฟเฟกต์ " + (f"; แสงต่างจากฉาก {off} คลิป" if off else "; แสงใกล้เคียงกันทั้งฉาก")
+                    + (" (ปรับให้แล้ว)" if off and st.get("match_light") else ""))
+
+    def _audio(self, pid, clips, timeline) -> None:
+        """AI 13: Dialogue Only = local RNNoise speech denoiser + quieting the gaps between lines."""
+        st = json.loads(self.store.conn().execute("SELECT settings FROM projects WHERE id=?", (pid,)).fetchone()["settings"])
+        if st["audio"] != "dialogue_only":
+            self._agent(pid, 13, "done", "ใช้เสียงจากคลิปต้นฉบับตามเดิม")
+            return
+        if not RNNOISE_MODEL.is_file():
+            self._agent(pid, 13, "warning", "ไม่พบโมเดลลดเสียงรบกวน — ใช้เสียงต้นฉบับ")
+            return
+        self._agent(pid, 13, "done", "Dialogue Only: ลดเสียงลม/รถ/ฝน/เสียงรบกวนด้วย RNNoise บนเครื่อง และลดเสียงช่วงที่ไม่มีคนพูดลง 20 dB "
+                    "— เพลงที่ดังซ้อนใต้เสียงพูดพร้อมกันอาจยังได้ยินบ้าง ระบบไม่สร้างหรือแก้คำพูด")
+
     def _match(self, pid, script, clips) -> dict:
         for c in clips:
             c["order"] = (M.natural_key(c["name"]), c["row"]["upload_order"])
-        r = M.match(script, [{k: c.get(k) for k in ("id", "name", "order", "duration", "speech", "transcript", "duplicate_of")}
-                             for c in clips])
+        slim = [{k: c.get(k) for k in ("id", "name", "order", "duration", "speech", "transcript", "duplicate_of")} for c in clips]
+        visual = {c["id"]: c["visual"] for c in clips if c.get("visual")}
+        r = M.match(script, slim, visual)
+        unsure = {cid: r["silent_candidates"][cid] for cid, a in r["assign"].items()
+                  if a["how"].startswith("silent") and a["confidence"] != "สูง" and cid in r["silent_candidates"]}
+        votes = self._vl_votes(pid, script, clips, unsure)
+        if votes:
+            r = M.match(script, slim, visual, votes)
         names = {c["id"]: c["name"] for c in clips}
         for c in clips:
             if c.get("duplicate_of") and not any(i.get("clip") == c["id"] for i in r["issues"]):
@@ -568,16 +708,21 @@ class Studio:
             raise StudioError("ไม่มีคลิปที่จับคู่ได้เลย จึงตัดต่อไม่ได้")
         W, H = out_size(st, first)
         fps = st["fps"]
-        key = hashlib.sha1(f"{W}x{H}@{fps}".encode()).hexdigest()[:8]
+        dialogue_only = st["audio"] == "dialogue_only" and RNNOISE_MODEL.is_file()
         cache = self.root / str(pid) / "segments"
         cache.mkdir(parents=True, exist_ok=True)
         segs = []
         for i, item in enumerate(timeline["video"]):
             self._check_pause(pid)
             c = by_id[item["clip"]]
+            bright = item.get("brightness", 0.0)
+            key = hashlib.sha1(f"{W}x{H}@{fps}|{dialogue_only}|{bright}".encode()).hexdigest()[:8]
             seg = cache / f"{c['id']}-{key}.mp4"
             if not seg.exists():    # render checkpoint: finished segments are reused
-                normalize_segment(c, seg, W, H, fps)
+                # where people speak: the recogniser's segments are more reliable than loudness in noisy clips
+                spoken = [(x["start"], x["end"]) for x in (c.get("asr") or {}).get("segments") or []]
+                normalize_segment(c, seg, W, H, fps, dialogue_only=dialogue_only, brightness=bright,
+                                  regions=spoken or (c.get("inspect") or {}).get("speech_regions") or [])
             segs.append(seg)
             self._agent(pid, 11, "running", f"เตรียมคลิป {i + 1}/{len(timeline['video'])} ({W}x{H} {fps}fps)")
         out_dir = self.media.root / str(uid)
@@ -738,16 +883,26 @@ def inspect_clip(path: str) -> dict:
     return out
 
 
-def normalize_segment(c: dict, seg: Path, W: int, H: int, fps: int) -> None:
-    """Same size/fps/codec for every clip, picture kept whole (padded, never cropped)."""
+def normalize_segment(c: dict, seg: Path, W: int, H: int, fps: int, dialogue_only: bool = False,
+                      brightness: float = 0.0, regions: list | None = None) -> None:
+    """Same size/fps/codec for every clip, picture kept whole (padded, never cropped).
+    dialogue_only: RNNoise speech denoiser + gaps between spoken lines lowered by 20 dB."""
     tmp = seg.with_suffix(".part.mp4")
     vf = (f"scale={W}:{H}:force_original_aspect_ratio=decrease:force_divisible_by=2,pad={W}:{H}:(ow-iw)/2:(oh-ih)/2:black,"
           f"setsar=1,fps={fps},format=yuv420p")
+    if brightness:
+        vf += f",eq=brightness={brightness:.3f}"
+    af = "aresample=48000,aformat=channel_layouts=stereo"
+    if dialogue_only and c["has_audio"]:
+        spans = [(max(0.0, a - 0.25), b + 0.25) for a, b in (regions or [])]
+        gate = "+".join(f"between(t,{a:.2f},{b:.2f})" for a, b in spans) or "0"
+        af = (f"aresample=48000,highpass=f=70,arnndn=m={RNNOISE_MODEL},volume='if(gt({gate},0),1,0.1)':eval=frame,"
+              f"aformat=channel_layouts=stereo")
     args = ["nice", "-n", "10", "ffmpeg", "-loglevel", "error", "-nostdin", "-y", "-i", c["path"]]
     if not c["has_audio"]:
         args += ["-f", "lavfi", "-i", "anullsrc=r=48000:cl=stereo"]
     args += ["-map", "0:v:0", "-map", "0:a:0" if c["has_audio"] else "1:a:0", "-vf", vf,
-             "-af", "aresample=48000,aformat=channel_layouts=stereo,apad", "-t", f"{c['duration']:.3f}",
+             "-af", af + ",apad", "-t", f"{c['duration']:.3f}",
              "-c:v", "libx264", "-preset", "veryfast", "-crf", "20", "-g", str(fps * 2), "-c:a", "aac", "-b:a", "160k", "-ar", "48000",
              "-video_track_timescale", "90000", "-movflags", "+faststart", "-threads", os.environ.get("LIVEAI_FFMPEG_THREADS", "2"), str(tmp)]
     r = subprocess.run(args, capture_output=True, text=True, timeout=3600)

@@ -178,7 +178,7 @@ class Studio(unittest.TestCase):
         self.assertEqual(subs, script_lines)
         # agents board: 15 agents, phase-2 ones honestly marked
         self.assertEqual(len(p["agents"]), 15)
-        self.assertEqual(p["agents"]["4"]["status"], "skipped")
+        self.assertTrue(all(a["status"] in ("done", "warning") for a in p["agents"].values()), p["agents"])
         self.assertEqual(p["agents"]["15"]["status"], "done")
         with urllib.request.urlopen(urllib.request.Request(self.base + res["video"]["url"], headers={"Range": "bytes=0-9"})) as f:
             self.assertEqual(f.status, 206)
@@ -214,14 +214,61 @@ class Studio(unittest.TestCase):
         line12 = self.script["shots"][11]["dialogue"][0]["text"]
         self.assertEqual(srt.count(line12), 1)
 
-    def test_6_dialogue_only_is_reported_honestly(self):
+    def test_6_dialogue_only(self):
         t = self.user()
         pid, _ = self.project(t, [n for n, i in self.truth.items() if i < 3], rng=(1, 3))
         self.call("PATCH", f"/api/studio/projects/{pid}", {"settings": {"audio": "dialogue_only"}}, t)
         self.call("POST", f"/api/studio/projects/{pid}/start", {}, t)
         p = self.wait(t, pid)
-        self.assertEqual(p["agents"]["13"]["status"], "warning")
-        self.assertIn("ยังแยกเสียงพูด", p["agents"]["13"]["message"])
+        self.assertEqual(p["status"], "done", p["message"])
+        self.assertEqual(p["agents"]["13"]["status"], "done")
+        self.assertIn("RNNoise", p["agents"]["13"]["message"])
+
+    def test_7_silent_clips_placed_by_picture_continuity(self):
+        """Shots 18–31 of the real script hold 3 silent shots. Like Meta AI clips made from the
+        previous clip's last frame, each clip here fades from its own colour into the next clip's
+        colour. Silent clips get meaningless names and are uploaded in random order."""
+        t = self.user()
+        shots = self.script["shots"][17:31]
+        rnd = random.Random(21)
+        d = self.tmp / "cont"
+        d.mkdir(exist_ok=True)
+        fake = json.loads((self.tmp / "asr.json").read_text(encoding="utf-8"))
+        names, truth = [], {}
+        pal = ["0x8B0000", "0x006400", "0x00008B", "0x8B8B00", "0x4B0082", "0xFF8C00", "0x008B8B", "0xC0C0C0",
+               "0x2F4F4F", "0xFF1493", "0x8B4513", "0x556B2F", "0x191970", "0xDAA520", "0x000000"]
+        for k, s in enumerate(shots):
+            name = f"clip_{rnd.randint(100000, 999999)}.mp4"
+            subprocess.run(["ffmpeg", "-loglevel", "error", "-y", "-f", "lavfi", "-i", f"color=c={pal[k]}:s=360x640:d=3",
+                            "-f", "lavfi", "-i", f"color=c={pal[k + 1]}:s=360x640:d=3", "-f", "lavfi",
+                            "-i", "sine=frequency=300:duration=2.4" if s["dialogue"] else "anoisesrc=a=0.0005:d=3",
+                            "-filter_complex", "[0][1]xfade=transition=fade:duration=1:offset=1.4[v]",
+                            "-map", "[v]", "-map", "2:a", "-af", "adelay=300|300,apad", "-t", "3",
+                            "-c:v", "libx264", "-preset", "ultrafast", "-c:a", "aac", str(d / name)], check=True)
+            fake[name] = " ".join(noisy(x["text"], rnd) for x in s["dialogue"])
+            names.append(name)
+            truth[name] = s["index"]
+        (self.tmp / "asr.json").write_text(json.dumps(fake, ensure_ascii=False), encoding="utf-8")
+        self.app.studio.asr.table = fake
+        rnd.shuffle(names)
+        code, p = self.call("POST", "/api/studio/projects", {"name": "ต่อเนื่อง"}, t)
+        pid = p["id"]
+        self.call("PATCH", f"/api/studio/projects/{pid}", {"script_text": SCRIPT, "settings": {"range_from": 18, "range_to": 31}}, t)
+        buf = io.BytesIO()
+        with zipfile.ZipFile(buf, "w") as z:
+            for n in names:
+                z.write(d / n, n)
+        self.call("POST", f"/api/studio/projects/{pid}/zip", token=t, raw=buf.getvalue(), ctype="application/zip")
+        self.call("POST", f"/api/studio/projects/{pid}/start", {}, t)
+        p = self.wait(t, pid)
+        tl = p["result"]["timeline"]["video"]
+        got = [(truth[i["name"]] - 17, i["shots"][0]) for i in tl]
+        self.assertEqual([g for g, _ in got], list(range(14)), got)
+        silent = [i for i in tl if i["how"].startswith("silent")]
+        self.assertEqual(len(silent), 3)
+        self.assertTrue(all(i["confidence"] == "สูง" for i in silent), silent)
+        self.assertEqual(p["status"], "done", p["message"])
+        self.assertTrue(all(i.get("join_similarity", 1) > 0.8 for i in tl[1:]), [i.get("join_similarity") for i in tl])
 
     def test_8_pause_and_resume_from_checkpoint(self):
         t = self.user()

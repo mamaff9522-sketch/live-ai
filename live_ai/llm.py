@@ -55,6 +55,7 @@ def ensure_model(s: Settings) -> Path:
         from . import modelsource
         try:
             found = modelsource.find()
+            s.model_repo = found["repo"]
             sources = [(found["url"], s.model_sha256 or found["sha256"])]
             logs.event(log, "model source", repo=found["repo"], file=found["file"], sha256=found["sha256"])
         except Exception as e:
@@ -82,7 +83,38 @@ def ensure_model(s: Settings) -> Path:
     raise ModelError("could not get the model: " + " | ".join(errors))
 
 
-def _download(url: str, dest: Path) -> None:
+def ensure_mmproj(s: Settings) -> Path | None:
+    """Vision projector for the model, unless turned off (LIVEAI_VISION=0) or not published."""
+    if os.environ.get("LIVEAI_VISION", "1") == "0":
+        return None
+    if os.environ.get("LIVEAI_MMPROJ_PATH"):
+        p = Path(os.environ["LIVEAI_MMPROJ_PATH"])
+        return p if p.is_file() else None
+    repo = getattr(s, "model_repo", None)
+    if not repo:
+        from . import modelsource
+        repo = modelsource.TRUSTED_REPOS[1]
+    from . import modelsource
+    found = modelsource.find_mmproj(repo)
+    if not found:
+        logs.event(log, "no vision projector found; pictures will not be analysed", logging.WARNING, repo=repo)
+        return None
+    dest = s.data_dir / "models" / ("mmproj-" + found["file"].rsplit("/", 1)[-1].removeprefix("mmproj-"))
+    if not (dest.is_file() and dest.stat().st_size > 10_000_000):
+        try:
+            _download(found["url"], dest, min_size=10_000_000)
+        except Exception as e:
+            logs.event(log, "vision projector download failed", logging.WARNING, error=str(e))
+            return None
+        if found["sha256"] and sha256_of(dest) != found["sha256"]:
+            dest.unlink()
+            logs.event(log, "vision projector SHA-256 mismatch, not used", logging.ERROR)
+            return None
+    logs.event(log, "vision projector ready", file=dest.name, size_mb=dest.stat().st_size // 2**20)
+    return dest
+
+
+def _download(url: str, dest: Path, min_size: int = 100_000_000) -> None:
     part = dest.with_suffix(dest.suffix + ".part")
     have = part.stat().st_size if part.exists() else 0
     req = urllib.request.Request(url, headers={"User-Agent": "live-ai/1.0"})
@@ -95,7 +127,7 @@ def _download(url: str, dest: Path) -> None:
         mode = "ab" if have else "wb"
         with open(part, mode) as f:
             shutil.copyfileobj(r, f, 1 << 20)
-    if part.stat().st_size < 100_000_000:
+    if part.stat().st_size < min_size:
         size = part.stat().st_size
         part.unlink()
         raise ModelError(f"download too small ({size} bytes)")
@@ -112,6 +144,7 @@ class LlamaServer:
         self.external = bool(s.llm_url)
         self.proc: subprocess.Popen | None = None
         self.model_path: Path | None = None
+        self.mmproj: Path | None = None
         self.state = "starting"          # starting | loading | ready | restarting | failed
         self.last_error = ""
         self.restarts = 0
@@ -129,6 +162,7 @@ class LlamaServer:
                 if not self.external:
                     self.state = "loading"
                     self.model_path = ensure_model(self.s)
+                    self.mmproj = ensure_mmproj(self.s)
                     self._spawn()
                 self._wait_ready(timeout=900)
             except Exception as e:
@@ -145,9 +179,12 @@ class LlamaServer:
 
     def command(self) -> list[str]:
         s = self.s
-        return [s.llama_server_bin, "-m", str(self.model_path), "-c", str(s.ctx_size), "-t", str(s.threads),
-                "-tb", str(s.threads), "--host", "127.0.0.1", "--port", str(s.llm_port), "--jinja",
-                "-np", "1", "--no-webui"]
+        cmd = [s.llama_server_bin, "-m", str(self.model_path), "-c", str(s.ctx_size), "-t", str(s.threads),
+               "-tb", str(s.threads), "--host", "127.0.0.1", "--port", str(s.llm_port), "--jinja",
+               "-np", "1", "--no-webui"]
+        if self.mmproj:
+            cmd += ["--mmproj", str(self.mmproj)]
+        return cmd
 
     def _spawn(self) -> None:
         with self._lock:
@@ -249,7 +286,7 @@ class LlamaServer:
         return False
 
     def status(self) -> dict:
-        return {"state": self.state, "restarts": self.restarts, "error": self.last_error,
+        return {"state": self.state, "restarts": self.restarts, "error": self.last_error, "vision": bool(self.mmproj),
                 "model": self.model_path.name if self.model_path else None,
                 "pid": self.proc.pid if self.proc and self.proc.poll() is None else None}
 
@@ -290,6 +327,27 @@ class LLMClient:
         text = data["choices"][0]["message"].get("content") or ""
         text = text.strip().removeprefix("```json").removeprefix("```").removesuffix("```").strip()
         return json.loads(text)
+
+    def choose_for_image(self, jpeg: bytes, question: str, options: list[str]) -> int | None:
+        """Shows the model one picture and numbered descriptions; returns the 0-based choice or None."""
+        if not self.server.mmproj:
+            return None
+        import base64
+        text = question + "\n" + "\n".join(f"{i + 1}. {o}" for i, o in enumerate(options)) + \
+            "\nตอบเป็น JSON {\"choice\": หมายเลข} เลือกข้อเดียวที่ตรงกับภาพที่สุด"
+        body = {"messages": [{"role": "user", "content": [
+                    {"type": "image_url", "image_url": {"url": "data:image/jpeg;base64," + base64.b64encode(jpeg).decode()}},
+                    {"type": "text", "text": text}]}],
+                "stream": False, "temperature": 0.0, "max_tokens": 20, "chat_template_kwargs": {"enable_thinking": False},
+                "response_format": {"type": "json_schema", "json_schema": {"name": "c", "schema": {
+                    "type": "object", "properties": {"choice": {"type": "integer", "minimum": 1, "maximum": len(options)}},
+                    "required": ["choice"]}}}}
+        req = urllib.request.Request(self.server.url + "/v1/chat/completions", json.dumps(body).encode(),
+                                     {"Content-Type": "application/json"})
+        with urllib.request.urlopen(req, timeout=600) as r:
+            data = json.load(r)
+        n = int(json.loads(data["choices"][0]["message"]["content"])["choice"])
+        return n - 1 if 1 <= n <= len(options) else None
 
     def stream_chat(self, messages: list[dict], think: bool = False, max_tokens: int | None = None,
                     code: bool = False) -> Iterator[dict]:
