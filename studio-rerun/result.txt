@@ -1,17 +1,17 @@
 status: done
-message: เสร็จสมบูรณ์ ผ่าน QA (16.8 วินาที, ใช้เวลา 20 วินาที)
-timeline: 1000038487.mp4 shots [1, 2] confidence สูง dialogue
-timeline: 1000038486.mp4 shots [3] confidence สูง dialogue
-timeline: 1000038485.mp4 shots [4] confidence สูง silent-visual
-missing: []
-issue: คลิป “1000038485.mp4”: เสียงเบามาก (-31 LUFS) เทียบกับระดับปกติ — วิดีโอที่ส่งออกถูกปรับความดังให้เท่ากันทั้งเรื่อง
-issue: คลิป “1000038485.mp4”: มีเสียงแต่ไม่พบคำพูด (เป็นเพลง เสียงร้องไห้ หรือบทพูดไม่ออกมาตอนสร้างคลิป)
-issue: คลิป “1000038487.mp4”: ภาพเปลี่ยนกะทันหันช่วง 0.0–2.0 วินาที (ซูม/ภาพกระโดด/ภาพซ้อน — ควรดูช่วงนี้)
-issue: คลิป “1000038487.mp4”: ภาพเปลี่ยนกะทันหันช่วง 6.5–9.5 วินาที (ซูม/ภาพกระโดด/ภาพซ้อน — ควรดูช่วงนี้)
+message: เสร็จสมบูรณ์ ผ่าน QA (53.4 วินาที, ใช้เวลา 43 วินาที) — มี 4 คลิปที่พูดนอกบท ใส่ตามลำดับที่สร้างคลิปและไม่มีซับ (วางบทให้ครบทั้งเรื่องแล้วกด Start ใหม่ จะได้ซับครบ)
+timeline: uploaded # 0 | shots [0] | kept 0.0 - 9.4 s | unscripted ต่ำ
+timeline: uploaded # 1 | shots [0] | kept 0.0 - 8.4 s | unscripted ต่ำ
+timeline: uploaded # 2 | shots [0] | kept 0.0 - 10.24 s | unscripted ต่ำ
+timeline: uploaded # 3 | shots [0] | kept 0.0 - 9.4 s | unscripted ต่ำ
+timeline: uploaded # 4 | shots [0] | kept 0.0 - 9.4 s | dialogue สูง
+timeline: uploaded # 5 | shots [1] | kept 0.0 - 6.5 s | dialogue สูง
+missing shots: 0
+issues by type: {'unscripted': 4, 'continuity': 4, 'clip': 16}
 qa: OK  ไฟล์ MP4 เปิดและถอดรหัสได้ครบทั้งไฟล์
-qa: OK  ความยาวรวม 16.81 วิ ตรงกับ Timeline 16.75 วิ
+qa: OK  ความยาวรวม 53.39 วิ ตรงกับ Timeline 53.34 วิ
 qa: OK  มีทั้งภาพและเสียง
-qa: OK  ภาพและเสียงยาวเท่ากัน (ต่างกัน 0.04 วิ)
+qa: OK  ภาพและเสียงยาวเท่ากัน (ต่างกัน 0.05 วิ)
 qa: OK  ไม่มีคลิปซ้ำใน Timeline
 qa: OK  ครบทุกช็อตตามบท (ขาด 0)
 qa: OK  บทพูดไม่ซ้ำ
@@ -20,4 +20,4 @@ qa: OK  ซับตรงตามบททุกตัวอักษร
 qa: OK  เวลาซับอยู่ในวิดีโอ ไม่ทับกัน
 qa: OK  ไม่ตัดคำพูดทิ้ง
 qa: OK  คลิปที่จับคู่ความมั่นใจต่ำ 0 คลิป (ต้องให้คนตรวจ)
-video: True | subtitles file: True | burned subs: False
+video: True | review copy: False | subtitles file: True | burned subs: False
