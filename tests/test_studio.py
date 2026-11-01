@@ -453,6 +453,56 @@ class ReactionAfterWords(unittest.TestCase):
         self.assertEqual(run([], broken=[(5.0, 6.0)]), 5.0)              # seen broken by the AI editor: cut
 
 
+class HumanLikeCuts(unittest.TestCase):
+    """Lessons from a 36-clip Meta AI project the owner called "มั่วมาก"."""
+
+    def _clip(self, jumps=(), segs=((0.0, 2.0),), regions=((0.0, 10.24),)):
+        return {"id": "c", "name": "c", "duration": 10.24, "transcript": "x",
+                "asr": {"segments": [{"start": a, "end": b} for a, b in segs]},
+                "inspect": {"speech_regions": [list(r) for r in regions], "jumps": [list(j) for j in jumps]}}
+
+    def _cut(self, clip, say=0.0, k_of=(1, 3)):
+        from live_ai.studio import cutter
+        items = [{"clip": f"x{i}", "lines": [0]} for i in range(k_of[1])]
+        items[k_of[0]] = {"clip": "c", "lines": [0], "say_seconds": say}
+        clips = {f"x{i}": {**self._clip(), "id": f"x{i}"} for i in range(k_of[1])}
+        clips["c"] = clip
+        cutter.plan_cuts({"video": items}, clips, lambda it: "ปกติ")
+        return items[k_of[0]]["in"], items[k_of[0]]["out"]
+
+    def test_camera_move_before_the_words_is_not_cut(self):
+        # measured "jump" 1.5-6.0 s (a camera move), words recognised from 5.3 s: the start stays
+        a, _ = self._cut(self._clip(jumps=[(1.5, 6.0)], segs=[(5.3, 8.0)]))
+        self.assertLessEqual(a, 0.5)
+        # broken first frames (0-1.2 s) before the words are still cut
+        a, _ = self._cut(self._clip(jumps=[(0.0, 1.2)], segs=[(2.0, 5.0)], regions=[(1.8, 5.2)]))
+        self.assertGreaterEqual(a, 1.2)
+
+    def test_line_longer_than_what_was_heard_is_kept_whole(self):
+        from live_ai.studio import cutter
+        line = "เงินก้อนนี้ข้าจ่ายให้ก่อน ถือว่าแกยืมข้า ค่อยๆ ผ่อนคืนเอา ไม่ต้องรีบนะ"   # ~5 s to say
+        say = cutter.say_seconds(line)
+        self.assertTrue(4.0 < say < 7.0, say)
+        _, b = self._cut(self._clip(segs=[(0.3, 1.5)]), say=say)        # the recogniser heard 1.2 s only
+        self.assertGreaterEqual(b, 0.3 + say)
+
+    def test_another_take_and_the_clip_for_a_missing_line(self):
+        from live_ai.studio import match as M
+        from live_ai.studio.script import parse
+        script = parse('แม่: "กินข้าวหรือยังลูก วันนี้แม่ทำแกงเขียวหวานไว้ให้"\nลูก: "ยังครับแม่ เดี๋ยวผมไปล้างมือก่อน"\n'
+                       'แม่: "รีบมานะ เดี๋ยวกับข้าวเย็นหมด"')
+        clips = [
+            {"id": "a", "name": "a.mp4", "order": (0,), "duration": 10.0, "speech": True, "transcript": "กินข้าวหรือยังลูก วันนี้แม่ทำแกงเขียวหวานไว้ให้"},
+            {"id": "b", "name": "b.mp4", "order": (1,), "duration": 10.0, "speech": True, "transcript": "กินข้าวหรือยังลูก วันนี้แม่ทำแกงเขียวหวานไว้"},
+            {"id": "c", "name": "c.mp4", "order": (2,), "duration": 10.0, "speech": True, "transcript": "รีบมานะ เดี๋ยวกับข้าวเย็นหมด"},
+            {"id": "d", "name": "d.mp4", "order": (3,), "duration": 10.0, "speech": True, "transcript": "ยังครับแม่ เดี๋ยวผมไปล้างมือก่อนนะครับแม่"},
+        ]
+        r = M.match(script, clips)
+        self.assertEqual(r["timeline"], ["a", "d", "c"])
+        self.assertEqual([i["clip"] for i in r["issues"] if i["type"] == "alternate"], ["b"])
+        self.assertEqual(r["missing"], [])
+
+
 class ClipChecks(unittest.TestCase):
     """Inspector notices sudden picture jumps inside an AI clip and very quiet audio."""
 

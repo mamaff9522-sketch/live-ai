@@ -807,6 +807,7 @@ class Studio:
 
     def _sequence(self, pid, script, clips, plan) -> dict:
         by_id = {c["id"]: c for c in clips}
+        lines = M.dialogue_lines(script["shots"])
         items, t = [], 0.0
         issues = []
         for cid in plan["timeline"]:
@@ -817,6 +818,9 @@ class Studio:
                                                                            f"{shot['duration']:g} วิ ({label(shot)})"})
             items.append({"clip": cid, "name": c["name"], "shots": a["shots"], "lines": a["lines"], "start": round(t, 3),
                           "in": 0.0, "out": c["duration"], "confidence": a["confidence"], "how": a["how"],
+                          # how long its words take to say: the cuts never keep less than that
+                          "say_seconds": round(sum(cutter.say_seconds(lines[li]["text"]) for li in a["lines"]) if a["lines"]
+                                               else cutter.say_seconds(c.get("transcript") or ""), 2),
                           **({"unscripted": True} if a.get("unscripted") else {})})
             t += c["duration"]
         tl = {"video": items, "duration": round(t, 3), "issues": issues}

@@ -7,7 +7,7 @@ What an editor does first with generated clips, written as rules that need no bi
   • stretches where the picture jumps (the inspector's `jumps`: sudden zoom, see-through figure …) are
     cut when they fall before the first word or after the last one;
   • clips without words keep a few seconds of their steadiest part (longer in sad scenes);
-  • joins are hard cuts, or a short dip to black in sad / tender scenes and between scenes.
+  • joins are straight cuts inside a scene, a short dip to black between scenes.
 Words are never cut: every recognised speech segment stays inside the kept part.
 
 A plan from a bigger model (the AI editor) can replace these numbers per clip; `apply_plan` checks
@@ -21,6 +21,26 @@ SILENT_KEEP = {"เศร้า": 4.0, "โรแมนติก": 3.5, "ปก�
 SOFT = {"เศร้า", "โรแมนติก"}
 MIN_KEEP = 1.0
 END_GLITCH = 0.6        # a measured picture jump this close to the end of a clip is a glitch in its last frames
+START_GLITCH = 0.6      # … or this close to its start, a glitch in its first frames
+TRIM_WITH_SOUND = 0.5   # most cut before the first recognised word while sound is already playing there
+CHARS_PER_SECOND = 12.0 # Thai speech, for how long a scripted line takes to say
+
+
+def say_seconds(text: str) -> float:
+    """About how long a line takes to say (Thai: ~12 characters a second, plus a short pause)."""
+    n = len("".join(ch for ch in str(text or "") if not ch.isspace() and ch not in "\"“”'‘’.,!?…~-—–:;()"))
+    return round(n / CHARS_PER_SECOND + 0.3, 2) if n else 0.0
+
+
+def trusted_jumps(c: dict) -> list[tuple]:
+    """Picture jumps the cuts may act on. The inspector's measured jumps are big picture changes, which
+    is also what a gesture or a camera move looks like (seen on Meta AI clips: most clips "jumped"
+    while nothing was wrong), so only those touching the very first or last frames count; stills the
+    AI editor looked at and called broken count anywhere."""
+    d = float(c["duration"])
+    measured = [tuple(j) for j in (c.get("inspect") or {}).get("jumps") or []]
+    edge = [(x, y) for x, y in measured if x <= START_GLITCH or y >= d - END_GLITCH]
+    return edge + [tuple(j) for j in c.get("ai_broken") or []]
 
 
 def speech_spans(clip: dict) -> list[tuple[float, float]]:
@@ -66,33 +86,33 @@ def plan_cuts(timeline: dict, clips_by_id: dict, mood_of_item, pacing: str = "au
         if pacing == "original":
             continue
         mood = mood_of_item(it)
-        measured = [tuple(j) for j in (c.get("inspect") or {}).get("jumps") or []]
-        seen_broken = [tuple(j) for j in c.get("ai_broken") or []]
-        jumps = measured + seen_broken
+        jumps = trusted_jumps(c)
         peaks = sorted(c.get("ai_peaks") or [])          # times the AI editor rated most expressive
         spans = speech_spans(c) if it.get("lines") or it.get("unscripted") else []
         first, last = k == 0, k == len(items) - 1
         if spans:
             s0, s1 = spans[0][0], spans[-1][1]
+            # the recogniser may miss words (seen: a whole line in the script, a few words heard): the
+            # kept part is at least as long as the scripted line takes to say
+            s1 = max(s1, min(d, s0 + float(it.get("say_seconds") or 0.0)))
             lead = max(LEAD_IN.get(mood, 0.3), 1.0 if first else 0.0)
             hold = HOLD_AFTER.get(mood, 0.8)
             if last:
                 hold = max(hold * 2, 2.5)
             a, b = max(0.0, s0 - lead), min(d, s1 + hold)
+            regions = [(float(x), float(y)) for x, y in (c.get("inspect") or {}).get("speech_regions") or []]
+            if any(x < a and y > 0.05 for x, y in regions):
+                # sound is already playing before the first recognised word (maybe words it missed): only a
+                # little is cut there
+                a = min(a, TRIM_WITH_SOUND)
             late = [t for t in peaks if s1 < t <= s1 + 3.0]
             if late:                                     # a strong reaction after the words: let it play
                 b = min(d, max(b, late[-1] + 0.5))
             for x, y in jumps:
-                if x < s0 and y > a:                     # jump before the first word: start after it
+                if x < s0 and y > a:                     # broken frames before the first word: start after them
                     a = min(max(a, y), max(0.0, s0 - 0.1))
-                # after the last word: a measured jump is only trusted at the very end of the clip (the big
-                # picture change it measures is also what a gesture or a camera move looks like, and the
-                # reaction after the words matters); stills the AI editor saw as broken are cut anywhere
-                trusted = (x, y) in seen_broken or y >= d - END_GLITCH
-                if trusted and y > s1 and x < b:
+                if y > s1 and x < b:                     # broken frames after the last word: end before them
                     b = max(min(b, x), min(d, s1 + 0.2))
-                if x < s1 and y > s0:
-                    notes.append(f"“{c['name']}” ภาพกระโดดช่วง {x:.1f}–{y:.1f} วิ ทับช่วงที่พูด จึงตัดออกไม่ได้")
         else:
             keep = SILENT_KEEP.get(mood, 3.0) + (1.0 if first or last else 0.0)
             a, b = 0.0, d
@@ -115,15 +135,14 @@ def plan_cuts(timeline: dict, clips_by_id: dict, mood_of_item, pacing: str = "au
             if d - b >= 0.3:
                 parts.append(f"ท้าย {d - b:.1f} วิ")
             notes.append(f"“{c['name']}” ตัด{' และ'.join(parts)} (อารมณ์{mood})")
-    # joins: dip to black in sad / tender scenes and between scenes
+    # joins: straight cuts inside a scene (a dip to black between every line of a sad scene flashed black
+    # all through the video); a dip to black only where the story moves to another place / time
     for prev, nxt in zip(items, items[1:]):
         if pacing == "original":
             break
-        m1, m2 = mood_of_item(prev), mood_of_item(nxt)
         new_scene = prev.get("scene") and nxt.get("scene") and prev["scene"] != nxt["scene"]
-        if new_scene or m1 in SOFT or m2 in SOFT:
-            dur = 0.5 if new_scene else 0.35
-            prev["fade_out"] = nxt["fade_in"] = dur
+        if new_scene:
+            prev["fade_out"] = nxt["fade_in"] = 0.6 if mood_of_item(prev) in SOFT or mood_of_item(nxt) in SOFT else 0.4
     if items and pacing != "original":
         items[0]["fade_in"] = max(items[0]["fade_in"], 0.4)
         items[-1]["fade_out"] = max(items[-1]["fade_out"], 0.8 if mood_of_item(items[-1]) in SOFT else 0.4)
@@ -148,24 +167,23 @@ def apply_plan(timeline: dict, clips_by_id: dict, plan: dict) -> list[str]:
         a = max(0.0, min(float(p.get("in", it["in"])), d))
         b = max(0.0, min(float(p.get("out", it["out"])), d))
         if spans:
-            a, b = min(a, spans[0][0]), max(b, spans[-1][1])        # never cut words
             s0, s1 = spans[0][0], spans[-1][1]
-            # frames the inspector measured as broken (sudden jump / see-through) stay out even if the
-            # model kept them, as long as no word is spoken there
-            for x, y in [tuple(j) for j in (c.get("inspect") or {}).get("jumps") or []]:
+            s1 = max(s1, min(d, s0 + float(it.get("say_seconds") or 0.0)))
+            a, b = min(a, s0), max(b, s1)                         # never cut words
+            # broken frames at the edges stay out even if the model kept them, as long as no word is there
+            for x, y in [j for j in trusted_jumps(c) if j not in [tuple(k) for k in c.get("ai_broken") or []]]:
                 if x < s0 and y > a:
                     a2 = min(max(a, y), max(0.0, s0 - 0.1))
                     if a2 > a:
                         notes.append(f"“{c['name']}”: ตัดช่วงภาพเสีย {x:.1f}–{y:.1f} วิ ที่ AI เก็บไว้ออก")
                         a = a2
-                if y > s1 and x < b and y >= d - END_GLITCH:
+                if y > s1 and x < b:
                     b2 = max(min(b, x), min(d, s1 + 0.2))
                     if b2 < b:
                         notes.append(f"“{c['name']}”: ตัดช่วงภาพเสีย {x:.1f}–{y:.1f} วิ ที่ AI เก็บไว้ออก")
                         b = b2
         else:
-            jumps = [tuple(j) for j in (c.get("inspect") or {}).get("jumps") or []]
-            a, b = _clear_of_jumps(a, b, jumps) if b - a > MIN_KEEP else (a, b)
+            a, b = _clear_of_jumps(a, b, trusted_jumps(c)) if b - a > MIN_KEEP else (a, b)
         if b - a < MIN_KEEP:
             notes.append(f"“{c['name']}”: แผนของ AI สั้นเกินไป ใช้ค่าจากกฎแทน")
             continue

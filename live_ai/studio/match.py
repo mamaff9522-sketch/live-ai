@@ -124,22 +124,36 @@ def match(script: dict, clips: list[dict], visual: dict | None = None, vl_votes:
     full = {c["id"]: best_window(c["transcript"], lines) for c in speaking}
     taken: set[int] = set()
     holder: dict[int, float] = {}              # line -> score of the clip that took it
+    holder_text: dict[int, str] = {}           # line -> what that clip says
+    alternates: dict[str, str] = {}            # clip -> the clip that already says its line (another take)
     for c in sorted(speaking, key=lambda c: (-full[c["id"]]["score"], c["order"])):
         w = full[c["id"]]
         if w["score"] < MATCH_WEAK or not w["lines"]:
             continue
         if taken & set(w["lines"]):
             free = best_window(c["transcript"], lines, exclude=taken)
+            shared = sorted(taken & set(w["lines"]))
+            # the clip that has this line already says all of it (not only its first half)
+            whole = containment("".join(lines[li]["text"] for li in shared), "".join(holder_text[li] for li in shared)) >= 0.7
             if free["lines"] and free["score"] >= max(MATCH_WEAK, 0.85 * w["score"]):
                 w = free
-            elif w["score"] < 0.5 * max(holder[li] for li in taken & set(w["lines"])):
+            elif whole and free["lines"] and free["score"] >= max(0.12, 0.6 * w["score"]):
+                # its best line is said in full by another clip, and it fits a line no clip has yet: it says
+                # that line, badly recognised (seen: a clip for the one missing shot sat on another line)
+                w = free
+            elif w["score"] < 0.5 * max(holder[li] for li in shared):
                 # a line another clip says clearly; this one only shares a few sounds with it ("ครับเฮีย"),
                 # which is not the second half of that line: it says something else
+                continue
+            elif whole:
+                # another take of a line a clip already says in full: kept out of the video
+                alternates[c["id"]] = next(k for k, v in assign.items() if set(v["lines"]) & set(shared))
                 continue
         assign[c["id"]] = {"lines": w["lines"], "score": w["score"], "margin": w["margin"], "how": "dialogue"}
         taken |= set(w["lines"])
         for li in w["lines"]:
-            holder[li] = max(holder.get(li, 0.0), w["score"])
+            if w["score"] > holder.get(li, 0.0):
+                holder[li], holder_text[li] = w["score"], c["transcript"]
 
     # 2. conflicts: several clips on the same first line
     by_line: dict[int, list[str]] = {}
@@ -187,6 +201,12 @@ def match(script: dict, clips: list[dict], visual: dict | None = None, vl_votes:
     rank = {c["id"]: i for i, c in enumerate(order)}
     silent_clips, talking = [], []
     for c in sorted(rest, key=lambda c: rank[c["id"]]):
+        if c["id"] in alternates:
+            o = clip_by_id[alternates[c["id"]]]
+            issues.append({"type": "alternate", "clip": c["id"], "of": o["id"],
+                           "message": f"คลิป “{c['name']}” พูดบทเดียวกับ “{o['name']}” (อีกเทค) — ใช้คลิปที่เสียงพูดตรงบทกว่า "
+                                      "ถ้าอยากใช้เทคนี้แทน ให้ลบอีกคลิปออกแล้วกด Start ใหม่"})
+            continue
         if c.get("speech") and c.get("transcript"):
             if any(f1(c["transcript"], o["transcript"]) >= 0.8 and abs(c["duration"] - o["duration"]) < 1.0 for o in talking):
                 o = next(o for o in talking if f1(c["transcript"], o["transcript"]) >= 0.8)
