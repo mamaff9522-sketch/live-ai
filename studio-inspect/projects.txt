@@ -1,0 +1,156 @@
+
+===== project 3 | status needs_attention | clips 36 | script chars 5081
+message: ยังไม่สมบูรณ์: พบคลิปที่ขาด 1 ช็อต ได้แก่ ช็อต 18; ครบทุกช็อตตามบท (ขาด 1); คลิปที่จับคู่ความมั่นใจต่ำ 4 คลิป (ต้องให้คนตรวจ)
+settings: {"aspect": "9:16", "height": 720, "fps": 30, "subtitles": "file", "audio": "dialogue_only", "match_light": false, "pacing": "auto", "ai_editor": true, "speaker_in_subs": false, "range_from": null, "range_to": null}
+script: story {'shots': 28, 'dialogue_lines': 27, 'silent_shots': 1, 'narration_lines': 0, 'expected_seconds': 0} | scenes 3
+script warnings: []
+shots (speakers, lines, optional): [(1, 1, False), (1, 1, False), (1, 1, False), (1, 1, False), (1, 1, False), (1, 1, False), (1, 1, False), (1, 1, False), (1, 1, False), (1, 1, False), (1, 1, False), (1, 1, False), (1, 1, False), (1, 1, False), (1, 1, False), (1, 1, False), (1, 1, False), (1, 1, False), (1, 1, False), (1, 1, False), (1, 1, False), (1, 1, False), (1, 1, False), (1, 1, False), (1, 1, False), (1, 1, False), (1, 1, False), (0, 0, False)]
+agent 1: None ยังไม่สมบูรณ์: พบคลิปที่ขาด 1 ช็อต ได้แก่ ช็อต 18; ครบทุกช็อตตามบท (ขาด 1); คลิปที่จับคู่ความมั่นใจต่ำ 4 คลิป (ต้องให้คนตรวจ)
+agent 2: None 28 ช็อต, บทพูด 27 บรรทัด (คัดลอกตรงต้นฉบับ), ช็อตไม่มีบทพูด 1
+agent 3: None 1 ตอน, 3 ฉาก, 28 ช็อต — ลำดับตามต้นฉบับ
+agent 4: None เก็บภาพต้นและท้ายของ 35 คลิปไว้ตรวจความต่อเนื่อง; Qwen ดูภาพได้ ใช้ช่วยวางคลิปที่ไม่มีเสียงพูด
+agent 5: None มีเสียงพูด 34/35 คลิป (ถอดเสียงใหม่ 0 คลิป, ที่เหลือใช้ผลที่บันทึกไว้)
+agent 6: None จับคู่ได้ 30/35 คลิป (มั่นใจสูง 22), ช็อตที่ขาด 1
+agent 7: None เรียง 30 คลิปตามเนื้อเรื่อง ยาวรวม 307.5 วินาที (ใช้ความยาวคลิปตามจริง ไม่ยืดให้เท่ากัน)
+agent 8: None ตรวจ 35 คลิป: เปิดไม่ได้ 0, มีข้อสังเกต 33
+agent 9: None พบรอยต่อที่ภาพเปลี่ยนมาก 15 จุด (ดูแท็บตรวจข้อผิดพลาด) — ตรวจจากภาพรวม ยังแยกแยะใบหน้า/เสื้อผ้าทีละจุดไม่ได้
+agent 10: None อารมณ์รายฉาก: ระทึก 1, เศร้า 2 — ใช้กำหนดจังหวะตัดต่อ (ค้างภาพหลังพูด, รอยต่อ)
+agent 11: None ส่งออก MP4 H.264/AAC 720x1280 30fps ยาว 244.5 วินาที
+agent 12: None ตัดช่วงว่าง/ภาพเสียตามจังหวะอารมณ์: 307.5 → 244.3 วินาที, รอยต่อแบบจางผ่านดำ 21 จุด (ไม่ตัดคำพูด); แสงต่างจากฉาก 1 คลิป
+agent 13: None Dialogue Only: ลดเสียงลม/รถ/ฝน/เสียงรบกวนด้วย RNNoise บนเครื่อง และลดเสียงช่วงที่ไม่มีคนพูดลง 20 dB — เพลงที่ดังซ้อนใต้เสียงพูดพร้อมกันอาจยังได้ยินบ้าง ระบบไม่สร้างหรือแก้คำพูด
+agent 14: None สร้างซับ 26 บรรทัด (ข้อความตรงตามบท จับเวลาจากเสียงพูดจริง) ส่งเป็นไฟล์ .srt แยก
+agent 15: None ไม่ผ่าน 3 ข้อ: พบคลิปที่ขาด 1 ช็อต ได้แก่ ช็อต 18; ครบทุกช็อตตามบท (ขาด 1); คลิปที่จับคู่ความมั่นใจต่ำ 4 คลิป (ต้องให้คนตรวจ)
+timeline: 30 items, duration 244.32
+  up# 0 | shots [0] | lines [0] | dialogue สูง | keep 0.0 - 9.4 | fade 0.4 0.0
+  up# 6 | shots [1] | lines [1] | dialogue สูง | keep 0.0 - 4.16 | fade 0.0 0.0
+  up# 7 | shots [2] | lines [2] | dialogue สูง | keep 0.0 - 8.08 | fade 0.0 0.0
+  up# 1 | shots [3] | lines [3] | dialogue สูง | keep 0.0 - 8.4 | fade 0.0 0.0
+  up# 2 | shots [4] | lines [4] | dialogue สูง | keep 0.0 - 10.24 | fade 0.0 0.0
+  up# 3 | shots [5] | lines [5] | dialogue สูง | keep 0.0 - 9.4 | fade 0.0 0.0
+  up# 4 | shots [6] | lines [6] | dialogue สูง | keep 0.0 - 9.4 | fade 0.0 0.0
+  up# 17 | shots [7] | lines [7] | dialogue ต่ำ | keep 0.0 - 7.4 | fade 0.0 0.0
+  up# 5 | shots [7] | lines [7] | dialogue สูง | keep 0.0 - 4.4 | fade 0.0 0.5
+  up# 10 | shots [8] | lines [8] | dialogue สูง | keep 5.23 - 10.24 | fade 0.5 0.35
+  up# 11 | shots [9] | lines [9] | dialogue กลาง | keep 0.73 - 8.43 | fade 0.35 0.35
+  up# 19 | shots [10] | lines [10] | dialogue ต่ำ | keep 0.0 - 9.6 | fade 0.35 0.35
+  up# 30 | shots [11] | lines [11] | dialogue สูง | keep 0.0 - 10.24 | fade 0.35 0.35
+  up# 31 | shots [11] | lines [11] | dialogue สูง | keep 0.0 - 5.21 | fade 0.35 0.35
+  up# 32 | shots [12] | lines [12] | dialogue สูง | keep 0.68 - 10.24 | fade 0.35 0.35
+  up# 28 | shots [13] | lines [13] | dialogue สูง | keep 2.55 - 10.24 | fade 0.35 0.35
+  up# 27 | shots [14] | lines [14] | dialogue สูง | keep 0.19 - 10.24 | fade 0.35 0.35
+  up# 26 | shots [15] | lines [15] | dialogue สูง | keep 1.15 - 10.24 | fade 0.35 0.5
+  up# 21 | shots [16] | lines [16] | dialogue สูง | keep 0.0 - 9.6 | fade 0.5 0.35
+  up# 20 | shots [18] | lines [18] | dialogue ต่ำ | keep 0.0 - 10.24 | fade 0.35 0.35
+  up# 29 | shots [19] | lines [19] | dialogue สูง | keep 1.77 - 10.6 | fade 0.35 0.35
+  up# 25 | shots [20] | lines [20] | dialogue สูง | keep 0.0 - 12.04 | fade 0.35 0.35
+  up# 34 | shots [21] | lines [21] | dialogue สูง | keep 0.0 - 2.02 | fade 0.35 0.35
+  up# 13 | shots [22] | lines [22] | dialogue ต่ำ | keep 0.0 - 10.24 | fade 0.35 0.35
+  up# 18 | shots [22] | lines [22] | dialogue กลาง | keep 0.0 - 10.24 | fade 0.35 0.35
+  up# 16 | shots [23] | lines [23] | dialogue กลาง | keep 1.71 - 8.93 | fade 0.35 0.35
+  up# 15 | shots [24] | lines [24] | dialogue สูง | keep 0.02 - 10.24 | fade 0.35 0.35
+  up# 12 | shots [25] | lines [25] | dialogue สูง | keep 1.2 - 10.24 | fade 0.35 0.35
+  up# 14 | shots [26] | lines [26] | dialogue สูง | keep 0.0 - 4.6 | fade 0.35 0.35
+  up# 9 | shots [27] | lines [] | silent-visual กลาง | keep 0.0 - 5.0 | fade 0.35 0.8
+clips not used (upload #): [8, 22, 23, 24, 33, 35]
+  clip up# 0 | speech True | words 7 | chars 88 | jumps [[0.5, 2.5], [3.5, 5.5]] | lufs -11.7
+  clip up# 1 | speech True | words 3 | chars 63 | jumps [[3.0, 5.0], [6.0, 9.5]] | lufs -15.8
+  clip up# 2 | speech True | words 9 | chars 139 | jumps [[0.5, 3.5], [4.5, 8.0]] | lufs -11.5
+  clip up# 3 | speech True | words 6 | chars 104 | jumps [[7.5, 8.0]] | lufs -14.7
+  clip up# 4 | speech True | words 4 | chars 96 | jumps [[3.0, 3.5]] | lufs -14.0
+  clip up# 5 | speech True | words 2 | chars 46 | jumps [[2.0, 4.5], [5.5, 6.5]] | lufs -17.1
+  clip up# 6 | speech True | words 3 | chars 50 | jumps [[1.0, 9.5]] | lufs -14.2
+  clip up# 7 | speech True | words 5 | chars 76 | jumps [[0.0, 7.5]] | lufs -10.5
+  clip up# 8 | speech True | words 8 | chars 89 | jumps [[0.5, 2.5], [3.5, 5.5]] | lufs -11.7
+  clip up# 9 | speech False | words 0 | chars 0 | jumps [[3.0, 7.0]] | lufs -37.4
+  clip up# 10 | speech True | words 3 | chars 27 | jumps [[1.5, 6.0]] | lufs -20.3
+  clip up# 11 | speech True | words 4 | chars 70 | jumps [[0.0, 7.0]] | lufs -16.7
+  clip up# 12 | speech True | words 4 | chars 86 | jumps [] | lufs -14.8
+  clip up# 13 | speech True | words 5 | chars 108 | jumps [] | lufs -15.9
+  clip up# 14 | speech True | words 2 | chars 29 | jumps [[2.5, 7.0]] | lufs -17.2
+  clip up# 15 | speech True | words 6 | chars 146 | jumps [[4.5, 7.5]] | lufs -11.8
+  clip up# 16 | speech True | words 3 | chars 64 | jumps [[1.5, 5.0]] | lufs -14.6
+  clip up# 17 | speech True | words 3 | chars 61 | jumps [] | lufs -15.1
+  clip up# 18 | speech True | words 4 | chars 91 | jumps [[3.5, 6.0]] | lufs -14.2
+  clip up# 19 | speech True | words 3 | chars 42 | jumps [[0.5, 6.0]] | lufs -17.8
+  clip up# 20 | speech True | words 4 | chars 100 | jumps [[2.5, 5.0]] | lufs -13.2
+  clip up# 21 | speech True | words 5 | chars 123 | jumps [[0.0, 1.0]] | lufs -13.7
+  clip up# 22 | speech True | words 2 | chars 45 | jumps [[2.0, 4.5], [5.5, 6.5]] | lufs -17.1
+  clip up# 23 | speech True | words 5 | chars 97 | jumps [[3.0, 3.5]] | lufs -14.0
+  clip up# 24 | speech True | words 2 | chars 45 | jumps [[2.0, 4.5], [5.5, 6.5]] | lufs -17.1
+  clip up# 25 | speech True | words 13 | chars 191 | jumps [[0.0, 2.0], [3.5, 4.0], [5.5, 6.5], [7.5, 11.5]] | lufs -9.4
+  clip up# 26 | speech True | words 4 | chars 74 | jumps [[2.0, 7.5]] | lufs -14.4
+  clip up# 27 | speech True | words 6 | chars 106 | jumps [[1.0, 1.5]] | lufs -15.7
+  clip up# 28 | speech True | words 4 | chars 95 | jumps [[0.5, 5.0]] | lufs -14.7
+  clip up# 29 | speech True | words 3 | chars 95 | jumps [] | lufs -9.9
+  clip up# 30 | speech True | words 10 | chars 153 | jumps [[1.0, 7.0]] | lufs -11.0
+  clip up# 31 | speech True | words 5 | chars 90 | jumps [[3.5, 4.0]] | lufs -10.6
+  clip up# 32 | speech True | words 6 | chars 126 | jumps [[0.0, 5.5], [8.0, 8.5]] | lufs -20.3
+  clip up# 33 | speech True | words 3 | chars 50 | jumps [[1.0, 9.5]] | lufs -14.2
+  clip up# 34 | speech True | words 2 | chars 21 | jumps [[1.5, 10.0]] | lufs -16.8
+  clip up# 35 | speech False | words 0 | chars 0 | jumps None | lufs None
+issues by type: {'uncertain': 4, 'check_silent': 1, 'duplicate': 5, 'continuity': 15, 'light': 1, 'clip': 69}
+missing shots: ['ช็อต 18']
+qa: [(True, 'ไฟล์ MP4 เปิดและถอดรหัสได้ครบทั้งไฟล์'), (True, 'ความยาวรวม 244.49 วิ ตรงกับ Timeline 244.32 วิ'), (True, 'มีทั้งภาพและเสียง'), (True, 'ภาพและเสียงยาวเท่ากัน (ต่างกัน 0.08 วิ)'), (True, 'ไม่มีคลิปซ้ำใน Timeline'), (False, 'ครบทุกช็อตตามบท (ขาด 1)'), (True, 'บทพูดไม่ซ้ำ'), (True, 'ลำดับเนื้อเรื่องเดินหน้าตามบท'), (True, 'ซับตรงตามบททุกตัวอักษร'), (True, 'เวลาซับอยู่ในวิดีโอ ไม่ทับกัน'), (True, 'ไม่ตัดคำพูดทิ้ง'), (False, 'คลิปที่จับคู่ความมั่นใจต่ำ 4 คลิป (ต้องให้คนตรวจ)')]
+
+===== project 2 | status done | clips 3 | script chars 1038
+message: เสร็จสมบูรณ์ ผ่าน QA (16.8 วินาที, ใช้เวลา 2 วินาที)
+settings: {"aspect": "9:16", "height": 720, "fps": 30, "subtitles": "file", "audio": "dialogue_only", "match_light": false, "speaker_in_subs": false, "range_from": null, "range_to": null}
+script: story {'shots': 5, 'dialogue_lines': 3, 'silent_shots': 2, 'narration_lines': 0, 'expected_seconds': 0} | scenes 1
+script warnings: ['บทนี้ไม่มีหัวข้อ ฉาก/คลิป จึงอ่านทีละบรรทัด: บทพูดแต่ละบรรทัด (หรือแต่ละย่อหน้าถ้าไม่มีบทพูด) เป็น 1 ช็อต']
+shots (speakers, lines, optional): [(0, 0, True), (1, 1, False), (1, 1, False), (1, 1, False), (0, 0, True)]
+agent 1: None เสร็จสมบูรณ์ ผ่าน QA (16.8 วินาที, ใช้เวลา 2 วินาที)
+agent 2: None 5 ช็อต, บทพูด 3 บรรทัด (คัดลอกตรงต้นฉบับ), ช็อตไม่มีบทพูด 2 — คำเตือน: บทนี้ไม่มีหัวข้อ ฉาก/คลิป จึงอ่านทีละบรรทัด: บทพูดแต่ละบรรทัด (หรือแต่ละย่อหน้าถ้าไม่มีบทพูด) เป็น 1 ช็อต
+agent 3: None 1 ตอน, 1 ฉาก, 5 ช็อต — ลำดับตามต้นฉบับ
+agent 4: None เก็บภาพต้นและท้ายของ 3 คลิปไว้ตรวจความต่อเนื่อง; Qwen ดูภาพได้ ใช้ช่วยวางคลิปที่ไม่มีเสียงพูด
+agent 5: None มีเสียงพูด 2/3 คลิป (ถอดเสียงใหม่ 0 คลิป, ที่เหลือใช้ผลที่บันทึกไว้)
+agent 6: None จับคู่ได้ 3/3 คลิป (มั่นใจสูง 3), ช็อตที่ขาด 0
+agent 7: None เรียง 3 คลิปตามเนื้อเรื่อง ยาวรวม 30.1 วินาที (ใช้ความยาวคลิปตามจริง ไม่ยืดให้เท่ากัน)
+agent 8: None ตรวจ 3 คลิป: เปิดไม่ได้ 0, มีข้อสังเกต 2
+agent 9: None รอยต่อในฉากเดียวกันต่อเนื่องดี — ตรวจจากภาพรวม ยังแยกแยะใบหน้า/เสื้อผ้าทีละจุดไม่ได้
+agent 10: None อารมณ์รายฉาก: เศร้า 1 — ใช้กำหนดจังหวะตัดต่อ (ค้างภาพหลังพูด, รอยต่อ)
+agent 11: None ส่งออก MP4 H.264/AAC 720x1280 30fps ยาว 16.8 วินาที
+agent 12: None ตัดช่วงว่าง/ภาพเสียตามจังหวะอารมณ์: 30.1 → 16.8 วินาที, รอยต่อแบบจางผ่านดำ 2 จุด (ไม่ตัดคำพูด); แสงใกล้เคียงกันทั้งฉาก
+agent 13: None Dialogue Only: ลดเสียงลม/รถ/ฝน/เสียงรบกวนด้วย RNNoise บนเครื่อง และลดเสียงช่วงที่ไม่มีคนพูดลง 20 dB — เพลงที่ดังซ้อนใต้เสียงพูดพร้อมกันอาจยังได้ยินบ้าง ระบบไม่สร้างหรือแก้คำพูด
+agent 14: None สร้างซับ 3 บรรทัด (ข้อความตรงตามบท จับเวลาจากเสียงพูดจริง) ส่งเป็นไฟล์ .srt แยก
+agent 15: None ผ่านทุกข้อ
+timeline: 3 items, duration 16.75
+  up# 2 | shots [1, 2] | lines [0, 1] | dialogue สูง | keep 1.49 - 8.01 | fade 0.4 0.35
+  up# 1 | shots [3] | lines [2] | dialogue สูง | keep 0.35 - 5.58 | fade 0.35 0.35
+  up# 0 | shots [4] | lines [] | silent-visual สูง | keep 0.0 - 5.0 | fade 0.35 0.8
+clips not used (upload #): []
+  clip up# 0 | speech False | words 0 | chars 0 | jumps [] | lufs -31.1
+  clip up# 1 | speech True | words 2 | chars 32 | jumps [] | lufs -7.9
+  clip up# 2 | speech True | words 1 | chars 38 | jumps [[0.0, 2.0], [6.5, 9.5]] | lufs -10.2
+issues by type: {'clip': 4}
+missing shots: []
+qa: [(True, 'ไฟล์ MP4 เปิดและถอดรหัสได้ครบทั้งไฟล์'), (True, 'ความยาวรวม 16.81 วิ ตรงกับ Timeline 16.75 วิ'), (True, 'มีทั้งภาพและเสียง'), (True, 'ภาพและเสียงยาวเท่ากัน (ต่างกัน 0.04 วิ)'), (True, 'ไม่มีคลิปซ้ำใน Timeline'), (True, 'ครบทุกช็อตตามบท (ขาด 0)'), (True, 'บทพูดไม่ซ้ำ'), (True, 'ลำดับเนื้อเรื่องเดินหน้าตามบท'), (True, 'ซับตรงตามบททุกตัวอักษร'), (True, 'เวลาซับอยู่ในวิดีโอ ไม่ทับกัน'), (True, 'ไม่ตัดคำพูดทิ้ง'), (True, 'คลิปที่จับคู่ความมั่นใจต่ำ 0 คลิป (ต้องให้คนตรวจ)')]
+
+===== project 1 | status failed | clips 3 | script chars 1038
+message: อ่านบทละครไม่ได้: ไม่พบฉาก คลิป หรือบทพูด
+settings: {"aspect": "9:16", "height": 720, "fps": 30, "subtitles": "file", "audio": "dialogue_only", "match_light": false, "speaker_in_subs": false, "range_from": null, "range_to": null}
+script: story {'shots': 0, 'dialogue_lines': 0, 'silent_shots': 0, 'narration_lines': 0, 'expected_seconds': 0} | scenes 0
+script warnings: []
+shots (speakers, lines, optional): []
+agent 1: None อ่านบทละครไม่ได้: ไม่พบฉาก คลิป หรือบทพูด
+agent 2: None กำลังทำงาน
+agent 3: None 
+agent 4: None 
+agent 5: None 
+agent 6: None 
+agent 7: None 
+agent 8: None 
+agent 9: None 
+agent 10: None 
+agent 11: None 
+agent 12: None 
+agent 13: None 
+agent 14: None 
+agent 15: None 
+timeline: 0 items, duration None
+clips not used (upload #): [0, 1, 2]
+  clip up# 0 | speech False | words 0 | chars 0 | jumps None | lufs None
+  clip up# 1 | speech False | words 0 | chars 0 | jumps None | lufs None
+  clip up# 2 | speech False | words 0 | chars 0 | jumps None | lufs None
+issues by type: {}
+missing shots: []
+qa: []
