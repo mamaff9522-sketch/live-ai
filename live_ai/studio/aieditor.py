@@ -44,7 +44,8 @@ CREATE TABLE IF NOT EXISTS editor_jobs (
 CREATE INDEX IF NOT EXISTS editor_jobs_user ON editor_jobs(user_id, status);
 """
 ONLINE_SECONDS = 90
-FRAMES_PER_CLIP = 6
+FRAMES_PER_CLIP = int(os.environ.get("LIVEAI_AIED_FRAMES", "6"))      # stills per clip (more on a fast GPU)
+MAX_FRAMES = int(os.environ.get("LIVEAI_AIED_MAX_FRAMES", "12"))
 
 
 def _hash(key: str) -> str:
@@ -165,4 +166,4 @@ def frame_times(duration: float, spans: list, jumps: list, n: int = FRAMES_PER_C
         ts.update({round(max(0.0, a - 0.3), 2), round(min(d - 0.05, b + 0.3), 2)})
     for a, b in jumps or []:
         ts.update({round(min(d - 0.05, max(0.0, a)), 2), round(min(d - 0.05, b), 2)})
-    return sorted(t for t in ts if 0 <= t < d)[:12]
+    return sorted(t for t in ts if 0 <= t < d)[:MAX_FRAMES]

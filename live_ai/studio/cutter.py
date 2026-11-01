@@ -65,7 +65,8 @@ def plan_cuts(timeline: dict, clips_by_id: dict, mood_of_item, pacing: str = "au
         if pacing == "original":
             continue
         mood = mood_of_item(it)
-        jumps = [tuple(j) for j in (c.get("inspect") or {}).get("jumps") or []]
+        jumps = [tuple(j) for j in (c.get("inspect") or {}).get("jumps") or []] + list(c.get("ai_broken") or [])
+        peaks = sorted(c.get("ai_peaks") or [])          # times the AI editor rated most expressive
         spans = speech_spans(c) if it.get("lines") else []
         first, last = k == 0, k == len(items) - 1
         if spans:
@@ -75,6 +76,9 @@ def plan_cuts(timeline: dict, clips_by_id: dict, mood_of_item, pacing: str = "au
             if last:
                 hold = max(hold * 2, 2.5)
             a, b = max(0.0, s0 - lead), min(d, s1 + hold)
+            late = [t for t in peaks if s1 < t <= s1 + 3.0]
+            if late:                                     # a strong reaction after the words: let it play
+                b = min(d, max(b, late[-1] + 0.5))
             for x, y in jumps:
                 if x < s0 and y > a:                     # jump before the first word: start after it
                     a = min(max(a, y), max(0.0, s0 - 0.1))
@@ -88,6 +92,10 @@ def plan_cuts(timeline: dict, clips_by_id: dict, mood_of_item, pacing: str = "au
             a, b = _clear_of_jumps(a, b, jumps)
             if b - a < MIN_KEEP:
                 a, b = 0.0, d
+            good = [t for t in peaks if a <= t <= b]
+            if good and b - a > keep:                    # centre the kept seconds on the most expressive moment
+                centre = good[0]
+                a = max(a, min(centre - keep / 2, b - keep))
             b = min(b, a + keep)
         if b - a < MIN_KEEP:
             a, b = max(0.0, min(a, d - MIN_KEEP)), min(d, max(b, a + MIN_KEEP))
@@ -134,6 +142,23 @@ def apply_plan(timeline: dict, clips_by_id: dict, plan: dict) -> list[str]:
         b = max(0.0, min(float(p.get("out", it["out"])), d))
         if spans:
             a, b = min(a, spans[0][0]), max(b, spans[-1][1])        # never cut words
+            s0, s1 = spans[0][0], spans[-1][1]
+            # frames the inspector measured as broken (sudden jump / see-through) stay out even if the
+            # model kept them, as long as no word is spoken there
+            for x, y in [tuple(j) for j in (c.get("inspect") or {}).get("jumps") or []]:
+                if x < s0 and y > a:
+                    a2 = min(max(a, y), max(0.0, s0 - 0.1))
+                    if a2 > a:
+                        notes.append(f"“{c['name']}”: ตัดช่วงภาพเสีย {x:.1f}–{y:.1f} วิ ที่ AI เก็บไว้ออก")
+                        a = a2
+                if y > s1 and x < b:
+                    b2 = max(min(b, x), min(d, s1 + 0.2))
+                    if b2 < b:
+                        notes.append(f"“{c['name']}”: ตัดช่วงภาพเสีย {x:.1f}–{y:.1f} วิ ที่ AI เก็บไว้ออก")
+                        b = b2
+        else:
+            jumps = [tuple(j) for j in (c.get("inspect") or {}).get("jumps") or []]
+            a, b = _clear_of_jumps(a, b, jumps) if b - a > MIN_KEEP else (a, b)
         if b - a < MIN_KEEP:
             notes.append(f"“{c['name']}”: แผนของ AI สั้นเกินไป ใช้ค่าจากกฎแทน")
             continue
@@ -147,3 +172,20 @@ def apply_plan(timeline: dict, clips_by_id: dict, plan: dict) -> list[str]:
         t += it["out"] - it["in"]
     timeline["duration"] = round(t, 3)
     return notes
+
+
+def labels_to_clip(clip: dict, frames: list[dict]) -> dict:
+    """AI editor frame labels [{t, broken, emotion 1-5}] -> broken stretches and expressive moments on the clip.
+    A broken frame marks the stretch from the previous to the next labelled frame (we only saw stills)."""
+    fr = sorted((f for f in frames if isinstance(f, dict) and "t" in f), key=lambda f: float(f["t"]))
+    d = float(clip["duration"])
+    broken = []
+    for i, f in enumerate(fr):
+        if f.get("broken"):
+            a = (float(fr[i - 1]["t"]) + float(f["t"])) / 2 if i else 0.0
+            b = (float(f["t"]) + float(fr[i + 1]["t"])) / 2 if i + 1 < len(fr) else d
+            broken.append((round(a, 2), round(b, 2)))
+    top = max([int(f.get("emotion", 0)) for f in fr] or [0])
+    peaks = [round(float(f["t"]), 2) for f in fr if not f.get("broken") and top >= 4 and int(f.get("emotion", 0)) >= top]
+    clip["ai_broken"], clip["ai_peaks"] = broken, peaks
+    return {"broken": broken, "peaks": peaks}

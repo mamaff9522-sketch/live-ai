@@ -741,7 +741,16 @@ class Studio:
         if not res or not isinstance(res.get("plan"), dict):
             timeline["ai_editor"] = {"used": False, "why": "no answer"}
             return "AI คนตัดต่อไม่ตอบในเวลาที่กำหนด จึงใช้กฎตัดต่อแทน"
-        notes = cutter.apply_plan(timeline, by_id, res["plan"])
+        labelled = {cid: p for cid, p in res["plan"].items() if isinstance(p, dict) and isinstance(p.get("frames"), list) and cid in by_id}
+        if labelled:
+            # the model judged each still (broken? how expressive?); the cutting rules turn that into cuts
+            seen = {cid: cutter.labels_to_clip(by_id[cid], p["frames"]) for cid, p in labelled.items()}
+            notes = cutter.plan_cuts(timeline, by_id, lambda it: scene_mood.get(it.get("scene"), "ปกติ"), st.get("pacing", "auto"))
+            for cid, v in seen.items():
+                if v["broken"]:
+                    notes.insert(0, f"“{by_id[cid]['name']}”: AI เห็นภาพเสียช่วง " + ", ".join(f"{a:.1f}–{b:.1f}" for a, b in v["broken"]) + " วิ")
+        else:
+            notes = cutter.apply_plan(timeline, by_id, res["plan"])
         timeline["ai_editor"] = {"used": True, "model": str(res.get("model", ""))[:80], "notes": notes,
                                  "reasons": {cid: str(p.get("why", ""))[:300] for cid, p in res["plan"].items() if isinstance(p, dict)}}
         timeline["cuts"] = [f"“{by_id[cid]['name']}”: {why}" for cid, why in timeline["ai_editor"]["reasons"].items()

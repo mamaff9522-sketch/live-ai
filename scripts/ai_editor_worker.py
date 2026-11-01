@@ -5,14 +5,15 @@ answers Live AI's editing jobs. Standard library only.
 usage: python ai_editor_worker.py --code "https://your-live-ai#lew_..." [--llm http://127.0.0.1:8080] [--once]
        (or --server https://your-live-ai --key lew_...)
 
-For every clip of a job it looks at the still frames (with their times) together with what is said and
-when, and decides which part to keep. Live AI checks every answer again (words are never cut) before
-using it, so a wrong answer can make a clip a bit longer or shorter but cannot break the story.
+For every clip of a job it looks at the still frames (with their times) together with what is said and when,
+and judges each frame: broken or not, how strongly it carries the feeling (1-5). Live AI's cutting rules turn
+those judgments into cuts (broken stretches out, strong reactions kept), and words are never cut.
 """
 from __future__ import annotations
 
 import argparse
 import base64
+import os
 import json
 import sys
 import time
@@ -22,32 +23,31 @@ import urllib.request
 
 MOOD_EN = {"เศร้า": "sad", "โรแมนติก": "tender/romantic", "ปกติ": "neutral", "ตลก": "funny", "โกรธ": "angry", "ระทึก": "tense"}
 
-SYSTEM = """You are an experienced film editor cutting a short Thai drama made from AI-generated video clips.
-For ONE clip you get still frames with their times, what is said and when, and a first plan made by simple rules.
-Decide which part of the clip to keep, like a human editor would.
-
-Rules:
-- Never cut spoken words: keep "in" at or before the speech start and "out" at or after the speech end.
-- Cut away broken frames: see-through or melting characters, sudden zooms or jumps, duplicated or wrong characters,
-  frozen or black frames - but only where no words are spoken.
-- Cut empty time where nothing happens. Keep reactions that carry emotion (tears, a look, a smile through tears).
-- Sad or tender scenes: let the moment breathe, hold about 1-2 s after the last word. Angry or tense: cut quickly.
-- The first clip may open with a short calm moment; the last clip may hold longer as the ending.
-- fade_in / fade_out (seconds, 0 to 0.8): use a soft fade only for sad/tender moments, scene changes, the very start
-  and the very end; otherwise 0.
-- "why": one short sentence in Thai explaining your choice (what you cut and why).
+SYSTEM = """You are an experienced film editor checking AI-generated video clips for a short Thai drama.
+You get ONE clip as still frames (with their times), what is said and when, and the scene mood.
+Judge EVERY frame, in order:
+- "broken": true if the picture is faulty: a see-through, ghost-like or melting character, a sudden zoom or jump
+  compared with the neighbouring frames, extra or missing limbs, a duplicated or different-looking character,
+  a frozen, smeared or black frame. Otherwise false. Judge only what you can see.
+- "emotion": 1-5, how strongly the frame carries the scene's feeling (5 = a powerful look, tears, a meaningful
+  gesture; 1 = empty or nothing happening).
+- "why": one short sentence in Thai: what is broken (if anything) and which moment is strongest.
 Answer only with the JSON object."""
 
-SCHEMA = {
-    "type": "object",
-    "properties": {
-        "in": {"type": "number"}, "out": {"type": "number"},
-        "fade_in": {"type": "number"}, "fade_out": {"type": "number"},
-        "bad_frames": {"type": "array", "items": {"type": "number"}, "maxItems": 12},
-        "why": {"type": "string", "maxLength": 300},
-    },
-    "required": ["in", "out", "fade_in", "fade_out", "why"],
-}
+
+def schema(n: int) -> dict:
+    return {
+        "type": "object",
+        "properties": {
+            "frames": {"type": "array", "minItems": n, "maxItems": n, "items": {
+                "type": "object",
+                "properties": {"t": {"type": "number"}, "broken": {"type": "boolean"},
+                               "emotion": {"type": "integer", "minimum": 1, "maximum": 5}},
+                "required": ["t", "broken", "emotion"]}},
+            "why": {"type": "string", "maxLength": 300},
+        },
+        "required": ["frames", "why"],
+    }
 
 
 def http(method: str, url: str, key: str | None = None, body: dict | None = None, timeout: int = 60, raw: bool = False):
@@ -87,25 +87,22 @@ def decide(llm: str, server: str, key: str, job_id: int, clip: dict) -> dict:
         "what_happens": clip.get("action", ""),
         "spoken_lines": [f"{l['speaker'] + ': ' if l.get('speaker') else ''}{l['text']}" for l in clip.get("lines", [])],
         "speech_start_s": speech[0][0] if speech else None, "speech_end_s": speech[-1][1] if speech else None,
-        "picture_jumps_found_s": clip.get("jumps") or [],
-        "rule_plan": clip.get("rule"),
+        "frame_times_s": [f["t"] for f in clip["frames"]],
     }
     content.append({"type": "text", "text": "Clip information:\n" + json.dumps(info, ensure_ascii=False, indent=1) +
-                    "\n\nDecide in, out, fade_in, fade_out (seconds) and why."})
+                    "\n\nJudge every frame (same order and times) and answer with frames and why."})
+    n = len(clip["frames"])
     body = {"messages": [{"role": "system", "content": SYSTEM}, {"role": "user", "content": content}],
-            "stream": False, "temperature": 0.2, "max_tokens": 400, "chat_template_kwargs": {"enable_thinking": False},
-            "response_format": {"type": "json_schema", "json_schema": {"name": "cut", "schema": SCHEMA}}}
+            "stream": False, "temperature": 0.1, "max_tokens": 120 + 40 * n, "chat_template_kwargs": {"enable_thinking": False},
+            "response_format": {"type": "json_schema", "json_schema": {"name": "frames", "schema": schema(n)}}}
     t0 = time.time()
-    r = http("POST", llm + "/v1/chat/completions", body=body, timeout=900)
+    r = http("POST", llm + "/v1/chat/completions", body=body, timeout=int(os.environ.get("AIED_LLM_TIMEOUT", "900")))
     text = r["choices"][0]["message"].get("content") or "{}"
     out = json.loads(text.strip().removeprefix("```json").removeprefix("```").removesuffix("```"))
-    d = float(clip["duration"])
-    plan = {"in": max(0.0, min(float(out["in"]), d)), "out": max(0.0, min(float(out["out"]), d)),
-            "fade_in": max(0.0, min(float(out.get("fade_in", 0)), 0.8)), "fade_out": max(0.0, min(float(out.get("fade_out", 0)), 0.8)),
-            "why": str(out.get("why", ""))[:300], "seconds": round(time.time() - t0, 1)}
-    if speech:   # the same safety rule Live AI applies again
-        plan["in"], plan["out"] = min(plan["in"], speech[0][0]), max(plan["out"], speech[-1][1])
-    return plan
+    frames = []
+    for f, got in zip(clip["frames"], out.get("frames", [])):
+        frames.append({"t": f["t"], "broken": bool(got.get("broken")), "emotion": max(1, min(5, int(got.get("emotion", 1))))})
+    return {"frames": frames, "why": str(out.get("why", ""))[:300], "seconds": round(time.time() - t0, 1)}
 
 
 def run(server: str, key: str, llm: str, once: bool = False) -> None:
@@ -134,8 +131,8 @@ def run(server: str, key: str, llm: str, once: bool = False) -> None:
         for clip in job["clips"]:
             try:
                 plan[clip["id"]] = p = decide(llm, server, key, jid, clip)
-                print(f"  {clip['position']}/{clip['of']} {clip['name']}: keep {p['in']:.2f}–{p['out']:.2f} s "
-                      f"(fade {p['fade_in']}/{p['fade_out']}) {p['seconds']} s — {p['why']}", flush=True)
+                marks = " ".join(f"{f['t']:.1f}{'✗' if f['broken'] else ''}:{f['emotion']}" for f in p["frames"])
+                print(f"  {clip['position']}/{clip['of']} {clip['name']} ({p['seconds']} s): {marks} — {p['why']}", flush=True)
             except Exception as e:
                 print(f"  {clip['name']}: no decision ({e}); Live AI keeps its own plan for this clip", flush=True)
                 traceback.print_exc(limit=1)
