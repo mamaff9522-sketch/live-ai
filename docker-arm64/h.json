@@ -1,0 +1,1 @@
+{"ok": true, "model": {"state": "ready", "restarts": 0, "error": "", "vision": true, "model": "Qwen3.5-2B-Q4_K_M.gguf", "pid": 21}, "uptime_s": 14, "threads": 2, "ctx": 16384, "ram_mb": {"model": 3437.1, "app": 37.9, "total": 15941, "available": 12656}, "cpu_percent": {"model": 0.0, "cores": 4}, "disk_free_mb": 105266}
