@@ -383,6 +383,49 @@ class FreeFormScripts(unittest.TestCase):
         self.assertTrue(any("สไตล์ภาพ" in n for n in r["notes"]))
 
 
+    def test_name_line_then_unquoted_words_with_direction(self):
+        """'ชื่อ:' on its own line, then '(ท่าทาง) คำพูด' without quotation marks; an invisible character
+        before a name; a direction broken over two lines; a copy that starts mid-sentence."""
+        from live_ai.studio.script import parse
+        r = parse("ชัย:\n(ตะโกนจากหน้าร้าน) ตง! ยกทีวีไปขึ้นรถตู้นะ\n\u200bตง:\n(สะดุ้ง) ขอโทษครับเฮีย\n"
+                  "ชัย:\n(ล้วงซองจาก\nกระเป๋าเสื้อ) เอ้า! นี่เบี้ยเลี้ยง\nตง: (ไหว้) ขอบคุณมากครับเฮียชัย")
+        self.assertEqual([(d["speaker"], d["text"]) for s in r["shots"] for d in s["dialogue"]],
+                         [("ชัย", "ตง! ยกทีวีไปขึ้นรถตู้นะ"), ("ตง", "ขอโทษครับเฮีย"), ("ชัย", "เอ้า! นี่เบี้ยเลี้ยง"),
+                          ("ตง", "ขอบคุณมากครับเฮียชัย")])
+        self.assertEqual([s["action"] for s in r["shots"]], [["ตะโกนจากหน้าร้าน"], ["สะดุ้ง"], ["ล้วงซองจาก กระเป๋าเสื้อ"], ["ไหว้"]])
+        r = parse("กระเป๋าเสื้อ ออกมายื่นให้ตง) เอ้า! นี่เบี้ยเลี้ยง\nตง:\n(รับซองมา) ขอบคุณมากครับ")
+        self.assertEqual([d["text"] for s in r["shots"] for d in s["dialogue"]], ["เอ้า! นี่เบี้ยเลี้ยง", "ขอบคุณมากครับ"])
+        self.assertTrue(any("ไม่ครบ" in w for w in r["warnings"]))
+        # quoted lines under a name heading keep working, and prose after them is not taken as words
+        r = parse("แม่:\n\"กลับบ้านเถอะลูก\"\nแม่เดินจากไป\nลูก: \"ครับแม่\"")
+        self.assertEqual([d["text"] for s in r["shots"] for d in s["dialogue"]], ["กลับบ้านเถอะลูก", "ครับแม่"])
+
+
+class ClipOrderAndUnscripted(unittest.TestCase):
+    def test_file_time_order_and_clips_outside_the_script(self):
+        from live_ai.studio import match as M
+        names = ["Meta_AI_AQPk_20261101_171304.mp4", "Meta_AI_AQMC_20261101_171141.mp4", "Meta_AI_AQMH_20261101_171319.mp4",
+                 "Meta_AI_AQO7_20261101_171230.mp4"]
+        made = M.file_order(names)
+        self.assertEqual(sorted(names, key=made.get), [names[1], names[3], names[0], names[2]])
+        self.assertEqual(sorted(["คลิป 10.mp4", "คลิป 2.mp4"], key=M.file_order(["คลิป 10.mp4", "คลิป 2.mp4"]).get),
+                         ["คลิป 2.mp4", "คลิป 10.mp4"])
+        from live_ai.studio.script import parse
+        script = parse("ชัย: (ยื่นซอง) เอ้า! นี่เบี้ยเลี้ยงรอบพิเศษของสัปดาห์นี้\nตง: (ไหว้) ขอบคุณมากครับเฮียชัย ผมจะไม่ลืมพระคุณ")
+        talk = {names[0]: "เอ้า นี่เบี้ยเลี้ยงรอบพิเศษของสัปดาห์นี้", names[2]: "ขอบคุณมากครับเฮียชัย ผมจะไม่ลืมพระคุณ",
+                names[1]: "ตงซ่อมเสร็จแล้วยกทีวีขึ้นรถตู้", names[3]: "ไม่ไหวก็ต้องไหวครับเฮียแม่ผมต้องฟอกไต"}
+        clips = [{"id": f"c{i}", "name": n, "order": made[n], "duration": 10.0, "speech": True, "transcript": talk[n]}
+                 for i, n in enumerate(names)]
+        r = M.match(script, clips)
+        self.assertEqual([next(c["name"] for c in clips if c["id"] == cid) for cid in r["timeline"]],
+                         [names[1], names[3], names[0], names[2]])
+        self.assertEqual(sorted(i["clip"] for i in r["issues"] if i["type"] == "unscripted"), ["c1", "c3"])
+        self.assertEqual(r["missing"], [])
+        r = M.match(script, clips, unscripted=False)
+        self.assertEqual(len(r["timeline"]), 2)
+        self.assertEqual(sorted(i["clip"] for i in r["issues"] if i["type"] == "unmatched"), ["c1", "c3"])
+
+
 class ClipChecks(unittest.TestCase):
     """Inspector notices sudden picture jumps inside an AI clip and very quiet audio."""
 

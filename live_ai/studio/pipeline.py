@@ -76,7 +76,7 @@ AGENTS = [
 ]
 NOT_YET: dict[int, str] = {}
 DEFAULT_SETTINGS = {"aspect": "9:16", "height": 720, "fps": 30, "subtitles": "file", "audio": "dialogue_only", "match_light": False,
-                    "pacing": "auto", "ai_editor": True,
+                    "pacing": "auto", "ai_editor": True, "unscripted": True,
                     "speaker_in_subs": False, "range_from": None, "range_to": None}
 VIDEO_EXT = {".mp4", ".mov", ".m4v", ".webm", ".mkv", ".3gp"}
 RNNOISE_MODEL = Path(__file__).resolve().parent.parent / "assets" / "rnnoise-std.rnnn"
@@ -253,7 +253,7 @@ class Studio:
                     cur[k] = v
                 elif k == "pacing" and v in ("auto", "original"):
                     cur[k] = v
-                elif k == "ai_editor" and isinstance(v, bool):
+                elif k in ("ai_editor", "unscripted") and isinstance(v, bool):
                     cur[k] = v
                 elif k == "audio" and v in ("original", "dialogue_only"):
                     cur[k] = v
@@ -493,7 +493,7 @@ class Studio:
         st = script["stats"]
         self._agent(pid, 2, "warning" if script["warnings"] else "done",
                     f"{st['shots']} ช็อต, บทพูด {st['dialogue_lines']} บรรทัด (คัดลอกตรงต้นฉบับ), ช็อตไม่มีบทพูด {st['silent_shots']}"
-                    + (f" — คำเตือน: {script['warnings'][0]}" if script["warnings"] else ""))
+                    + (" — คำเตือน: " + " / ".join(script["warnings"][:2]) if script["warnings"] else ""))
         return script
 
     def _scenes(self, pid, script) -> None:
@@ -723,7 +723,7 @@ class Studio:
         n = len(timeline["video"])
         for k, it in enumerate(timeline["video"]):
             c = by_id[it["clip"]]
-            spans = cutter.speech_spans(c) if it.get("lines") else []
+            spans = cutter.speech_spans(c) if it.get("lines") or it.get("unscripted") else []
             jumps = (c.get("inspect") or {}).get("jumps") or []
             frames = self.aied.make_frames(pid, c, frame_times(c["duration"], spans, jumps))
             shot = script["shots"][it["shots"][0]]
@@ -769,16 +769,19 @@ class Studio:
                     "— เพลงที่ดังซ้อนใต้เสียงพูดพร้อมกันอาจยังได้ยินบ้าง ระบบไม่สร้างหรือแก้คำพูด")
 
     def _match(self, pid, script, clips) -> dict:
+        made = M.file_order([c["name"] for c in clips])
         for c in clips:
-            c["order"] = (M.natural_key(c["name"]), c["row"]["upload_order"])
+            c["order"] = (made[c["name"]], c["row"]["upload_order"])
         slim = [{k: c.get(k) for k in ("id", "name", "order", "duration", "speech", "transcript", "duplicate_of")} for c in clips]
         visual = {c["id"]: c["visual"] for c in clips if c.get("visual")}
-        r = M.match(script, slim, visual)
+        st = json.loads(self.store.conn().execute("SELECT settings FROM projects WHERE id=?", (pid,)).fetchone()["settings"])
+        extra = bool(st.get("unscripted", True))
+        r = M.match(script, slim, visual, unscripted=extra)
         unsure = {cid: r["silent_candidates"][cid] for cid, a in r["assign"].items()
                   if a["how"].startswith("silent") and a["confidence"] != "สูง" and cid in r["silent_candidates"]}
         votes = self._vl_votes(pid, script, clips, unsure)
         if votes:
-            r = M.match(script, slim, visual, votes)
+            r = M.match(script, slim, visual, votes, unscripted=extra)
         names = {c["id"]: c["name"] for c in clips}
         for c in clips:
             if c.get("duplicate_of") and not any(i.get("clip") == c["id"] for i in r["issues"]):
@@ -789,7 +792,10 @@ class Studio:
                 if i.get("clip") == c["id"] and i["type"] == "duplicate":
                     c["duplicate_of"] = i["of"]
         hi = sum(1 for a in r["assign"].values() if a["confidence"] == "สูง")
-        msg = f"จับคู่ได้ {len(r['assign'])}/{len(clips)} คลิป (มั่นใจสูง {hi}), ช็อตที่ขาด {len(r['missing'])}"
+        outside = sum(1 for a in r["assign"].values() if a.get("unscripted"))
+        msg = f"จับคู่ได้ {len(r['assign']) - outside}/{len(clips)} คลิป (มั่นใจสูง {hi}), ช็อตที่ขาด {len(r['missing'])}"
+        if outside:
+            msg += f", คลิปที่พูดนอกบท {outside} คลิป ใส่ตามลำดับที่สร้าง"
         self._agent(pid, 6, "warning" if r["issues"] or r["missing"] else "done", msg)
         for m in r["missing"]:
             m["regen"] = M.regen_prompt(script["shots"][m["shot"]], script)
@@ -802,11 +808,12 @@ class Studio:
         for cid in plan["timeline"]:
             c, a = by_id[cid], plan["assign"][cid]
             shot = script["shots"][a["shots"][0]]
-            if shot.get("duration") and (c["duration"] < shot["duration"] * 0.5 or c["duration"] > shot["duration"] * 2):
+            if shot.get("duration") and not a.get("unscripted") and (c["duration"] < shot["duration"] * 0.5 or c["duration"] > shot["duration"] * 2):
                 issues.append({"type": "duration", "clip": cid, "message": f"“{c['name']}” ยาว {c['duration']:.1f} วิ แต่บทกำหนด "
                                                                            f"{shot['duration']:g} วิ ({label(shot)})"})
             items.append({"clip": cid, "name": c["name"], "shots": a["shots"], "lines": a["lines"], "start": round(t, 3),
-                          "in": 0.0, "out": c["duration"], "confidence": a["confidence"], "how": a["how"]})
+                          "in": 0.0, "out": c["duration"], "confidence": a["confidence"], "how": a["how"],
+                          **({"unscripted": True} if a.get("unscripted") else {})})
             t += c["duration"]
         tl = {"video": items, "duration": round(t, 3), "issues": issues}
         self._agent(pid, 7, "done", f"เรียง {len(items)} คลิปตามเนื้อเรื่อง ยาวรวม {t:.1f} วินาที (ใช้ความยาวคลิปตามจริง ไม่ยืดให้เท่ากัน)")

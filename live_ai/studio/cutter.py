@@ -67,7 +67,7 @@ def plan_cuts(timeline: dict, clips_by_id: dict, mood_of_item, pacing: str = "au
         mood = mood_of_item(it)
         jumps = [tuple(j) for j in (c.get("inspect") or {}).get("jumps") or []] + list(c.get("ai_broken") or [])
         peaks = sorted(c.get("ai_peaks") or [])          # times the AI editor rated most expressive
-        spans = speech_spans(c) if it.get("lines") else []
+        spans = speech_spans(c) if it.get("lines") or it.get("unscripted") else []
         first, last = k == 0, k == len(items) - 1
         if spans:
             s0, s1 = spans[0][0], spans[-1][1]
@@ -137,7 +137,7 @@ def apply_plan(timeline: dict, clips_by_id: dict, plan: dict) -> list[str]:
             continue
         c = clips_by_id[it["clip"]]
         d = float(c["duration"])
-        spans = speech_spans(c) if it.get("lines") else []
+        spans = speech_spans(c) if it.get("lines") or it.get("unscripted") else []
         a = max(0.0, min(float(p.get("in", it["in"])), d))
         b = max(0.0, min(float(p.get("out", it["out"])), d))
         if spans:

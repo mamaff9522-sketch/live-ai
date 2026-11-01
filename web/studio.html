@@ -203,6 +203,7 @@ function tExport() {
         $('div', {}, $('label', {}, 'ซับไตเติล'), sel('subtitles', [['file', 'ไฟล์ .srt แยก'], ['burn', 'ไฟล์แยก + ฝังลงวิดีโอ'], ['none', 'ไม่ใส่ซับ']])),
         $('div', {}, $('label', {}, 'จังหวะตัดต่อ'), sel('pacing', [['auto', 'ตัดช่วงว่าง/ภาพเสีย ตามอารมณ์ (แนะนำ)'], ['original', 'ใช้คลิปเต็มความยาว']])),
         $('div', {}, $('label', {}, 'AI คนตัดต่อ (9B)'), sel('ai_editor', [['true', 'ใช้เมื่อเปิด Colab ไว้'], ['false', 'ไม่ใช้ (ใช้กฎตัดต่อ)']])),
+        $('div', {}, $('label', {}, 'คลิปที่พูดนอกบท'), sel('unscripted', [['true', 'ใส่ตามลำดับที่สร้างคลิป (แนะนำ)'], ['false', 'ไม่ใส่']])),
         $('div', {}, $('label', {}, 'ระบบเสียง'), sel('audio', [['dialogue_only', 'Dialogue Only (เฉพาะเสียงพูด)'], ['original', 'เสียงต้นฉบับทั้งหมด']])),
         $('div', {}, $('label', {}, 'แสงระหว่างคลิป'), sel('match_light', [['false', 'รักษาต้นฉบับ'], ['true', 'ปรับแสงให้ใกล้กัน']])),
         $('div', {}, $('label', {}, 'ใส่ชื่อผู้พูดในซับ'), sel('speaker_in_subs', [['false', 'ไม่ใส่'], ['true', 'ใส่']])),
@@ -239,7 +240,7 @@ function aiEditorCard(r) {
     ai && ai.used ? $('div', {}, $('h2', { style: 'margin-top:12px' }, `AI ตัดสินใจในรอบล่าสุด (${ai.model || ''})`), $('ul', {}, Object.values(ai.reasons || {}).filter(Boolean).map(w => $('li', {}, w))))
       : ai ? $('p', { class: 'muted' }, ai.why === 'offline' ? 'รอบล่าสุด: Colab ไม่ได้เปิด จึงใช้กฎตัดต่อ' : 'รอบล่าสุด: AI ไม่ตอบทันเวลา จึงใช้กฎตัดต่อ') : null);
 }
-async function save(settings) { for (const k of ['speaker_in_subs', 'match_light', 'ai_editor']) if (settings[k] !== undefined) settings[k] = settings[k] === 'true' || settings[k] === true; try { P = await api('/api/studio/projects/' + P.id, { method: 'PATCH', body: JSON.stringify({ settings }) }); render(); } catch (e) { alert(e.message); } }
+async function save(settings) { for (const k of ['speaker_in_subs', 'match_light', 'ai_editor', 'unscripted']) if (settings[k] !== undefined) settings[k] = settings[k] === 'true' || settings[k] === true; try { P = await api('/api/studio/projects/' + P.id, { method: 'PATCH', body: JSON.stringify({ settings }) }); render(); } catch (e) { alert(e.message); } }
 
 const q = new URLSearchParams(location.search).get('p'); q ? open_(+q).catch(home) : home();
 </script>

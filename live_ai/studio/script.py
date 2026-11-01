@@ -49,8 +49,36 @@ NOTE_LABELS = {"สไตล์ภาพ", "สไตล์", "คุณภา�
 RE_SPEAKER_HEAD = re.compile(r"^([^\s:：“\"‘(][^:：“\"‘]{0,30}?)\s*(?:\(([^)]*)\))?\s*[:：]\s*$")
 
 
+INVISIBLE = dict.fromkeys(map(ord, "\u200b\u200c\u200d\u2060\ufeff\u00ad"), None)
+# "(รับซองมา ไหว้ขอบคุณ) ขอบคุณมากครับ": a stage direction in brackets, then the words
+RE_LEAD_PAREN = re.compile(r"^[(（]([^)）]*)[)）]\s*(.*)$")
+
+
 def norm(s: str) -> str:
-    return unicodedata.normalize("NFC", s).replace("​", "").strip()
+    return unicodedata.normalize("NFC", s).translate(INVISIBLE).replace("\u00a0", " ").strip()
+
+
+def lead_paren(text: str) -> tuple[str, str]:
+    """('stage direction', 'words') for a line that starts with a bracketed direction."""
+    m = RE_LEAD_PAREN.match(text.strip())
+    return (m.group(1).strip(), m.group(2).strip()) if m else ("", text.strip())
+
+
+def join_brackets(lines: list[str]) -> list[str]:
+    """A bracketed direction broken over several lines "(ล้วงซอง\nออกมายื่นให้) เอ้า!" becomes one line."""
+    out, k = [], 0
+    while k < len(lines):
+        x = lines[k]
+        if x.lstrip()[:1] in "(（" and not re.search(r"[)）]", x):
+            j = next((j for j in range(k + 1, min(len(lines), k + 4)) if re.search(r"[)）]", lines[j])), None)
+            if j is not None and all(lines[i] for i in range(k + 1, j + 1)):
+                out.append(" ".join(lines[k:j + 1]))
+                out += [""] * (j - k)          # keeps line numbers the same
+                k = j + 1
+                continue
+        out.append(x)
+        k += 1
+    return out
 
 
 def split_quoted(text: str) -> tuple[str | None, str]:
@@ -108,13 +136,14 @@ def parse(text: str, free: bool = False) -> dict:
             return first
         second = _parse(text, True)
         if second["shots"]:
-            second["warnings"].insert(0, "บทนี้ไม่มีหัวข้อ ฉาก/คลิป จึงอ่านทีละบรรทัด: บทพูดแต่ละบรรทัด (หรือแต่ละย่อหน้าถ้าไม่มีบทพูด) เป็น 1 ช็อต")
+            at = 1 if second["warnings"] and "ไม่ครบ" in second["warnings"][0] else 0
+            second["warnings"].insert(at, "บทนี้ไม่มีหัวข้อ ฉาก/คลิป จึงอ่านทีละบรรทัด: บทพูดแต่ละบรรทัด (หรือแต่ละย่อหน้าถ้าไม่มีบทพูด) เป็น 1 ช็อต")
         return second
     return _parse(text, True)
 
 
 def _parse(text: str, free: bool) -> dict:
-    lines = [norm(x) for x in text.replace("\r\n", "\n").split("\n")]
+    lines = join_brackets([norm(x) for x in text.replace("\r\n", "\n").split("\n")])
     sc = Script()
     sc.format = "clips" if any(RE_CLIP.match(x) for x in lines) else "story"
     known: set[str] = set()
@@ -123,6 +152,7 @@ def _parse(text: str, free: bool) -> dict:
     cur_shot = None
     pending_actions: list[str] = []
     speaker_head: tuple[str, str | None] | None = None
+    head_spoke = False
     in_chars = False
     chars_in_block = 0
     started = free                 # story content begins at the first scene/clip (free: at once)
@@ -156,6 +186,12 @@ def _parse(text: str, free: bool) -> dict:
     def add_dialogue(speaker: str, emotion: str | None, rest: str) -> bool:
         speaker = speaker.strip().strip("*").strip()
         quote, after = split_quoted(rest)
+        direction = ""
+        if quote is None:
+            after = ""
+            direction, rest = lead_paren(rest)
+            if direction and rest[:1] in OPEN_Q:          # ชื่อ: (ยิ้ม) “…”
+                quote, after = split_quoted(rest)
         text = quote if quote is not None else rest.strip()
         if not text:
             return False
@@ -173,6 +209,8 @@ def _parse(text: str, free: bool) -> dict:
             pending_actions.clear()
         elif cur_shot is None:
             new_shot()
+        if direction:
+            cur_shot["action"].append(direction)
         cur_shot["dialogue"].append({"speaker": speaker, "text": text, "emotion": (emotion or "").strip(),
                                      "quoted": quote is not None})
         if after:
@@ -278,13 +316,20 @@ def _parse(text: str, free: bool) -> dict:
             continue
         if (m := RE_SPEAKER_HEAD.match(bare)) and m.group(1).strip() not in NOT_SPEAKERS:
             speaker_head = (m.group(1).strip(), m.group(2))
+            head_spoke = False
             known.add(speaker_head[0])
             continue
         if speaker_head and bare[:1] in OPEN_Q:
             if add_dialogue(speaker_head[0], speaker_head[1], bare):
+                head_spoke = True
                 continue
         elif speaker_head and not re.fullmatch(r"[(（].*[)）]", bare):
-            speaker_head = None                 # anything but a stage direction ends this person's lines
+            head, speaker_head = speaker_head, None   # anything but a stage direction ends this person's lines
+            # "ตง:" on its own line, then the words without quotation marks (often after a direction in
+            # brackets): the first such line is what this person says
+            if not head_spoke and not RE_DIALOGUE.match(bare) and not RE_NARRATION.match(bare) \
+                    and lead_paren(bare)[1] and add_dialogue(head[0], head[1], bare):
+                continue
         if (m := RE_NARRATION.match(bare)):
             q, after = split_quoted(m.group(1))
             target = cur_shot if sc.format == "clips" else None
@@ -310,12 +355,18 @@ def _parse(text: str, free: bool) -> dict:
         if (m := RE_DIALOGUE.match(bare)):
             speaker = m.group(1).strip()
             q, _ = split_quoted(m.group(3))
-            looks_spoken = q is not None or speaker in known
+            looks_spoken = q is not None or speaker in known or (len(speaker) <= 20 and bool(lead_paren(m.group(3))[0])
+                                                                    and bool(lead_paren(m.group(3))[1]))
             if speaker in known and re.fullmatch(r"\(?\s*(?:ไม่มี|ไม่พูด|เงียบ|—|-)\s*\)?", m.group(3).strip()):
                 continue
             if speaker not in NOT_SPEAKERS and looks_spoken and len(speaker) <= 30:
                 if add_dialogue(speaker, m.group(2), m.group(3)):
                     continue
+        if free and not sc.shots and not pending_actions and (m := re.match(r"^([^()（）]{1,120})[)）]\s*(\S.*)$", bare)):
+            # the first line starts in the middle of a bracketed direction: the copy is missing its beginning
+            sc.warnings.insert(0, "บทเริ่มกลางประโยค (“" + bare[:30] + "…”) — น่าจะคัดลอกมาไม่ครบตั้งแต่ต้นเรื่อง")
+            if add_dialogue("", None, "(" + m.group(1) + ") " + m.group(2)):
+                continue
         if (m := RE_ACTION.match(bare)):
             line = m.group(1).strip()
         if free and sc.format == "story" and quoted_segments(line):

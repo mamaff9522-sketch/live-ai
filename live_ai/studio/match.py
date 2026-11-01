@@ -88,7 +88,21 @@ def best_window(transcript: str, lines: list[dict], exclude: set[int] = frozense
     return best
 
 
-def match(script: dict, clips: list[dict], visual: dict | None = None, vl_votes: dict | None = None) -> dict:
+RE_STAMP = re.compile(r"(20\d\d)[-_.]?(\d\d)[-_.]?(\d\d)[-_. T]?(\d\d)[-_.:]?(\d\d)[-_.:]?(\d\d)")
+
+
+def file_order(names: list[str]) -> dict[str, tuple]:
+    """Order of clips as made: by the date-time in the file names when every name has one (phones and
+    Meta AI / Grok name downloads "…_20261101_171141.mp4"; the random part before it means nothing),
+    else by natural name order ("คลิป 2" before "คลิป 10")."""
+    stamps = {n: RE_STAMP.search(n) for n in names}
+    if names and all(stamps.values()):
+        return {n: (0, "".join(stamps[n].groups()), natural_key(n)) for n in names}
+    return {n: (1, "", natural_key(n)) for n in names}
+
+
+def match(script: dict, clips: list[dict], visual: dict | None = None, vl_votes: dict | None = None,
+          unscripted: bool = True) -> dict:
     """clips: [{"id","name","order","duration","speech": bool, "transcript": str, "duplicate_of": id|None}]
     Returns {"assign": {clip_id: {...}}, "timeline": [...], "missing": [...], "extra": [...], "issues": [...]}"""
     shots = script["shots"]
@@ -103,6 +117,7 @@ def match(script: dict, clips: list[dict], visual: dict | None = None, vl_votes:
     speaking = [c for c in clips if c.get("speech") and c.get("transcript") and not c.get("duplicate_of")]
     full = {c["id"]: best_window(c["transcript"], lines) for c in speaking}
     taken: set[int] = set()
+    holder: dict[int, float] = {}              # line -> score of the clip that took it
     for c in sorted(speaking, key=lambda c: (-full[c["id"]]["score"], c["order"])):
         w = full[c["id"]]
         if w["score"] < MATCH_WEAK or not w["lines"]:
@@ -111,8 +126,14 @@ def match(script: dict, clips: list[dict], visual: dict | None = None, vl_votes:
             free = best_window(c["transcript"], lines, exclude=taken)
             if free["lines"] and free["score"] >= max(MATCH_WEAK, 0.85 * w["score"]):
                 w = free
+            elif w["score"] < 0.5 * max(holder[li] for li in taken & set(w["lines"])):
+                # a line another clip says clearly; this one only shares a few sounds with it ("ครับเฮีย"),
+                # which is not the second half of that line: it says something else
+                continue
         assign[c["id"]] = {"lines": w["lines"], "score": w["score"], "margin": w["margin"], "how": "dialogue"}
         taken |= set(w["lines"])
+        for li in w["lines"]:
+            holder[li] = max(holder.get(li, 0.0), w["score"])
 
     # 2. conflicts: several clips on the same first line
     by_line: dict[int, list[str]] = {}
@@ -158,11 +179,19 @@ def match(script: dict, clips: list[dict], visual: dict | None = None, vl_votes:
     rest = [c for c in clips if c["id"] not in assign and not c.get("duplicate_of")]
     order = sorted(clips, key=lambda c: (c["order"],))
     rank = {c["id"]: i for i, c in enumerate(order)}
-    silent_clips = []
+    silent_clips, talking = [], []
     for c in sorted(rest, key=lambda c: rank[c["id"]]):
         if c.get("speech") and c.get("transcript"):
-            issues.append({"type": "unmatched", "clip": c["id"],
-                           "message": f"คลิป “{c['name']}” มีเสียงพูด (“{c['transcript'][:50]}”) แต่ไม่ตรงกับบทใดเลย — อาจเป็นคลิปที่สร้างผิดหรือไม่ใช่ของเรื่องนี้"})
+            if any(f1(c["transcript"], o["transcript"]) >= 0.8 and abs(c["duration"] - o["duration"]) < 1.0 for o in talking):
+                o = next(o for o in talking if f1(c["transcript"], o["transcript"]) >= 0.8)
+                c["duplicate_of"] = o["id"]
+                issues.append({"type": "duplicate", "clip": c["id"], "of": o["id"],
+                               "message": f"คลิป “{c['name']}” ซ้ำกับ “{o['name']}” (เสียงพูดเหมือนกัน) จะไม่ถูกใช้"})
+            elif unscripted:
+                talking.append(c)
+            else:
+                issues.append({"type": "unmatched", "clip": c["id"],
+                               "message": f"คลิป “{c['name']}” มีเสียงพูด (“{c['transcript'][:50]}”) แต่ไม่ตรงกับบทใดเลย — ไม่ได้ใส่ (ตั้งค่าไว้ว่าไม่ใส่คลิปที่ไม่อยู่ในบท)"})
         else:
             silent_clips.append(c)
     placements = place_silent(silent_clips, silent_shots, assign, clip_by_id, rank, shots, visual or {}, vl_votes or {})
@@ -185,7 +214,25 @@ def match(script: dict, clips: list[dict], visual: dict | None = None, vl_votes:
     # 4. timeline + missing shots
     timeline = sorted(assign, key=lambda cid: (assign[cid]["shots"][0], assign[cid]["lines"][0] if assign[cid]["lines"] else -1,
                                                -assign[cid].get("pos", 0.0), rank[cid]))
-    covered = {s for a in assign.values() for s in a["shots"]}
+    # clips whose words are not in the script (the script was pasted incomplete, or the clip says it
+    # differently): an editor would still use them, in the order they were made, next to the clip made
+    # just before them. Their words get no subtitles (subtitles are copied from the script only).
+    for c in talking:
+        before = [cid for cid in timeline if rank[cid] < rank[c["id"]]]
+        at = timeline.index(max(before, key=lambda cid: rank[cid])) + 1 if before else 0
+        if at < len(timeline) and not before:
+            shot = assign[timeline[0]]["shots"][0]
+        elif at:
+            shot = assign[timeline[at - 1]]["shots"][-1]
+        else:
+            shot = 0
+        assign[c["id"]] = {"lines": [], "shots": [shot], "score": 0.0, "margin": 0.0, "how": "unscripted",
+                           "confidence": "ต่ำ", "unscripted": True}
+        timeline.insert(at, c["id"])
+        issues.append({"type": "unscripted", "clip": c["id"],
+                       "message": f"คลิป “{c['name']}” พูดว่า “{c['transcript'][:50]}” ซึ่งไม่อยู่ในบท — ใส่ไว้ตามลำดับที่สร้างคลิป "
+                                  "(ไม่มีซับสำหรับคลิปนี้ ถ้าวางบทครบทั้งเรื่องจะได้ซับและลำดับตามบท; ถ้าไม่ใช่ของเรื่องนี้ ให้ลบคลิปออกแล้วกด Start ใหม่)"})
+    covered = {s for a in assign.values() for s in a["shots"] if not a.get("unscripted")}
     covered_lines = {li for a in assign.values() for li in a["lines"]}
     missing = []
     for s in shots:
