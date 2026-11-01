@@ -1,0 +1,134 @@
+llama.cpp v0.8.0
+Note: switching to '8642541b255bfb5dc39cd351a178be09013a55d6'.
+
+You are in 'detached HEAD' state. You can look around, make experimental
+changes and commit them, and you can discard any commits you make in this
+state without impacting any branches by switching back to a branch.
+
+If you want to create a new branch to retain commits you create, you may
+do so (now or later) by using -c with the switch command. Example:
+
+  git switch -c <new-branch-name>
+
+Or undo this operation with:
+
+  git switch -
+
+Turn off this advice by setting config variable advice.detachedHead to false
+
+-- The C compiler identification is GNU 11.4.0
+-- The CXX compiler identification is GNU 11.4.0
+-- Detecting C compiler ABI info
+-- Detecting C compiler ABI info - done
+-- Check for working C compiler: /usr/bin/cc - skipped
+-- Detecting C compile features
+-- Detecting C compile features - done
+-- Detecting CXX compiler ABI info
+-- Detecting CXX compiler ABI info - done
+-- Check for working CXX compiler: /usr/bin/c++ - skipped
+-- Detecting CXX compile features
+-- Detecting CXX compile features - done
+-- llama.cpp version: 0.8.0-dev
+CMAKE_BUILD_TYPE=Release
+-- Found Git: /usr/bin/git (found version "2.34.1")
+-- The ASM compiler identification is GNU
+-- Found assembler: /usr/bin/cc
+-- Performing Test CMAKE_HAVE_LIBC_PTHREAD
+-- Performing Test CMAKE_HAVE_LIBC_PTHREAD - Success
+-- Found Threads: TRUE
+-- Warning: ccache not found - consider installing it for faster compilation or disable this warning with GGML_CCACHE=OFF
+-- CMAKE_SYSTEM_PROCESSOR: x86_64
+-- GGML_SYSTEM_ARCH: x86
+-- Found OpenMP_C: -fopenmp (found version "4.5")
+-- Found OpenMP_CXX: -fopenmp (found version "4.5")
+-- Found OpenMP: TRUE (found version "4.5")
+-- Including CPU backend
+-- x86 detected
+-- Adding CPU backend variant ggml-cpu: -march=native 
+-- Found CUDAToolkit: /usr/local/cuda/targets/x86_64-linux/include (found version "12.4.131")
+-- CUDA Toolkit found
+-- The CUDA compiler identification is NVIDIA 12.4.131 with host compiler GNU 11.4.0
+-- Detecting CUDA compiler ABI info
+-- Detecting CUDA compiler ABI info - done
+-- Check for working CUDA compiler: /usr/local/cuda/bin/nvcc - skipped
+-- Detecting CUDA compile features
+-- Detecting CUDA compile features - done
+-- Using CMAKE_CUDA_ARCHITECTURES=75;80;89 CMAKE_CUDA_ARCHITECTURES_NATIVE=No CUDA devices found.-real
+-- FlashAttention K-V type combinations: f16-f16;q4_0-q4_0;q8_0-q8_0;bf16-bf16
+-- Found NCCL: /usr/lib/x86_64-linux-gnu/libnccl.so
+-- CUDA host compiler is GNU 11.4.0
+-- Including CUDA backend
+-- ggml version: 0.28.0
+-- ggml commit:  8642541
+-- Could NOT find OpenSSL, try to set the path to OpenSSL root folder in the system variable OPENSSL_ROOT_DIR (missing: OPENSSL_CRYPTO_LIBRARY OPENSSL_INCLUDE_DIR) 
+CMake Warning at vendor/cpp-httplib/CMakeLists.txt:154 (message):
+  OpenSSL not found, HTTPS support disabled
+
+
+-- Generating embedded license file for target: llama-app
+-- Configuring done (3.3s)
+-- Generating done (0.2s)
+-- Build files have been written to: /__w/live-ai/live-ai/build
+[ 94%] Building CXX object common/CMakeFiles/llama-common.dir/jinja/parser.cpp.o
+[ 94%] Building CXX object common/CMakeFiles/llama-common.dir/jinja/runtime.cpp.o
+[ 94%] Building CXX object common/CMakeFiles/llama-common.dir/jinja/value.cpp.o
+[ 95%] Building CXX object common/CMakeFiles/llama-common.dir/jinja/string.cpp.o
+[ 95%] Building CXX object common/CMakeFiles/llama-common.dir/jinja/caps.cpp.o
+[ 95%] Linking CXX shared library ../bin/libllama-common.so
+[ 95%] Built target llama-common
+[ 95%] Building CXX object tools/server/CMakeFiles/server-context.dir/server-chat.cpp.o
+[ 95%] Building CXX object tools/server/CMakeFiles/server-context.dir/server-task.cpp.o
+[ 95%] Building CXX object tools/server/CMakeFiles/server-context.dir/server-queue.cpp.o
+[ 95%] Building CXX object tools/server/CMakeFiles/server-context.dir/server-common.cpp.o
+[ 96%] Building CXX object tools/server/CMakeFiles/server-context.dir/server-decision.cpp.o
+[ 96%] Building CXX object tools/server/CMakeFiles/server-context.dir/server-context.cpp.o
+[ 96%] Building CXX object tools/server/CMakeFiles/server-context.dir/server-realtime.cpp.o
+[ 96%] Building CXX object tools/server/CMakeFiles/server-context.dir/server-stream.cpp.o
+[ 97%] Building CXX object tools/server/CMakeFiles/server-context.dir/server-tools.cpp.o
+[ 97%] Building CXX object tools/server/CMakeFiles/server-context.dir/server-mcp.cpp.o
+[ 97%] Building CXX object tools/server/CMakeFiles/server-context.dir/server-schema.cpp.o
+[ 97%] Linking CXX static library libserver-context.a
+[ 97%] Built target server-context
+[ 97%] Building CXX object tools/server/CMakeFiles/llama-server-impl.dir/server.cpp.o
+[ 97%] Building CXX object tools/server/CMakeFiles/llama-server-impl.dir/server-connect.cpp.o
+[ 97%] Building CXX object tools/server/CMakeFiles/llama-server-impl.dir/server-http.cpp.o
+[ 98%] Building CXX object tools/server/CMakeFiles/llama-server-impl.dir/server-models.cpp.o
+[ 98%] Building CXX object tools/server/CMakeFiles/llama-server-impl.dir/server-models-sched.cpp.o
+[ 98%] Linking CXX shared library ../../bin/libllama-server-impl.so
+[ 98%] Built target llama-server-impl
+[ 98%] Building CXX object tools/server/CMakeFiles/llama-server.dir/main.cpp.o
+[100%] Linking CXX executable ../../bin/llama-server
+[100%] Built target llama-server
+total 614744
+drwxr-xr-x  2 root root      4096 Nov  1 05:27 .
+drwxr-xr-x 14 1001 1001      4096 Nov  1 05:27 ..
+-rw-r--r--  1 root root         7 Nov  1 05:27 TAG
+lrwxrwxrwx  1 root root        17 Nov  1 04:47 libggml-base.so -> libggml-base.so.0
+lrwxrwxrwx  1 root root        22 Nov  1 04:47 libggml-base.so.0 -> libggml-base.so.0.28.0
+-rwxr-xr-x  1 root root    906072 Nov  1 04:47 libggml-base.so.0.28.0
+lrwxrwxrwx  1 root root        16 Nov  1 04:48 libggml-cpu.so -> libggml-cpu.so.0
+lrwxrwxrwx  1 root root        21 Nov  1 04:48 libggml-cpu.so.0 -> libggml-cpu.so.0.28.0
+-rwxr-xr-x  1 root root   1420280 Nov  1 04:48 libggml-cpu.so.0.28.0
+lrwxrwxrwx  1 root root        17 Nov  1 05:24 libggml-cuda.so -> libggml-cuda.so.0
+lrwxrwxrwx  1 root root        22 Nov  1 05:24 libggml-cuda.so.0 -> libggml-cuda.so.0.28.0
+-rwxr-xr-x  1 root root 608186536 Nov  1 05:24 libggml-cuda.so.0.28.0
+lrwxrwxrwx  1 root root        12 Nov  1 05:24 libggml.so -> libggml.so.0
+lrwxrwxrwx  1 root root        17 Nov  1 05:24 libggml.so.0 -> libggml.so.0.28.0
+-rwxr-xr-x  1 root root     55384 Nov  1 05:24 libggml.so.0.28.0
+lrwxrwxrwx  1 root root        20 Nov  1 05:26 libllama-common.so -> libllama-common.so.0
+lrwxrwxrwx  1 root root        24 Nov  1 05:26 libllama-common.so.0 -> libllama-common.so.0.8.0
+-rwxr-xr-x  1 root root   6567608 Nov  1 05:26 libllama-common.so.0.8.0
+-rwxr-xr-x  1 root root   4810344 Nov  1 05:27 libllama-server-impl.so
+lrwxrwxrwx  1 root root        13 Nov  1 05:24 libllama.so -> libllama.so.0
+lrwxrwxrwx  1 root root        17 Nov  1 05:24 libllama.so.0 -> libllama.so.0.8.0
+-rwxr-xr-x  1 root root   5290416 Nov  1 05:24 libllama.so.0.8.0
+lrwxrwxrwx  1 root root        12 Nov  1 05:26 libmtmd.so -> libmtmd.so.0
+lrwxrwxrwx  1 root root        16 Nov  1 05:26 libmtmd.so.0 -> libmtmd.so.0.8.0
+-rwxr-xr-x  1 root root   2211264 Nov  1 05:26 libmtmd.so.0.8.0
+-rwxr-xr-x  1 root root     17864 Nov  1 05:27 llama-server
+	libggml-cuda.so.0 => /__w/live-ai/live-ai/build/bin/libggml-cuda.so.0 (0x0000759cb6800000)
+	libcudart.so.12 => /usr/local/cuda/targets/x86_64-linux/lib/libcudart.so.12 (0x0000759cb6400000)
+	libcublas.so.12 => /usr/local/cuda/targets/x86_64-linux/lib/libcublas.so.12 (0x0000759caf800000)
+	libcuda.so.1 => not found
+	libcublasLt.so.12 => /usr/local/cuda/targets/x86_64-linux/lib/libcublasLt.so.12 (0x0000759c83200000)
+04aee8e986d1c1acad69a3b3ba01798fb63867e14686c69b1d683a7852ad4ee7  llama-server-cuda.tar.gz
