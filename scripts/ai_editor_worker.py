@@ -67,7 +67,9 @@ def http(method: str, url: str, key: str | None = None, body: dict | None = None
 def model_name(llm: str) -> str:
     try:
         d = http("GET", llm + "/v1/models", timeout=10)
-        return (d.get("data") or [{}])[0].get("id", "")[:60] or "Qwen3.5-9B"
+        mid = (d.get("data") or [{}])[0].get("id", "")
+        mid = mid.rsplit("/", 1)[-1].removesuffix(".gguf")          # llama-server reports the file path
+        return mid[:60] or "Qwen3.5-9B"
     except Exception:
         return "Qwen3.5-9B"
 

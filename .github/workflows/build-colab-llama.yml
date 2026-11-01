@@ -19,19 +19,30 @@ jobs:
     steps:
       - name: Tools
         run: |
-          apt-get update -qq && DEBIAN_FRONTEND=noninteractive apt-get install -y -qq git cmake build-essential curl jq ca-certificates > /dev/null
+          apt-get update -qq && DEBIAN_FRONTEND=noninteractive apt-get install -y -qq git build-essential curl jq ca-certificates > /dev/null
+          # Ubuntu 22.04's CMake is too old for current llama.cpp: use Kitware's release build
+          curl -fsSL https://github.com/Kitware/CMake/releases/download/v3.31.6/cmake-3.31.6-linux-x86_64.tar.gz | tar -xz -C /opt
+          ln -sf /opt/cmake-3.31.6-linux-x86_64/bin/cmake /usr/local/bin/cmake && cmake --version | head -1
           curl -fsSL https://cli.github.com/packages/githubcli-archive-keyring.gpg -o /usr/share/keyrings/gh.gpg
           echo "deb [signed-by=/usr/share/keyrings/gh.gpg] https://cli.github.com/packages stable main" > /etc/apt/sources.list.d/gh.list
           apt-get update -qq && apt-get install -y -qq gh > /dev/null
+      - uses: actions/checkout@v4
       - name: Build
         env: { GH_TOKEN: "${{ github.token }}" }
+        shell: bash
         run: |
+          set -eo pipefail
+          mkdir -p report
+          exec > >(tee report/build.log) 2>&1
+          # link against the CUDA driver stub (no GPU on the build machine; Colab provides the real driver)
+          export LIBRARY_PATH=/usr/local/cuda/lib64/stubs:${LIBRARY_PATH:-}
           TAG=$(curl -fsSL -H "Authorization: Bearer $GH_TOKEN" https://api.github.com/repos/ggml-org/llama.cpp/releases/latest | jq -r .tag_name)
           echo "llama.cpp $TAG"; echo "$TAG" > TAG
           git clone -q --depth 1 --branch "$TAG" https://github.com/ggml-org/llama.cpp src
           cmake -S src -B build -DCMAKE_BUILD_TYPE=Release -DGGML_CUDA=ON -DCMAKE_CUDA_ARCHITECTURES="75;80;89" \
-            -DLLAMA_CURL=OFF -DLLAMA_BUILD_TESTS=OFF -DLLAMA_BUILD_EXAMPLES=OFF -DLLAMA_BUILD_UI=OFF -DLLAMA_USE_PREBUILT_UI=OFF > /dev/null
-          cmake --build build --target llama-server -j"$(nproc)" 2>&1 | tail -3
+            -DCMAKE_LIBRARY_PATH=/usr/local/cuda/lib64/stubs \
+            -DLLAMA_CURL=OFF -DLLAMA_BUILD_TESTS=OFF -DLLAMA_BUILD_EXAMPLES=OFF -DLLAMA_BUILD_UI=OFF -DLLAMA_USE_PREBUILT_UI=OFF
+          cmake --build build --target llama-server -j"$(nproc)" 2>&1 | tail -30
           mkdir -p pkg && cp -a build/bin/llama-server build/bin/*.so* pkg/ 2>/dev/null || cp build/bin/llama-server pkg/
           cp TAG pkg/
           ls -la pkg; ldd pkg/llama-server | grep -iE "cuda|cublas|not found" || true
@@ -44,3 +55,12 @@ jobs:
           gh release view tools -R "$GITHUB_REPOSITORY" >/dev/null 2>&1 || gh release create tools -R "$GITHUB_REPOSITORY" \
             --title "Open models and tools (mirror)" --notes "Mirrors and builds used by Live AI" --latest=false
           gh release upload tools llama-server-cuda.tar.gz llama-server-cuda.tar.gz.sha256 -R "$GITHUB_REPOSITORY" --clobber
+      - name: Build log to the ci-reports branch
+        if: always()
+        env: { GH_TOKEN: "${{ github.token }}" }
+        shell: bash
+        run: |
+          git config --global --add safe.directory '*'
+          mkdir -p report && tail -200 report/build.log > report/build_tail.log 2>/dev/null || true
+          rm -f report/build.log
+          bash scripts/publish_report.sh report colab-llama

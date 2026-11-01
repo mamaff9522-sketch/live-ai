@@ -735,7 +735,9 @@ class Studio:
         payload = {"version": 1, "project": self.store.conn().execute("SELECT name FROM projects WHERE id=?", (pid,)).fetchone()["name"],
                    "title": script.get("title", ""), "clips": clips_out}
         job = self.aied.create_job(uid, pid, payload)
-        res = self.aied.wait(job, min(1800, 180 + 60 * n), check=lambda: self._check_pause(pid))
+        per_clip = float(os.environ.get("LIVEAI_AIED_SECONDS_PER_CLIP", "60"))     # Colab T4: well under a minute
+        res = self.aied.wait(job, min(float(os.environ.get("LIVEAI_AIED_MAX_WAIT", "3600")), 180 + per_clip * n),
+                             check=lambda: self._check_pause(pid))
         if not res or not isinstance(res.get("plan"), dict):
             timeline["ai_editor"] = {"used": False, "why": "no answer"}
             return "AI คนตัดต่อไม่ตอบในเวลาที่กำหนด จึงใช้กฎตัดต่อแทน"
