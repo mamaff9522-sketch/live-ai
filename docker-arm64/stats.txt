@@ -1,4 +1,3 @@
-CONTAINER ID   NAME      CPU %     MEM USAGE / LIMIT     MEM %     NET I/O           BLOCK I/O    PIDS
-808143bb58e7   liveai    0.32%     2.261GiB / 15.57GiB   14.52%    1.96GB / 3.51MB   0B / 821MB   18
+Error response from daemon: No such container: liveai
 aarch64
 4
