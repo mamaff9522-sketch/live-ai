@@ -1,0 +1,23 @@
+0.00.000.847 I srv  llama_server: initializing ...
+0.00.007.502 I cmn  common_param: common_params_print_info: verbosity = 3 (adjust with the `-lv N` CLI arg)
+0.00.007.580 I srv  init_listene: The UI is disabled
+0.00.007.583 I srv  init_listene: Use --ui/--no-ui (or deprecated --webui/--no-webui) to enable/disable
+0.00.007.656 W srv  server_setup: security: no API key is set and CORS allows all origins (see https://github.com/ggml-org/llama.cpp/pull/25655)
+0.00.009.359 I srv    load_model: loading model '/data/models/Qwen3.5-2B-Q4_K_M.gguf'
+0.01.214.277 I cmn          init: llama threadpool init, n_threads = 2
+0.01.289.263 W load_hparams: Qwen-VL models require at minimum 1024 image tokens to function correctly on grounding tasks
+0.01.289.271 W load_hparams: if you encounter problems with accuracy, try adding --image-min-tokens 1024
+0.01.289.271 W load_hparams: more info: https://github.com/ggml-org/llama.cpp/issues/16842
+
+0.01.603.926 I srv    load_model: loaded multimodal model, '/data/models/mmproj-F16.gguf'
+0.01.680.407 I srv    load_model: initializing, n_slots = 1, n_ctx_slot = 16384, kv_unified = 'false'
+0.01.683.928 I srv  server_run_i: model loaded
+0.01.683.943 I srv  server_on_li: listening on http://127.0.0.1:8081
+0.03.502.362 I slot get_availabl: id  0 | task -1 | selected slot by LRU, n_tokens = 0, t_last = -1
+0.03.502.428 I slot launch_slot_: id  0 | task 0 | processing task, is_child = 0
+0.07.583.600 I slot print_timing: id  0 | task 0 | prompt eval time =    2024.28 ms /   175 tokens (   11.57 ms per token,    86.45 tokens per second)
+0.07.583.607 I slot print_timing: id  0 | task 0 |        eval time =    2056.84 ms /    47 tokens (   44.71 ms per token,    22.36 tokens per second)
+0.07.583.607 I slot print_timing: id  0 | task 0 |       total time =    4081.12 ms /   222 tokens
+0.07.583.614 I slot print_timing: id  0 | task 0 |    graphs reused =         46
+0.07.583.614 I slot print_timing: id  0 | task 0 |   graph reallocs =          0    /     0        (same size) / (changed size)
+0.07.583.666 I slot      release: id  0 | task 0 | stop processing: n_tokens = 221, truncated = 0
