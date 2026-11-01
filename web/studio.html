@@ -202,18 +202,44 @@ function tExport() {
         $('div', {}, $('label', {}, 'FPS'), sel('fps', [[24, '24'], [25, '25'], [30, '30'], [60, '60']])),
         $('div', {}, $('label', {}, 'ซับไตเติล'), sel('subtitles', [['file', 'ไฟล์ .srt แยก'], ['burn', 'ไฟล์แยก + ฝังลงวิดีโอ'], ['none', 'ไม่ใส่ซับ']])),
         $('div', {}, $('label', {}, 'จังหวะตัดต่อ'), sel('pacing', [['auto', 'ตัดช่วงว่าง/ภาพเสีย ตามอารมณ์ (แนะนำ)'], ['original', 'ใช้คลิปเต็มความยาว']])),
+        $('div', {}, $('label', {}, 'AI คนตัดต่อ (9B)'), sel('ai_editor', [['true', 'ใช้เมื่อเปิด Colab ไว้'], ['false', 'ไม่ใช้ (ใช้กฎตัดต่อ)']])),
         $('div', {}, $('label', {}, 'ระบบเสียง'), sel('audio', [['dialogue_only', 'Dialogue Only (เฉพาะเสียงพูด)'], ['original', 'เสียงต้นฉบับทั้งหมด']])),
         $('div', {}, $('label', {}, 'แสงระหว่างคลิป'), sel('match_light', [['false', 'รักษาต้นฉบับ'], ['true', 'ปรับแสงให้ใกล้กัน']])),
         $('div', {}, $('label', {}, 'ใส่ชื่อผู้พูดในซับ'), sel('speaker_in_subs', [['false', 'ไม่ใส่'], ['true', 'ใส่']])),
         $('div', {}, $('label', {}, 'ตัดต่อตั้งแต่คลิป/ช็อตที่'), num('range_from')),
         $('div', {}, $('label', {}, 'ถึงคลิป/ช็อตที่'), num('range_to'))),
       $('p', { class: 'muted' }, 'ค่าเริ่มต้นรักษาภาพต้นฉบับ (ไม่ครอป ใส่ขอบดำถ้าสัดส่วนไม่ตรง) และไม่ขยายภาพแล้วอ้างว่าเป็นความละเอียดสูง')),
+    aiEditorCard(r),
     $('div', { class: 'card' }, $('h2', {}, 'ผลลัพธ์'),
       r.video?.url ? $('video', { src: r.video.url, controls: true, playsinline: true, preload: 'metadata' }) : r.review?.url ? $('div', {}, $('p', { style: 'color:var(--warn)' }, '⚠️ ฉบับตรวจสอบ ยังไม่ผ่าน QA ดูแท็บ "ตรวจข้อผิดพลาด"'), $('video', { src: r.review.url, controls: true, playsinline: true, preload: 'metadata' })) : $('p', { class: 'muted' }, 'ยังไม่มีไฟล์'),
       $('div', { class: 'row', style: 'margin-top:8px' }, file(r.video, 'MP4'), file(r.video_subs, 'MP4 มีซับ'), file(r.srt, 'ซับ .srt'), file(r.review, 'ฉบับตรวจสอบ')),
       r.seconds ? $('p', { class: 'muted' }, `ใช้เวลาประมวลผล ${Math.round(r.seconds)} วินาที`) : null));
 }
-async function save(settings) { for (const k of ['speaker_in_subs', 'match_light']) if (settings[k] !== undefined) settings[k] = settings[k] === 'true' || settings[k] === true; try { P = await api('/api/studio/projects/' + P.id, { method: 'PATCH', body: JSON.stringify({ settings }) }); render(); } catch (e) { alert(e.message); } }
+const COLAB = 'https://colab.research.google.com/github/mamaff9522-sketch/live-ai/blob/main/colab/ai_editor.ipynb';
+function aiEditorCard(r) {
+  const box = $('div', { class: 'muted' }, 'กำลังตรวจสถานะ…');
+  const out = $('div');
+  api('/api/editor/status').then(st => {
+    box.replaceChildren(st.online ? `🟢 เชื่อมต่ออยู่ (${(st.info && st.info.model) || 'Qwen3.5-9B'}) — โปรเจกต์ที่กด Start จะให้ AI ดูภาพและตัดสินใจจุดตัด`
+      : st.has_key ? '⚪ ยังไม่ได้เปิด Colab — ตอนนี้ใช้กฎตัดต่อแทน' : '⚪ ยังไม่ได้ตั้งค่า');
+  }).catch(() => box.textContent = '');
+  const ai = (r.timeline || {}).ai_editor;
+  return $('div', { class: 'card' }, $('h2', {}, 'AI คนตัดต่อ (Qwen3.5-9B บน Google Colab ฟรี)'),
+    $('p', { class: 'muted' }, 'AI ตัวใหญ่ขึ้นดูภาพจากทุกคลิปแล้วตัดสินใจว่าจะตัดตรงไหน ค้างภาพนานแค่ไหน ทำงานบนการ์ดจอฟรีของ Colab ในบัญชี Google ของคุณ ระบบยังตรวจซ้ำทุกครั้งว่าไม่ตัดคำพูด'),
+    box,
+    $('ol', {}, $('li', {}, 'กด "สร้างรหัสเชื่อม" แล้วกด "คัดลอก"'), $('li', {}, 'กด "เปิด Colab" → เมนู รันไทม์ → เปลี่ยนประเภทรันไทม์ → T4 GPU'),
+      $('li', {}, 'วางรหัสในช่อง รหัสเชื่อม แล้วกด ▶ ช่องแรก (ครั้งแรกรอดาวน์โหลดประมาณ 5–10 นาที)'), $('li', {}, 'กลับมากด Start ที่โปรเจกต์ได้เลย ปิดจอมือถือได้ แต่อย่าปิดแท็บ Colab')),
+    $('div', { class: 'row' },
+      $('button', { class: 'btn2', onclick: async () => { if (!confirm('สร้างรหัสใหม่? รหัสเดิมจะใช้ไม่ได้')) return; const k = await api('/api/editor/key', { method: 'POST' }); const code = location.origin + '#' + k.key;
+        out.replaceChildren($('div', { class: 'token', style: 'word-break:break-all;font-size:13px;margin:8px 0' }, code),
+          $('button', { class: 'btn2', onclick: e => { navigator.clipboard.writeText(code).then(() => e.target.textContent = 'คัดลอกแล้ว ✓'); } }, 'คัดลอก'),
+          $('p', { class: 'muted' }, 'รหัสนี้แสดงครั้งเดียว ใครมีรหัสนี้รับงานตัดต่อของคุณได้ อย่าส่งให้คนอื่น')); } }, 'สร้างรหัสเชื่อม'),
+      $('a', { class: 'btn2', href: COLAB, target: '_blank', rel: 'noopener', style: 'text-decoration:none' }, 'เปิด Colab')),
+    out,
+    ai && ai.used ? $('div', {}, $('h2', { style: 'margin-top:12px' }, `AI ตัดสินใจในรอบล่าสุด (${ai.model || ''})`), $('ul', {}, Object.values(ai.reasons || {}).filter(Boolean).map(w => $('li', {}, w))))
+      : ai ? $('p', { class: 'muted' }, ai.why === 'offline' ? 'รอบล่าสุด: Colab ไม่ได้เปิด จึงใช้กฎตัดต่อ' : 'รอบล่าสุด: AI ไม่ตอบทันเวลา จึงใช้กฎตัดต่อ') : null);
+}
+async function save(settings) { for (const k of ['speaker_in_subs', 'match_light', 'ai_editor']) if (settings[k] !== undefined) settings[k] = settings[k] === 'true' || settings[k] === true; try { P = await api('/api/studio/projects/' + P.id, { method: 'PATCH', body: JSON.stringify({ settings }) }); render(); } catch (e) { alert(e.message); } }
 
 const q = new URLSearchParams(location.search).get('p'); q ? open_(+q).catch(home) : home();
 </script>

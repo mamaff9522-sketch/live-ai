@@ -23,6 +23,7 @@ from .. import logs
 from ..media import MediaError, probe
 from ..store import NotFound
 from . import cutter
+from .aieditor import AIEditor, frame_times
 from . import match as M
 from .asr import ASRUnavailable, FakeASR, loudness, make_asr, speech_regions
 from .script import label, parse
@@ -75,7 +76,7 @@ AGENTS = [
 ]
 NOT_YET: dict[int, str] = {}
 DEFAULT_SETTINGS = {"aspect": "9:16", "height": 720, "fps": 30, "subtitles": "file", "audio": "dialogue_only", "match_light": False,
-                    "pacing": "auto",
+                    "pacing": "auto", "ai_editor": True,
                     "speaker_in_subs": False, "range_from": None, "range_to": None}
 VIDEO_EXT = {".mp4", ".mov", ".m4v", ".webm", ".mkv", ".3gp"}
 RNNOISE_MODEL = Path(__file__).resolve().parent.parent / "assets" / "rnnoise-std.rnnn"
@@ -165,6 +166,7 @@ class Studio:
         self.root.mkdir(parents=True, exist_ok=True)
         self.q: queue.Queue[int] = queue.Queue()
         self.asr = make_asr(s.data_dir, s.threads)
+        self.aied = AIEditor(store, self.root)
         with store.conn() as c:
             c.executescript(SCHEMA)
             cols = {r["name"] for r in c.execute("PRAGMA table_info(project_clips)")}
@@ -250,6 +252,8 @@ class Studio:
                 elif k == "subtitles" and v in ("none", "file", "burn"):
                     cur[k] = v
                 elif k == "pacing" and v in ("auto", "original"):
+                    cur[k] = v
+                elif k == "ai_editor" and isinstance(v, bool):
                     cur[k] = v
                 elif k == "audio" and v in ("original", "dialogue_only"):
                     cur[k] = v
@@ -693,15 +697,54 @@ class Studio:
         before = timeline["duration"]
         notes = cutter.plan_cuts(timeline, by_id, lambda it: scene_mood.get(it.get("scene"), "ปกติ"), st.get("pacing", "auto"))
         timeline["cuts"] = notes
+        ai = self._ai_editor(pid, script, by_id, timeline, scene_mood, st)
         fades = sum(1 for it in timeline["video"][1:] if it.get("fade_in"))
         if st.get("pacing", "auto") == "original":
             how = "ใช้คลิปเต็มความยาวตามต้นฉบับ ต่อแบบ Hard Cut"
         else:
             how = (f"ตัดช่วงว่าง/ภาพเสียตามจังหวะอารมณ์: {before:.1f} → {timeline['duration']:.1f} วินาที, "
                    f"รอยต่อแบบจางผ่านดำ {fades} จุด (ไม่ตัดคำพูด)")
+        how = (ai + " — " if ai else "") + how
         self._agent(pid, 12, "warning" if off and not st.get("match_light") else "done",
                     how + (f"; แสงต่างจากฉาก {off} คลิป" if off else "; แสงใกล้เคียงกันทั้งฉาก")
                     + (" (ปรับให้แล้ว)" if off and st.get("match_light") else ""))
+
+    def _ai_editor(self, pid, script, by_id, timeline, scene_mood, st) -> str:
+        """Asks the owner's AI editor (Qwen3.5-9B on their Colab GPU) for the cuts, when it is online."""
+        if st.get("pacing", "auto") == "original" or not st.get("ai_editor", True) or not timeline["video"]:
+            return ""
+        uid = self.store.conn().execute("SELECT user_id FROM projects WHERE id=?", (pid,)).fetchone()["user_id"]
+        if not self.aied.online(uid):
+            timeline["ai_editor"] = {"used": False, "why": "offline"}
+            return ""
+        self._agent(pid, 12, "running", "ส่งภาพและบทพูดให้ AI คนตัดต่อ (บน Colab ของคุณ) …")
+        lines = M.dialogue_lines(script["shots"])
+        clips_out = []
+        n = len(timeline["video"])
+        for k, it in enumerate(timeline["video"]):
+            c = by_id[it["clip"]]
+            spans = cutter.speech_spans(c) if it.get("lines") else []
+            jumps = (c.get("inspect") or {}).get("jumps") or []
+            frames = self.aied.make_frames(pid, c, frame_times(c["duration"], spans, jumps))
+            shot = script["shots"][it["shots"][0]]
+            clips_out.append({"id": c["id"], "name": c["name"], "position": k + 1, "of": n, "duration": round(c["duration"], 2),
+                              "mood": scene_mood.get(it.get("scene"), "ปกติ"),
+                              "lines": [{"speaker": lines[li]["speaker"], "text": lines[li]["text"]} for li in it.get("lines", [])],
+                              "action": " ".join(shot.get("action", []))[:400], "speech": spans, "jumps": jumps,
+                              "rule": {k2: it.get(k2) for k2 in ("in", "out", "fade_in", "fade_out")}, "frames": frames})
+        payload = {"version": 1, "project": self.store.conn().execute("SELECT name FROM projects WHERE id=?", (pid,)).fetchone()["name"],
+                   "title": script.get("title", ""), "clips": clips_out}
+        job = self.aied.create_job(uid, pid, payload)
+        res = self.aied.wait(job, min(1800, 180 + 60 * n), check=lambda: self._check_pause(pid))
+        if not res or not isinstance(res.get("plan"), dict):
+            timeline["ai_editor"] = {"used": False, "why": "no answer"}
+            return "AI คนตัดต่อไม่ตอบในเวลาที่กำหนด จึงใช้กฎตัดต่อแทน"
+        notes = cutter.apply_plan(timeline, by_id, res["plan"])
+        timeline["ai_editor"] = {"used": True, "model": str(res.get("model", ""))[:80], "notes": notes,
+                                 "reasons": {cid: str(p.get("why", ""))[:300] for cid, p in res["plan"].items() if isinstance(p, dict)}}
+        timeline["cuts"] = [f"“{by_id[cid]['name']}”: {why}" for cid, why in timeline["ai_editor"]["reasons"].items()
+                            if why and cid in by_id] + notes
+        return f"AI คนตัดต่อ ({res.get('model') or 'Qwen3.5-9B'}) ดูภาพแล้วกำหนดจุดตัด {len(res['plan'])} คลิป"
 
     def _audio(self, pid, clips, timeline) -> None:
         """AI 13: Dialogue Only = local RNNoise speech denoiser + quieting the gaps between lines."""

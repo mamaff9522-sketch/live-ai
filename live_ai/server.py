@@ -562,6 +562,62 @@ class Handler(BaseHTTPRequestHandler):
              "skip": self.app.growth.skip}[action](u["id"], int(iid))
             self._send(200, {"ok": True})
 
+    # AI editor (Qwen3.5-9B on the owner's Colab) -----------------------------------------
+    @route("POST", "/api/editor/key")
+    def editor_key(self):
+        if (u := self._auth()):
+            self._send(200, {"key": self.app.studio.aied.new_key(u["id"])})
+
+    @route("GET", "/api/editor/status")
+    def editor_status(self):
+        if (u := self._auth()):
+            self._send(200, self.app.studio.aied.status(u["id"]))
+
+    def _worker(self) -> int | None:
+        uid = self.app.studio.aied.worker_user(self.headers.get("X-Worker-Key", ""))
+        if not uid:
+            self._err(401, "รหัสเชื่อม AI คนตัดต่อไม่ถูกต้อง (สร้างใหม่ในสตูดิโอ แท็บ ตั้งค่า & ส่งออก)")
+        return uid
+
+    @route("POST", "/api/editor/worker/hello")
+    def editor_hello(self):
+        if (uid := self._worker()):
+            self.app.studio.aied.seen(uid, self._json())
+            self._send(200, {"ok": True})
+
+    @route("GET", "/api/editor/worker/next")
+    def editor_next(self):
+        if (uid := self._worker()):
+            end = time.time() + 20                       # long poll
+            while True:
+                self.app.studio.aied.seen(uid)
+                job = self.app.studio.aied.next_job(uid)
+                if job or time.time() > end:
+                    break
+                time.sleep(1.5)
+            if job:
+                self._send(200, job)
+            else:
+                self._send(200, {"id": None})
+
+    @route("GET", r"/api/editor/worker/jobs/(\d+)/frames/([A-Za-z0-9_.\-]+)")
+    def editor_frame(self, jid, name):
+        if (uid := self._worker()):
+            p = self.app.studio.aied.frame_path(uid, int(jid), name)
+            if not p:
+                return self._err(404, "ไม่พบภาพ")
+            self._send(200, ctype="image/jpeg", body=p.read_bytes())
+
+    @route("POST", r"/api/editor/worker/jobs/(\d+)/(result|fail)")
+    def editor_result(self, jid, what):
+        if (uid := self._worker()):
+            d = self._json_big()
+            if what == "fail":
+                self.app.studio.aied.fail(uid, int(jid), str(d.get("error", "")))
+                return self._send(200, {"ok": True})
+            ok = self.app.studio.aied.submit(uid, int(jid), d)
+            self._send(200 if ok else 409, {"ok": ok})
+
 
 def serve(s: Settings | None = None, start_model: bool = True) -> tuple[ThreadingHTTPServer, App]:
     s = s or Settings()

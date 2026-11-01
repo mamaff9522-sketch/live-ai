@@ -1,0 +1,44 @@
+name: mirror Qwen3.5-9B (test use)
+
+# Copies Qwen3.5-9B Q4_K_M + its vision projector (Apache 2.0, unsloth/Qwen3.5-9B-GGUF) into the release
+# "tools" in parts under 2 GB (GitHub's limit per file), each checked against Hugging Face's SHA-256, so a
+# machine that cannot reach huggingface.co can test the AI editor. Colab downloads from Hugging Face directly.
+
+on:
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  mirror:
+    runs-on: ubuntu-latest
+    timeout-minutes: 90
+    steps:
+      - uses: actions/checkout@v4
+      - name: Download, verify, split
+        run: |
+          R=unsloth/Qwen3.5-9B-GGUF
+          curl -fsSL "https://huggingface.co/api/models/$R/tree/main" > tree.json
+          G=$(jq -r '[.[] | select(.path|endswith(".gguf")) | select(.path|test("Q4_K_M")) | select(.path|test("mmproj";"i")|not)][0].path' tree.json)
+          M=$(jq -r '[.[] | select(.path|test("mmproj";"i"))] | sort_by(if (.path|test("F16";"i")) and (.path|test("BF16";"i")|not) then 0 elif (.path|test("BF16";"i")) then 1 else 2 end) | .[0].path' tree.json)
+          echo "model $G / projector $M"
+          mkdir -p out
+          for f in "$G" "$M"; do
+            curl -fsSL -o "out/$(basename "$f")" "https://huggingface.co/$R/resolve/main/$f"
+            want=$(jq -r --arg p "$f" '.[] | select(.path==$p) | .lfs.oid' tree.json)
+            got=$(sha256sum "out/$(basename "$f")" | cut -d' ' -f1)
+            echo "$f want $want got $got"; [ "$want" = "$got" ]
+          done
+          cd out
+          GB=$(basename "$G"); MB=$(basename "$M")
+          mv "$GB" qwen3.5-9b-q4km.gguf; mv "$MB" qwen3.5-9b-mmproj.gguf
+          sha256sum qwen3.5-9b-q4km.gguf qwen3.5-9b-mmproj.gguf > qwen3.5-9b.sha256
+          split -b 1900m -d qwen3.5-9b-q4km.gguf qwen3.5-9b-q4km.gguf.part
+          rm qwen3.5-9b-q4km.gguf
+          ls -la
+      - name: Publish to release "tools"
+        env: { GH_TOKEN: "${{ github.token }}" }
+        run: |
+          gh release view tools >/dev/null 2>&1 || gh release create tools --title "Open models and tools (mirror)" --notes "Mirrors used by Live AI" --latest=false
+          gh release upload tools out/* --clobber

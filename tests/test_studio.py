@@ -273,6 +273,50 @@ class Studio(unittest.TestCase):
         self.assertEqual(p["status"], "done", p["message"])
         self.assertTrue(all(i.get("join_similarity", 1) > 0.8 for i in tl[1:]), [i.get("join_similarity") for i in tl])
 
+    def test_9_ai_editor_worker_decides_cuts(self):
+        """The AI editor path end to end: key -> worker online -> job with frames -> answers -> applied safely."""
+        sys.path.insert(0, str(ROOT / "scripts"))
+        import ai_editor_worker
+        t = self.user()
+        code, k = self.call("POST", "/api/editor/key", token=t)
+        self.assertEqual(code, 200)
+        key = k["key"]
+        self.assertFalse(self.call("GET", "/api/editor/status", token=t)[1]["online"])
+        # a wrong key is refused
+        req = urllib.request.Request(self.base + "/api/editor/worker/next", headers={"X-Worker-Key": "lew_wrong"})
+        with self.assertRaises(urllib.error.HTTPError) as e:
+            urllib.request.urlopen(req, timeout=30)
+        self.assertEqual(e.exception.code, 401)
+        worker = threading.Thread(target=ai_editor_worker.run, args=(self.base, key, self.app.llm.url, True), daemon=True)
+        worker.start()
+        for _ in range(50):
+            if self.call("GET", "/api/editor/status", token=t)[1]["online"]:
+                break
+            time.sleep(0.1)
+        self.assertTrue(self.call("GET", "/api/editor/status", token=t)[1]["online"])
+        names = [n for n in self.truth if self.truth[n] < 4]
+        pid, _ = self.project(t, names, (1, 4))
+        self.call("POST", f"/api/studio/projects/{pid}/start", {}, t)
+        p = self.wait(t, pid, 240)
+        worker.join(30)
+        tl = p["result"]["timeline"]
+        self.assertTrue(tl.get("ai_editor", {}).get("used"), tl.get("ai_editor"))
+        self.assertTrue(all("ทดสอบ: ดูภาพ" in why for why in tl["ai_editor"]["reasons"].values()))
+        self.assertTrue(any("ดูภาพ 0" not in why for why in tl["ai_editor"]["reasons"].values()))   # frames were sent
+        self.assertEqual(p["status"], "done", p["message"])
+        qa = {q["name"]: q["ok"] for q in p["result"]["qa"]["checks"]}
+        self.assertTrue(qa["ไม่ตัดคำพูดทิ้ง"])
+        self.assertIn("AI คนตัดต่อ", p["agents"]["12"]["message"] if isinstance(p["agents"], dict) else "")
+        # another user cannot take this user's jobs or frames
+        t2 = self.user()
+        key2 = self.call("POST", "/api/editor/key", token=t2)[1]["key"]
+        job = self.app.studio.aied.store.conn().execute("SELECT id, payload FROM editor_jobs WHERE project_id=?", (pid,)).fetchone()
+        frame = json.loads(job["payload"])["clips"][0]["frames"][0]["name"]
+        req = urllib.request.Request(f"{self.base}/api/editor/worker/jobs/{job['id']}/frames/{frame}", headers={"X-Worker-Key": key2})
+        with self.assertRaises(urllib.error.HTTPError) as e:
+            urllib.request.urlopen(req, timeout=30)
+        self.assertEqual(e.exception.code, 404)
+
     def test_8_pause_and_resume_from_checkpoint(self):
         t = self.user()
         pid, _ = self.project(t, list(self.truth))

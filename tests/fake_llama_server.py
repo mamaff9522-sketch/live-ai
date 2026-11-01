@@ -43,6 +43,23 @@ class H(BaseHTTPRequestHandler):
                 f.write(json.dumps(body, ensure_ascii=False) + "\n")
         last = body["messages"][-1]["content"]
         props = (body.get("response_format") or {}).get("json_schema", {}).get("schema", {}).get("properties", {})
+        if "why" in props and "out" in props:                  # AI editor: keep speech + 0.4 s, cut the rest
+            parts = body["messages"][-1]["content"]
+            info_txt = [p["text"] for p in parts if p.get("type") == "text" and p["text"].startswith("Clip information")][0]
+            info = json.loads(info_txt.split("\n", 1)[1].rsplit("\n\nDecide", 1)[0])
+            images = sum(1 for p in parts if p.get("type") == "image_url")
+            a = info["speech_start_s"] if info["speech_start_s"] is not None else 0.0
+            b = info["speech_end_s"] + 0.4 if info["speech_end_s"] is not None else min(info["duration_s"], 1.5)
+            out = {"in": max(0.0, a - 0.1), "out": min(info["duration_s"], b), "fade_in": 0, "fade_out": 0,
+                   "why": f"ทดสอบ: ดูภาพ {images} ภาพ เก็บช่วงพูด"}
+            b2 = json.dumps({"choices": [{"message": {"role": "assistant", "content": json.dumps(out, ensure_ascii=False)}}]},
+                            ensure_ascii=False).encode()
+            self.send_response(200)
+            self.send_header("Content-Type", "application/json")
+            self.send_header("Content-Length", str(len(b2)))
+            self.end_headers()
+            self.wfile.write(b2)
+            return
         if "caption" in props or "audience" in props:          # Facebook page growth (posts / plan)
             import random as _r
             words = ["แค้น", "รัก", "ทรยศ", "ความลับ", "แม่สามี", "ลูกสะใภ้", "น้ำตา", "หักหลัง", "คืนนั้น", "พินัยกรรม", "ตระกูล",

@@ -1,0 +1,46 @@
+name: build llama-server for Colab GPUs
+
+# Builds llama.cpp's llama-server with CUDA (T4 = sm_75, A100 = sm_80, L4 = sm_89) on Ubuntu 22.04 (same as
+# Google Colab) and publishes it to the release "tools" as llama-server-cuda.tar.gz, so the AI-editor
+# notebook can start in a minute instead of compiling for half an hour on Colab's 2 CPUs.
+# CUDA libraries are not bundled: Colab's own CUDA 12 runtime is used.
+
+on:
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    timeout-minutes: 150
+    container: nvidia/cuda:12.4.1-devel-ubuntu22.04
+    steps:
+      - name: Tools
+        run: |
+          apt-get update -qq && DEBIAN_FRONTEND=noninteractive apt-get install -y -qq git cmake build-essential curl jq ca-certificates > /dev/null
+          curl -fsSL https://cli.github.com/packages/githubcli-archive-keyring.gpg -o /usr/share/keyrings/gh.gpg
+          echo "deb [signed-by=/usr/share/keyrings/gh.gpg] https://cli.github.com/packages stable main" > /etc/apt/sources.list.d/gh.list
+          apt-get update -qq && apt-get install -y -qq gh > /dev/null
+      - name: Build
+        env: { GH_TOKEN: "${{ github.token }}" }
+        run: |
+          TAG=$(curl -fsSL -H "Authorization: Bearer $GH_TOKEN" https://api.github.com/repos/ggml-org/llama.cpp/releases/latest | jq -r .tag_name)
+          echo "llama.cpp $TAG"; echo "$TAG" > TAG
+          git clone -q --depth 1 --branch "$TAG" https://github.com/ggml-org/llama.cpp src
+          cmake -S src -B build -DCMAKE_BUILD_TYPE=Release -DGGML_CUDA=ON -DCMAKE_CUDA_ARCHITECTURES="75;80;89" \
+            -DLLAMA_CURL=OFF -DLLAMA_BUILD_TESTS=OFF -DLLAMA_BUILD_EXAMPLES=OFF -DLLAMA_BUILD_UI=OFF -DLLAMA_USE_PREBUILT_UI=OFF > /dev/null
+          cmake --build build --target llama-server -j"$(nproc)" 2>&1 | tail -3
+          mkdir -p pkg && cp -a build/bin/llama-server build/bin/*.so* pkg/ 2>/dev/null || cp build/bin/llama-server pkg/
+          cp TAG pkg/
+          ls -la pkg; ldd pkg/llama-server | grep -iE "cuda|cublas|not found" || true
+          tar -czf llama-server-cuda.tar.gz -C pkg .
+          sha256sum llama-server-cuda.tar.gz | tee llama-server-cuda.tar.gz.sha256
+      - name: Publish to release "tools"
+        env: { GH_TOKEN: "${{ github.token }}" }
+        run: |
+          git config --global --add safe.directory "$PWD"
+          gh release view tools -R "$GITHUB_REPOSITORY" >/dev/null 2>&1 || gh release create tools -R "$GITHUB_REPOSITORY" \
+            --title "Open models and tools (mirror)" --notes "Mirrors and builds used by Live AI" --latest=false
+          gh release upload tools llama-server-cuda.tar.gz llama-server-cuda.tar.gz.sha256 -R "$GITHUB_REPOSITORY" --clobber
