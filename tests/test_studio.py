@@ -426,6 +426,23 @@ class ClipOrderAndUnscripted(unittest.TestCase):
         self.assertEqual(sorted(i["clip"] for i in r["issues"] if i["type"] == "unmatched"), ["c1", "c3"])
 
 
+class ReactionAfterWords(unittest.TestCase):
+    def test_measured_jump_after_words_only_trims_the_last_frames(self):
+        """A big picture change after the words is usually a gesture or a camera move (the reaction):
+        only a jump at the very end of the clip is cut; one the AI editor saw as broken is cut anywhere."""
+        from live_ai.studio import cutter
+        def run(jumps, broken=()):
+            clip = {"id": "c", "name": "c", "duration": 10.24, "transcript": "ขอบคุณครับ",
+                    "asr": {"segments": [{"start": 0.0, "end": 2.0}, {"start": 3.0, "end": 4.0}]},
+                    "inspect": {"speech_regions": [[0.0, 10.24]], "jumps": jumps}, "ai_broken": list(broken)}
+            tl = {"video": [{"clip": "c", "lines": [0]}]}
+            cutter.plan_cuts(tl, {"c": clip}, lambda it: "ปกติ")
+            return tl["video"][0]["out"]
+        self.assertGreaterEqual(run([[2.0, 4.5], [5.5, 6.5]]), 6.5)     # words end at 4.0, last clip holds 2.5 s
+        self.assertEqual(run([[5.0, 10.24]]), 5.0)                      # glitch running into the end: cut
+        self.assertEqual(run([], broken=[(5.0, 6.0)]), 5.0)              # seen broken by the AI editor: cut
+
+
 class ClipChecks(unittest.TestCase):
     """Inspector notices sudden picture jumps inside an AI clip and very quiet audio."""
 

@@ -457,8 +457,12 @@ class Studio:
                   "timeline": timeline,
                   "complete": complete}
         unused = [c["name"] for c in clips if c["id"] in {i["clip"] for i in plan["issues"] if i.get("type") == "extra"}]
+        outside = [i["name"] for i in timeline["video"] if i.get("unscripted")]
         if complete:
             msg = f"เสร็จสมบูรณ์ ผ่าน QA ({out['duration']:.1f} วินาที, ใช้เวลา {secs:.0f} วินาที)"
+            if outside:
+                msg += (f" — มี {len(outside)} คลิปที่พูดนอกบท ใส่ตามลำดับที่สร้างคลิปและไม่มีซับ"
+                        " (วางบทให้ครบทั้งเรื่องแล้วกด Start ใหม่ จะได้ซับครบ)")
             if unused:
                 msg += f" — ไม่ได้ใช้ {len(unused)} คลิปที่ไม่ตรงกับบท: {', '.join(unused[:5])} (ดูแท็บ ตรวจข้อผิดพลาด)"
         else:
@@ -952,7 +956,7 @@ class Studio:
         cut_words = [i["name"] for i in timeline["video"] if i.get("lines") and any(
             a < i.get("in", 0) - 0.05 or b > i.get("out", 1e9) + 0.05 for a, b in cutter.speech_spans(by_id[i["clip"]]))]
         checks.append(("ไม่ตัดคำพูดทิ้ง" + (f" (ตัดโดน: {', '.join(cut_words[:3])})" if cut_words else ""), not cut_words))
-        low = [i for i in timeline["video"] if i["confidence"] == "ต่ำ"]
+        low = [i for i in timeline["video"] if i["confidence"] == "ต่ำ" and not i.get("unscripted")]
         checks.append((f"คลิปที่จับคู่ความมั่นใจต่ำ {len(low)} คลิป (ต้องให้คนตรวจ)", not low))
         for name, ok in checks:
             if not ok:
@@ -1082,7 +1086,7 @@ def normalize_segment(c: dict, seg: Path, W: int, H: int, fps: int, dialogue_onl
     regions = [(max(0.0, a - t0), min(D, b - t0)) for a, b in (regions or []) if b > t0 and a < t1]
     tmp = seg.with_suffix(".part.mp4")
     vf = (f"scale={W}:{H}:force_original_aspect_ratio=decrease:force_divisible_by=2,pad={W}:{H}:(ow-iw)/2:(oh-ih)/2:black,"
-          f"setsar=1,fps={fps},format=yuv420p")
+          f"setsar=1,fps={fps},format=yuv420p,tpad=stop_mode=clone:stop_duration={D:.3f}")
     if brightness:
         vf += f",eq=brightness={brightness:.3f}"
     af = f"aresample=48000,apad=whole_dur={D:.3f},aformat=channel_layouts=stereo"

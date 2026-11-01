@@ -20,6 +20,7 @@ LEAD_IN = {"เศร้า": 0.5, "โรแมนติก": 0.45, "ปกต�
 SILENT_KEEP = {"เศร้า": 4.0, "โรแมนติก": 3.5, "ปกติ": 3.0, "ตลก": 2.5, "โกรธ": 2.0, "ระทึก": 2.0}
 SOFT = {"เศร้า", "โรแมนติก"}
 MIN_KEEP = 1.0
+END_GLITCH = 0.6        # a measured picture jump this close to the end of a clip is a glitch in its last frames
 
 
 def speech_spans(clip: dict) -> list[tuple[float, float]]:
@@ -65,7 +66,9 @@ def plan_cuts(timeline: dict, clips_by_id: dict, mood_of_item, pacing: str = "au
         if pacing == "original":
             continue
         mood = mood_of_item(it)
-        jumps = [tuple(j) for j in (c.get("inspect") or {}).get("jumps") or []] + list(c.get("ai_broken") or [])
+        measured = [tuple(j) for j in (c.get("inspect") or {}).get("jumps") or []]
+        seen_broken = [tuple(j) for j in c.get("ai_broken") or []]
+        jumps = measured + seen_broken
         peaks = sorted(c.get("ai_peaks") or [])          # times the AI editor rated most expressive
         spans = speech_spans(c) if it.get("lines") or it.get("unscripted") else []
         first, last = k == 0, k == len(items) - 1
@@ -82,7 +85,11 @@ def plan_cuts(timeline: dict, clips_by_id: dict, mood_of_item, pacing: str = "au
             for x, y in jumps:
                 if x < s0 and y > a:                     # jump before the first word: start after it
                     a = min(max(a, y), max(0.0, s0 - 0.1))
-                if y > s1 and x < b:                     # jump after the last word: end before it
+                # after the last word: a measured jump is only trusted at the very end of the clip (the big
+                # picture change it measures is also what a gesture or a camera move looks like, and the
+                # reaction after the words matters); stills the AI editor saw as broken are cut anywhere
+                trusted = (x, y) in seen_broken or y >= d - END_GLITCH
+                if trusted and y > s1 and x < b:
                     b = max(min(b, x), min(d, s1 + 0.2))
                 if x < s1 and y > s0:
                     notes.append(f"“{c['name']}” ภาพกระโดดช่วง {x:.1f}–{y:.1f} วิ ทับช่วงที่พูด จึงตัดออกไม่ได้")
@@ -151,7 +158,7 @@ def apply_plan(timeline: dict, clips_by_id: dict, plan: dict) -> list[str]:
                     if a2 > a:
                         notes.append(f"“{c['name']}”: ตัดช่วงภาพเสีย {x:.1f}–{y:.1f} วิ ที่ AI เก็บไว้ออก")
                         a = a2
-                if y > s1 and x < b:
+                if y > s1 and x < b and y >= d - END_GLITCH:
                     b2 = max(min(b, x), min(d, s1 + 0.2))
                     if b2 < b:
                         notes.append(f"“{c['name']}”: ตัดช่วงภาพเสีย {x:.1f}–{y:.1f} วิ ที่ AI เก็บไว้ออก")
