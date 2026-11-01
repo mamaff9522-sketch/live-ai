@@ -1,0 +1,30 @@
+name: studio — inspect the newest projects (read-only)
+
+# How the newest studio projects on the VPS were edited: order, matches, cuts, checks. Changes nothing.
+# The repository is public: only counts, positions and scores are printed (see scripts/studio_inspect.py).
+
+on:
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  inspect:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    env:
+      VPS_HOST: ${{ secrets.VPS_HOST }}
+      VPS_USER: ${{ secrets.VPS_USER || 'root' }}
+      SSHPASS: ${{ secrets.VPS_PASSWORD }}
+    steps:
+      - uses: actions/checkout@v4
+      - name: Read
+        run: |
+          sudo apt-get install -y -qq sshpass > /dev/null
+          mkdir -p inspect
+          sshpass -e ssh -o StrictHostKeyChecking=accept-new -o ConnectTimeout=20 "$VPS_USER@$VPS_HOST" "docker exec -i live-ai python -" < scripts/studio_inspect.py | tee inspect/projects.txt
+      - name: Publish
+        if: always()
+        env: { GH_TOKEN: "${{ github.token }}" }
+        run: mkdir -p inspect && bash scripts/publish_report.sh inspect studio-inspect
