@@ -1,1 +1,1 @@
-{"conversation_id": 39, "stats": {"seconds": 1.46, "prompt_tokens": 18, "reply_tokens": 9, "tokens_per_second": 8.04, "prompt_tokens_per_second": 39.36, "finish_reason": "stop", "memory": ""}, "reply": "สีโปรดของคุณคือ **สีเขียว** ครับ"}
+{"conversation_id": 44, "stats": {"seconds": 1.23, "prompt_tokens": 18, "reply_tokens": 10, "tokens_per_second": 13.1, "prompt_tokens_per_second": 33.96, "finish_reason": "stop", "memory": ""}, "reply": "สีโปรดของคุณคือสีเขียวครับ 🟢"}
