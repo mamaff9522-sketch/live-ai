@@ -1,2 +1,2 @@
-seconds 10.738033398
+seconds 6.008768941
 studio page 200
