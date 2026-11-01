@@ -1,237 +1,271 @@
-{"ts": "2026-10-31T22:15:46", "level": "INFO", "where": "live_ai.http", "msg": "Live AI listening", "host": "127.0.0.1", "port": 7860, "threads": 2, "ctx": 16384}
-{"ts": "2026-10-31T22:15:47", "level": "INFO", "where": "live_ai.llm", "msg": "model source", "repo": "unsloth/Qwen3.5-2B-GGUF", "file": "Qwen3.5-2B-Q4_K_M.gguf", "sha256": "aaf42c8b7c3cab2bf3d69c355048d4a0ee9973d48f16c731c0520ee914699223"}
-{"ts": "2026-10-31T22:15:47", "level": "INFO", "where": "live_ai.llm", "msg": "model ready", "path": "/home/runner/work/live-ai/live-ai/data/models/Qwen3.5-2B-Q4_K_M.gguf", "size_mb": 1221}
-{"ts": "2026-10-31T22:15:47", "level": "INFO", "where": "live_ai.llm", "msg": "downloading model", "url": "https://huggingface.co/unsloth/Qwen3.5-2B-GGUF/resolve/main/mmproj-F16.gguf", "resume_from": 0}
-{"ts": "2026-10-31T22:15:49", "level": "INFO", "where": "live_ai.llm", "msg": "vision projector ready", "file": "mmproj-F16.gguf", "size_mb": 637}
-{"ts": "2026-10-31T22:15:49", "level": "INFO", "where": "live_ai.llm", "msg": "starting llama-server", "cmd": "/home/runner/work/live-ai/live-ai/llama-bin/llama-server -m /home/runner/work/live-ai/live-ai/data/models/Qwen3.5-2B-Q4_K_M.gguf -c 16384 -t 2 -tb 2 --host 127.0.0.1 --port 8081 --jinja -np 1 --no-webui --mmproj /home/runner/work/live-ai/live-ai/data/models/mmproj-F16.gguf"}
-{"ts": "2026-10-31T22:15:51", "level": "INFO", "where": "live_ai.llm", "msg": "model ready", "load_seconds": 2.0, "threads": 2, "ctx": 16384}
-{"ts": "2026-10-31T22:15:52", "level": "INFO", "where": "live_ai.http", "msg": "user created", "user": 1}
-{"ts": "2026-10-31T22:15:52", "level": "INFO", "where": "live_ai.http", "msg": "request", "method": "POST", "path": "/api/register", "ms": 0}
-{"ts": "2026-10-31T22:15:52", "level": "INFO", "where": "live_ai.http", "msg": "user created", "user": 2}
-{"ts": "2026-10-31T22:15:52", "level": "INFO", "where": "live_ai.http", "msg": "request", "method": "POST", "path": "/api/register", "ms": 0}
-{"ts": "2026-10-31T22:16:03", "level": "INFO", "where": "live_ai.assistant", "msg": "reply", "user": 1, "conversation": 1, "in_chars": 77, "out_chars": 399, "think": false, "seconds": 11.12, "prompt_tokens": 185, "reply_tokens": 127, "tokens_per_second": 16.08, "prompt_tokens_per_second": 56.48, "finish_reason": "stop", "memory": ""}
-{"ts": "2026-10-31T22:16:03", "level": "INFO", "where": "live_ai.http", "msg": "request", "method": "POST", "path": "/api/chat", "ms": 11115}
-{"ts": "2026-10-31T22:16:05", "level": "INFO", "where": "live_ai.assistant", "msg": "reply", "user": 1, "conversation": 2, "in_chars": 47, "out_chars": 47, "think": false, "seconds": 1.44, "prompt_tokens": 22, "reply_tokens": 15, "tokens_per_second": 16.19, "prompt_tokens_per_second": 38.79, "finish_reason": "stop", "memory": ""}
-{"ts": "2026-10-31T22:16:05", "level": "INFO", "where": "live_ai.http", "msg": "request", "method": "POST", "path": "/api/chat", "ms": 1436}
-{"ts": "2026-10-31T22:16:13", "level": "INFO", "where": "live_ai.assistant", "msg": "reply", "user": 1, "conversation": 3, "in_chars": 39, "out_chars": 448, "think": false, "seconds": 8.33, "prompt_tokens": 23, "reply_tokens": 126, "tokens_per_second": 16.16, "prompt_tokens_per_second": 39.09, "finish_reason": "stop", "memory": ""}
-{"ts": "2026-10-31T22:16:13", "level": "INFO", "where": "live_ai.http", "msg": "request", "method": "POST", "path": "/api/chat", "ms": 8331}
-{"ts": "2026-10-31T22:16:20", "level": "INFO", "where": "live_ai.assistant", "msg": "reply", "user": 1, "conversation": 4, "in_chars": 85, "out_chars": 210, "think": false, "seconds": 7.02, "prompt_tokens": 45, "reply_tokens": 98, "tokens_per_second": 15.99, "prompt_tokens_per_second": 47.55, "finish_reason": "stop", "memory": ""}
-{"ts": "2026-10-31T22:16:20", "level": "INFO", "where": "live_ai.http", "msg": "request", "method": "POST", "path": "/api/chat", "ms": 7018}
-{"ts": "2026-10-31T22:17:16", "level": "INFO", "where": "live_ai.assistant", "msg": "reply", "user": 1, "conversation": 5, "in_chars": 61, "out_chars": 241, "think": true, "seconds": 56.05, "prompt_tokens": 36, "reply_tokens": 876, "tokens_per_second": 15.82, "prompt_tokens_per_second": 48.81, "finish_reason": "stop", "memory": ""}
-{"ts": "2026-10-31T22:17:16", "level": "INFO", "where": "live_ai.http", "msg": "request", "method": "POST", "path": "/api/chat", "ms": 56052}
-{"ts": "2026-10-31T22:17:28", "level": "INFO", "where": "live_ai.assistant", "msg": "reply", "user": 1, "conversation": 6, "in_chars": 98, "out_chars": 488, "think": false, "seconds": 11.77, "prompt_tokens": 38, "reply_tokens": 177, "tokens_per_second": 16.12, "prompt_tokens_per_second": 46.42, "finish_reason": "stop", "memory": ""}
-{"ts": "2026-10-31T22:17:28", "level": "INFO", "where": "live_ai.http", "msg": "request", "method": "POST", "path": "/api/chat", "ms": 11771}
-{"ts": "2026-10-31T22:17:40", "level": "INFO", "where": "live_ai.assistant", "msg": "reply", "user": 1, "conversation": 7, "in_chars": 120, "out_chars": 664, "think": false, "seconds": 12.01, "prompt_tokens": 42, "reply_tokens": 179, "tokens_per_second": 16.05, "prompt_tokens_per_second": 47.28, "finish_reason": "stop", "memory": ""}
-{"ts": "2026-10-31T22:17:40", "level": "INFO", "where": "live_ai.http", "msg": "request", "method": "POST", "path": "/api/chat", "ms": 12006}
-{"ts": "2026-10-31T22:18:43", "level": "INFO", "where": "live_ai.assistant", "msg": "reply", "user": 1, "conversation": 8, "in_chars": 120, "out_chars": 758, "think": true, "seconds": 62.58, "prompt_tokens": 2, "reply_tokens": 982, "tokens_per_second": 15.7, "prompt_tokens_per_second": 19.16, "finish_reason": "stop", "memory": ""}
-{"ts": "2026-10-31T22:18:43", "level": "INFO", "where": "live_ai.http", "msg": "request", "method": "POST", "path": "/api/chat", "ms": 62580}
-{"ts": "2026-10-31T22:18:57", "level": "INFO", "where": "live_ai.assistant", "msg": "reply", "user": 1, "conversation": 9, "in_chars": 189, "out_chars": 653, "think": false, "seconds": 14.62, "prompt_tokens": 76, "reply_tokens": 212, "tokens_per_second": 16.02, "prompt_tokens_per_second": 53.65, "finish_reason": "stop", "memory": ""}
-{"ts": "2026-10-31T22:18:57", "level": "INFO", "where": "live_ai.http", "msg": "request", "method": "POST", "path": "/api/chat", "ms": 14619}
-{"ts": "2026-10-31T22:19:19", "level": "INFO", "where": "live_ai.assistant", "msg": "reply", "user": 1, "conversation": 10, "in_chars": 59, "out_chars": 1024, "think": false, "seconds": 22.08, "prompt_tokens": 29, "reply_tokens": 343, "tokens_per_second": 16.01, "prompt_tokens_per_second": 42.33, "finish_reason": "stop", "memory": ""}
-{"ts": "2026-10-31T22:19:19", "level": "INFO", "where": "live_ai.http", "msg": "request", "method": "POST", "path": "/api/chat", "ms": 22081}
-{"ts": "2026-10-31T22:19:28", "level": "INFO", "where": "live_ai.assistant", "msg": "reply", "user": 1, "conversation": 11, "in_chars": 34, "out_chars": 397, "think": false, "seconds": 8.44, "prompt_tokens": 25, "reply_tokens": 127, "tokens_per_second": 16.17, "prompt_tokens_per_second": 40.77, "finish_reason": "stop", "memory": ""}
-{"ts": "2026-10-31T22:19:28", "level": "INFO", "where": "live_ai.http", "msg": "request", "method": "POST", "path": "/api/chat", "ms": 8436}
-{"ts": "2026-10-31T22:19:33", "level": "INFO", "where": "live_ai.assistant", "msg": "reply", "user": 1, "conversation": 11, "in_chars": 25, "out_chars": 137, "think": false, "seconds": 4.83, "prompt_tokens": 147, "reply_tokens": 36, "tokens_per_second": 15.93, "prompt_tokens_per_second": 56.0, "finish_reason": "stop", "memory": ""}
-{"ts": "2026-10-31T22:19:33", "level": "INFO", "where": "live_ai.http", "msg": "request", "method": "POST", "path": "/api/chat", "ms": 4828}
-{"ts": "2026-10-31T22:19:38", "level": "INFO", "where": "live_ai.assistant", "msg": "reply", "user": 1, "conversation": 12, "in_chars": 27, "out_chars": 140, "think": false, "seconds": 5.68, "prompt_tokens": 198, "reply_tokens": 36, "tokens_per_second": 16.14, "prompt_tokens_per_second": 57.16, "finish_reason": "stop", "memory": "remembered"}
-{"ts": "2026-10-31T22:19:38", "level": "INFO", "where": "live_ai.http", "msg": "request", "method": "POST", "path": "/api/chat", "ms": 5678}
-{"ts": "2026-10-31T22:19:38", "level": "INFO", "where": "live_ai.http", "msg": "request", "method": "GET", "path": "/api/memories", "ms": 0}
-{"ts": "2026-10-31T22:19:39", "level": "INFO", "where": "live_ai.assistant", "msg": "reply", "user": 1, "conversation": 13, "in_chars": 17, "out_chars": 22, "think": false, "seconds": 0.84, "prompt_tokens": 16, "reply_tokens": 7, "tokens_per_second": 16.12, "prompt_tokens_per_second": 34.19, "finish_reason": "stop", "memory": ""}
-{"ts": "2026-10-31T22:19:39", "level": "INFO", "where": "live_ai.http", "msg": "request", "method": "POST", "path": "/api/chat", "ms": 845}
-{"ts": "2026-10-31T22:19:46", "level": "INFO", "where": "live_ai.assistant", "msg": "reply", "user": 2, "conversation": 14, "in_chars": 17, "out_chars": 242, "think": false, "seconds": 6.7, "prompt_tokens": 172, "reply_tokens": 60, "tokens_per_second": 16.2, "prompt_tokens_per_second": 56.26, "finish_reason": "stop", "memory": ""}
-{"ts": "2026-10-31T22:19:46", "level": "INFO", "where": "live_ai.http", "msg": "request", "method": "POST", "path": "/api/chat", "ms": 6705}
-{"ts": "2026-10-31T22:19:46", "level": "INFO", "where": "live_ai.http", "msg": "request", "method": "GET", "path": "/api/conversations/:id/messages", "ms": 0}
-{"ts": "2026-10-31T22:20:06", "level": "INFO", "where": "live_ai.assistant", "msg": "reply", "user": 1, "conversation": 15, "in_chars": 63, "out_chars": 847, "think": false, "seconds": 19.97, "prompt_tokens": 205, "reply_tokens": 263, "tokens_per_second": 15.99, "prompt_tokens_per_second": 57.38, "finish_reason": "stop", "memory": ""}
-{"ts": "2026-10-31T22:20:06", "level": "INFO", "where": "live_ai.http", "msg": "request", "method": "POST", "path": "/api/chat", "ms": 19968}
-{"ts": "2026-10-31T22:20:26", "level": "INFO", "where": "live_ai.assistant", "msg": "reply", "user": 1, "conversation": 15, "in_chars": 19, "out_chars": 704, "think": false, "seconds": 19.89, "prompt_tokens": 281, "reply_tokens": 236, "tokens_per_second": 15.78, "prompt_tokens_per_second": 56.6, "finish_reason": "stop", "memory": ""}
-{"ts": "2026-10-31T22:20:26", "level": "INFO", "where": "live_ai.http", "msg": "request", "method": "POST", "path": "/api/chat", "ms": 19887}
-{"ts": "2026-10-31T22:20:53", "level": "INFO", "where": "live_ai.assistant", "msg": "reply", "user": 1, "conversation": 15, "in_chars": 14, "out_chars": 975, "think": false, "seconds": 27.17, "prompt_tokens": 254, "reply_tokens": 352, "tokens_per_second": 15.48, "prompt_tokens_per_second": 56.59, "finish_reason": "stop", "memory": ""}
-{"ts": "2026-10-31T22:20:53", "level": "INFO", "where": "live_ai.http", "msg": "request", "method": "POST", "path": "/api/chat", "ms": 27165}
-{"ts": "2026-10-31T22:21:20", "level": "INFO", "where": "live_ai.assistant", "msg": "reply", "user": 1, "conversation": 15, "in_chars": 17, "out_chars": 983, "think": false, "seconds": 27.51, "prompt_tokens": 368, "reply_tokens": 321, "tokens_per_second": 15.21, "prompt_tokens_per_second": 56.94, "finish_reason": "stop", "memory": ""}
-{"ts": "2026-10-31T22:21:20", "level": "INFO", "where": "live_ai.http", "msg": "request", "method": "POST", "path": "/api/chat", "ms": 27511}
-{"ts": "2026-10-31T22:21:48", "level": "INFO", "where": "live_ai.assistant", "msg": "reply", "user": 1, "conversation": 15, "in_chars": 20, "out_chars": 939, "think": false, "seconds": 27.74, "prompt_tokens": 338, "reply_tokens": 326, "tokens_per_second": 15.04, "prompt_tokens_per_second": 55.16, "finish_reason": "stop", "memory": ""}
-{"ts": "2026-10-31T22:21:48", "level": "INFO", "where": "live_ai.http", "msg": "request", "method": "POST", "path": "/api/chat", "ms": 27742}
-{"ts": "2026-10-31T22:22:13", "level": "INFO", "where": "live_ai.assistant", "msg": "reply", "user": 1, "conversation": 15, "in_chars": 13, "out_chars": 827, "think": false, "seconds": 25.08, "prompt_tokens": 347, "reply_tokens": 278, "tokens_per_second": 14.85, "prompt_tokens_per_second": 54.09, "finish_reason": "stop", "memory": ""}
-{"ts": "2026-10-31T22:22:13", "level": "INFO", "where": "live_ai.http", "msg": "request", "method": "POST", "path": "/api/chat", "ms": 25085}
-{"ts": "2026-10-31T22:22:45", "level": "INFO", "where": "live_ai.assistant", "msg": "reply", "user": 1, "conversation": 15, "in_chars": 16, "out_chars": 1154, "think": false, "seconds": 31.41, "prompt_tokens": 298, "reply_tokens": 379, "tokens_per_second": 14.63, "prompt_tokens_per_second": 53.56, "finish_reason": "stop", "memory": ""}
-{"ts": "2026-10-31T22:22:45", "level": "INFO", "where": "live_ai.http", "msg": "request", "method": "POST", "path": "/api/chat", "ms": 31414}
-{"ts": "2026-10-31T22:23:11", "level": "INFO", "where": "live_ai.assistant", "msg": "reply", "user": 1, "conversation": 15, "in_chars": 19, "out_chars": 909, "think": false, "seconds": 26.85, "prompt_tokens": 395, "reply_tokens": 283, "tokens_per_second": 14.44, "prompt_tokens_per_second": 54.11, "finish_reason": "stop", "memory": ""}
-{"ts": "2026-10-31T22:23:11", "level": "INFO", "where": "live_ai.http", "msg": "request", "method": "POST", "path": "/api/chat", "ms": 26851}
-{"ts": "2026-10-31T22:23:43", "level": "INFO", "where": "live_ai.assistant", "msg": "reply", "user": 1, "conversation": 15, "in_chars": 28, "out_chars": 954, "think": false, "seconds": 31.0, "prompt_tokens": 304, "reply_tokens": 359, "tokens_per_second": 14.22, "prompt_tokens_per_second": 52.37, "finish_reason": "stop", "memory": ""}
-{"ts": "2026-10-31T22:23:43", "level": "INFO", "where": "live_ai.http", "msg": "request", "method": "POST", "path": "/api/chat", "ms": 31003}
-{"ts": "2026-10-31T22:23:55", "level": "INFO", "where": "live_ai.assistant", "msg": "reply", "user": 1, "conversation": 15, "in_chars": 10, "out_chars": 272, "think": false, "seconds": 12.27, "prompt_tokens": 375, "reply_tokens": 71, "tokens_per_second": 14.15, "prompt_tokens_per_second": 51.38, "finish_reason": "stop", "memory": ""}
-{"ts": "2026-10-31T22:23:55", "level": "INFO", "where": "live_ai.http", "msg": "request", "method": "POST", "path": "/api/chat", "ms": 12266}
-{"ts": "2026-10-31T22:23:55", "level": "WARNING", "where": "live_ai.assistant", "msg": "model unreachable, waiting for recovery"}
-{"ts": "2026-10-31T22:23:55", "level": "ERROR", "where": "live_ai.llm", "msg": "model stopped, restarting", "exit_code": -9, "failed_health_checks": 0}
-{"ts": "2026-10-31T22:23:57", "level": "INFO", "where": "live_ai.llm", "msg": "starting llama-server", "cmd": "/home/runner/work/live-ai/live-ai/llama-bin/llama-server -m /home/runner/work/live-ai/live-ai/data/models/Qwen3.5-2B-Q4_K_M.gguf -c 16384 -t 2 -tb 2 --host 127.0.0.1 --port 8081 --jinja -np 1 --no-webui --mmproj /home/runner/work/live-ai/live-ai/data/models/mmproj-F16.gguf"}
-{"ts": "2026-10-31T22:23:59", "level": "INFO", "where": "live_ai.llm", "msg": "model ready", "load_seconds": 2.0, "threads": 2, "ctx": 16384}
-{"ts": "2026-10-31T22:23:59", "level": "INFO", "where": "live_ai.llm", "msg": "model recovered", "restarts": 1}
-{"ts": "2026-10-31T22:24:06", "level": "INFO", "where": "live_ai.assistant", "msg": "reply", "user": 1, "conversation": 16, "in_chars": 36, "out_chars": 103, "think": false, "seconds": 10.81, "prompt_tokens": 204, "reply_tokens": 42, "tokens_per_second": 16.1, "prompt_tokens_per_second": 57.1, "finish_reason": "stop", "memory": ""}
-{"ts": "2026-10-31T22:24:06", "level": "INFO", "where": "live_ai.http", "msg": "request", "method": "POST", "path": "/api/chat", "ms": 10809}
-{"ts": "2026-10-31T22:24:14", "level": "INFO", "where": "live_ai.http", "msg": "user created", "user": 3}
-{"ts": "2026-10-31T22:24:14", "level": "INFO", "where": "live_ai.http", "msg": "request", "method": "POST", "path": "/api/register", "ms": 0}
-{"ts": "2026-10-31T22:24:14", "level": "INFO", "where": "live_ai.http", "msg": "request", "method": "POST", "path": "/api/studio/projects", "ms": 0}
-{"ts": "2026-10-31T22:24:14", "level": "INFO", "where": "live_ai.http", "msg": "request", "method": "PATCH", "path": "/api/studio/projects/:id", "ms": 2}
-{"ts": "2026-10-31T22:24:14", "level": "INFO", "where": "live_ai.media", "msg": "media saved", "user": 3, "media": "7c795386c63a1e63c4dc4d98", "kind": "video", "size_mb": 0.2, "seconds": 8.067, "origin": "studio"}
-{"ts": "2026-10-31T22:24:14", "level": "INFO", "where": "live_ai.media", "msg": "media saved", "user": 3, "media": "e84f025af9c22ab0df84886a", "kind": "video", "size_mb": 0.1, "seconds": 4.0, "origin": "studio"}
-{"ts": "2026-10-31T22:24:14", "level": "INFO", "where": "live_ai.media", "msg": "media saved", "user": 3, "media": "d078b9d9f690ed1d8df741e4", "kind": "video", "size_mb": 0.2, "seconds": 6.74, "origin": "studio"}
-{"ts": "2026-10-31T22:24:14", "level": "INFO", "where": "live_ai.media", "msg": "media saved", "user": 3, "media": "a6472607142343a2293aa553", "kind": "video", "size_mb": 0.2, "seconds": 8.9, "origin": "studio"}
-{"ts": "2026-10-31T22:24:14", "level": "INFO", "where": "live_ai.media", "msg": "media saved", "user": 3, "media": "30c77fa59b8398424f4f8bcc", "kind": "video", "size_mb": 0.1, "seconds": 4.0, "origin": "studio"}
-{"ts": "2026-10-31T22:24:14", "level": "INFO", "where": "live_ai.media", "msg": "media saved", "user": 3, "media": "85d67f2a23e23869bc840c97", "kind": "video", "size_mb": 0.2, "seconds": 9.08, "origin": "studio"}
-{"ts": "2026-10-31T22:24:14", "level": "INFO", "where": "live_ai.media", "msg": "media saved", "user": 3, "media": "cf796ba440514e9249457227", "kind": "video", "size_mb": 0.2, "seconds": 7.167, "origin": "studio"}
-{"ts": "2026-10-31T22:24:14", "level": "INFO", "where": "live_ai.media", "msg": "media saved", "user": 3, "media": "a93c66f327e0ea569bfe49f7", "kind": "video", "size_mb": 0.2, "seconds": 7.34, "origin": "studio"}
-{"ts": "2026-10-31T22:24:14", "level": "INFO", "where": "live_ai.media", "msg": "media saved", "user": 3, "media": "f18d9390a035aff16355b4cb", "kind": "video", "size_mb": 0.1, "seconds": 8.24, "origin": "studio"}
-{"ts": "2026-10-31T22:24:14", "level": "INFO", "where": "live_ai.media", "msg": "media saved", "user": 3, "media": "750fcbd702dd7644a3f681ce", "kind": "video", "size_mb": 0.2, "seconds": 9.08, "origin": "studio"}
-{"ts": "2026-10-31T22:24:14", "level": "INFO", "where": "live_ai.media", "msg": "media saved", "user": 3, "media": "fa5a1ce160c2d3f619e6462f", "kind": "video", "size_mb": 0.2, "seconds": 6.933, "origin": "studio"}
-{"ts": "2026-10-31T22:24:14", "level": "INFO", "where": "live_ai.media", "msg": "media saved", "user": 3, "media": "62151dacef39dcba0c3c7703", "kind": "video", "size_mb": 0.2, "seconds": 6.933, "origin": "studio"}
-{"ts": "2026-10-31T22:24:14", "level": "INFO", "where": "live_ai.studio", "msg": "zip added", "project": 1, "added": 12, "skipped": 0}
-{"ts": "2026-10-31T22:24:14", "level": "INFO", "where": "live_ai.http", "msg": "request", "method": "POST", "path": "/api/studio/projects/:id/zip", "ms": 480}
-{"ts": "2026-10-31T22:24:14", "level": "INFO", "where": "live_ai.studio", "msg": "project queued", "project": 1, "clips": 12}
-{"ts": "2026-10-31T22:24:14", "level": "INFO", "where": "live_ai.http", "msg": "request", "method": "POST", "path": "/api/studio/projects/:id/start", "ms": 1}
-{"ts": "2026-10-31T22:24:14", "level": "INFO", "where": "live_ai.http", "msg": "request", "method": "GET", "path": "/api/studio/projects/:id", "ms": 1}
-{"ts": "2026-10-31T22:24:17", "level": "INFO", "where": "live_ai.http", "msg": "request", "method": "GET", "path": "/api/studio/projects/:id", "ms": 3}
-{"ts": "2026-10-31T22:24:20", "level": "INFO", "where": "live_ai.http", "msg": "request", "method": "GET", "path": "/api/studio/projects/:id", "ms": 1}
-{"ts": "2026-10-31T22:24:23", "level": "INFO", "where": "live_ai.asr", "msg": "downloading whisper model", "file": "ggml-small-q5_1.bin"}
-{"ts": "2026-10-31T22:24:23", "level": "INFO", "where": "live_ai.http", "msg": "request", "method": "GET", "path": "/api/studio/projects/:id", "ms": 1}
-{"ts": "2026-10-31T22:24:26", "level": "INFO", "where": "live_ai.http", "msg": "request", "method": "GET", "path": "/api/studio/projects/:id", "ms": 3}
-{"ts": "2026-10-31T22:24:29", "level": "INFO", "where": "live_ai.http", "msg": "request", "method": "GET", "path": "/api/studio/projects/:id", "ms": 1}
-{"ts": "2026-10-31T22:24:32", "level": "INFO", "where": "live_ai.http", "msg": "request", "method": "GET", "path": "/api/studio/projects/:id", "ms": 3}
-{"ts": "2026-10-31T22:24:35", "level": "INFO", "where": "live_ai.http", "msg": "request", "method": "GET", "path": "/api/studio/projects/:id", "ms": 1}
-{"ts": "2026-10-31T22:24:38", "level": "INFO", "where": "live_ai.http", "msg": "request", "method": "GET", "path": "/api/studio/projects/:id", "ms": 1}
-{"ts": "2026-10-31T22:24:41", "level": "INFO", "where": "live_ai.http", "msg": "request", "method": "GET", "path": "/api/studio/projects/:id", "ms": 1}
-{"ts": "2026-10-31T22:24:44", "level": "INFO", "where": "live_ai.http", "msg": "request", "method": "GET", "path": "/api/studio/projects/:id", "ms": 1}
-{"ts": "2026-10-31T22:24:47", "level": "INFO", "where": "live_ai.http", "msg": "request", "method": "GET", "path": "/api/studio/projects/:id", "ms": 4}
-{"ts": "2026-10-31T22:24:50", "level": "INFO", "where": "live_ai.http", "msg": "request", "method": "GET", "path": "/api/studio/projects/:id", "ms": 3}
-{"ts": "2026-10-31T22:24:53", "level": "INFO", "where": "live_ai.http", "msg": "request", "method": "GET", "path": "/api/studio/projects/:id", "ms": 1}
-{"ts": "2026-10-31T22:24:56", "level": "INFO", "where": "live_ai.http", "msg": "request", "method": "GET", "path": "/api/studio/projects/:id", "ms": 2}
-{"ts": "2026-10-31T22:24:59", "level": "INFO", "where": "live_ai.http", "msg": "request", "method": "GET", "path": "/api/studio/projects/:id", "ms": 3}
-{"ts": "2026-10-31T22:25:02", "level": "INFO", "where": "live_ai.http", "msg": "request", "method": "GET", "path": "/api/studio/projects/:id", "ms": 3}
-{"ts": "2026-10-31T22:25:05", "level": "INFO", "where": "live_ai.http", "msg": "request", "method": "GET", "path": "/api/studio/projects/:id", "ms": 3}
-{"ts": "2026-10-31T22:25:08", "level": "INFO", "where": "live_ai.http", "msg": "request", "method": "GET", "path": "/api/studio/projects/:id", "ms": 4}
-{"ts": "2026-10-31T22:25:11", "level": "INFO", "where": "live_ai.http", "msg": "request", "method": "GET", "path": "/api/studio/projects/:id", "ms": 3}
-{"ts": "2026-10-31T22:25:14", "level": "INFO", "where": "live_ai.http", "msg": "request", "method": "GET", "path": "/api/studio/projects/:id", "ms": 3}
-{"ts": "2026-10-31T22:25:17", "level": "INFO", "where": "live_ai.http", "msg": "request", "method": "GET", "path": "/api/studio/projects/:id", "ms": 3}
-{"ts": "2026-10-31T22:25:20", "level": "INFO", "where": "live_ai.http", "msg": "request", "method": "GET", "path": "/api/studio/projects/:id", "ms": 3}
-{"ts": "2026-10-31T22:25:23", "level": "INFO", "where": "live_ai.http", "msg": "request", "method": "GET", "path": "/api/studio/projects/:id", "ms": 3}
-{"ts": "2026-10-31T22:25:26", "level": "INFO", "where": "live_ai.http", "msg": "request", "method": "GET", "path": "/api/studio/projects/:id", "ms": 3}
-{"ts": "2026-10-31T22:25:29", "level": "INFO", "where": "live_ai.http", "msg": "request", "method": "GET", "path": "/api/studio/projects/:id", "ms": 1}
-{"ts": "2026-10-31T22:25:32", "level": "INFO", "where": "live_ai.http", "msg": "request", "method": "GET", "path": "/api/studio/projects/:id", "ms": 3}
-{"ts": "2026-10-31T22:25:35", "level": "INFO", "where": "live_ai.http", "msg": "request", "method": "GET", "path": "/api/studio/projects/:id", "ms": 3}
-{"ts": "2026-10-31T22:25:38", "level": "INFO", "where": "live_ai.http", "msg": "request", "method": "GET", "path": "/api/studio/projects/:id", "ms": 5}
-{"ts": "2026-10-31T22:25:41", "level": "INFO", "where": "live_ai.http", "msg": "request", "method": "GET", "path": "/api/studio/projects/:id", "ms": 3}
-{"ts": "2026-10-31T22:25:44", "level": "INFO", "where": "live_ai.http", "msg": "request", "method": "GET", "path": "/api/studio/projects/:id", "ms": 3}
-{"ts": "2026-10-31T22:25:47", "level": "INFO", "where": "live_ai.http", "msg": "request", "method": "GET", "path": "/api/studio/projects/:id", "ms": 3}
-{"ts": "2026-10-31T22:25:50", "level": "INFO", "where": "live_ai.http", "msg": "request", "method": "GET", "path": "/api/studio/projects/:id", "ms": 3}
-{"ts": "2026-10-31T22:25:53", "level": "INFO", "where": "live_ai.http", "msg": "request", "method": "GET", "path": "/api/studio/projects/:id", "ms": 3}
-{"ts": "2026-10-31T22:25:56", "level": "INFO", "where": "live_ai.http", "msg": "request", "method": "GET", "path": "/api/studio/projects/:id", "ms": 3}
-{"ts": "2026-10-31T22:25:59", "level": "INFO", "where": "live_ai.http", "msg": "request", "method": "GET", "path": "/api/studio/projects/:id", "ms": 5}
-{"ts": "2026-10-31T22:26:02", "level": "INFO", "where": "live_ai.http", "msg": "request", "method": "GET", "path": "/api/studio/projects/:id", "ms": 3}
-{"ts": "2026-10-31T22:26:05", "level": "INFO", "where": "live_ai.http", "msg": "request", "method": "GET", "path": "/api/studio/projects/:id", "ms": 1}
-{"ts": "2026-10-31T22:26:08", "level": "INFO", "where": "live_ai.http", "msg": "request", "method": "GET", "path": "/api/studio/projects/:id", "ms": 3}
-{"ts": "2026-10-31T22:26:11", "level": "INFO", "where": "live_ai.http", "msg": "request", "method": "GET", "path": "/api/studio/projects/:id", "ms": 3}
-{"ts": "2026-10-31T22:26:14", "level": "INFO", "where": "live_ai.studio", "msg": "speech denoiser", "engine": "RNNoise"}
-{"ts": "2026-10-31T22:26:14", "level": "INFO", "where": "live_ai.http", "msg": "request", "method": "GET", "path": "/api/studio/projects/:id", "ms": 1}
-{"ts": "2026-10-31T22:26:17", "level": "INFO", "where": "live_ai.http", "msg": "request", "method": "GET", "path": "/api/studio/projects/:id", "ms": 2}
-{"ts": "2026-10-31T22:26:20", "level": "INFO", "where": "live_ai.http", "msg": "request", "method": "GET", "path": "/api/studio/projects/:id", "ms": 1}
-{"ts": "2026-10-31T22:26:23", "level": "INFO", "where": "live_ai.http", "msg": "request", "method": "GET", "path": "/api/studio/projects/:id", "ms": 2}
-{"ts": "2026-10-31T22:26:26", "level": "INFO", "where": "live_ai.http", "msg": "request", "method": "GET", "path": "/api/studio/projects/:id", "ms": 4}
-{"ts": "2026-10-31T22:26:29", "level": "INFO", "where": "live_ai.media", "msg": "media saved", "user": 3, "media": "a31f1d0f8ebbb76d88712081", "kind": "video", "size_mb": 1.4, "seconds": 65.883, "origin": "studio"}
-{"ts": "2026-10-31T22:26:29", "level": "INFO", "where": "live_ai.http", "msg": "request", "method": "GET", "path": "/api/studio/projects/:id", "ms": 4}
-{"ts": "2026-10-31T22:26:32", "level": "INFO", "where": "live_ai.http", "msg": "request", "method": "GET", "path": "/api/studio/projects/:id", "ms": 2}
-{"ts": "2026-10-31T22:26:35", "level": "INFO", "where": "live_ai.http", "msg": "request", "method": "GET", "path": "/api/studio/projects/:id", "ms": 5}
-{"ts": "2026-10-31T22:26:38", "level": "INFO", "where": "live_ai.media", "msg": "media saved", "user": 3, "media": "3deeec390857a6226b10aa05", "kind": "video", "size_mb": 1.8, "seconds": 65.883, "origin": "studio"}
-{"ts": "2026-10-31T22:26:38", "level": "INFO", "where": "live_ai.http", "msg": "request", "method": "GET", "path": "/api/studio/projects/:id", "ms": 4}
-{"ts": "2026-10-31T22:26:39", "level": "INFO", "where": "live_ai.studio", "msg": "project finished", "project": 1, "complete": false, "seconds": 145.3, "clips": 12, "missing": 1}
-{"ts": "2026-10-31T22:26:41", "level": "INFO", "where": "live_ai.http", "msg": "request", "method": "GET", "path": "/api/studio/projects/:id", "ms": 1}
-{"ts": "2026-10-31T22:26:41", "level": "INFO", "where": "live_ai.media", "msg": "media saved", "user": 3, "media": "86acfa8af049edf39f989104", "kind": "video", "size_mb": 0.2, "seconds": 5.667, "origin": "upload"}
-{"ts": "2026-10-31T22:26:41", "level": "INFO", "where": "live_ai.http", "msg": "request", "method": "POST", "path": "/api/media", "ms": 40}
-{"ts": "2026-10-31T22:26:41", "level": "INFO", "where": "live_ai.http", "msg": "request", "method": "POST", "path": "/api/studio/projects/:id/clips", "ms": 1}
-{"ts": "2026-10-31T22:26:41", "level": "INFO", "where": "live_ai.studio", "msg": "project queued", "project": 1, "clips": 13}
-{"ts": "2026-10-31T22:26:41", "level": "INFO", "where": "live_ai.http", "msg": "request", "method": "POST", "path": "/api/studio/projects/:id/start", "ms": 3}
-{"ts": "2026-10-31T22:26:41", "level": "INFO", "where": "live_ai.http", "msg": "request", "method": "GET", "path": "/api/studio/projects/:id", "ms": 2}
-{"ts": "2026-10-31T22:26:44", "level": "INFO", "where": "live_ai.http", "msg": "request", "method": "GET", "path": "/api/studio/projects/:id", "ms": 5}
-{"ts": "2026-10-31T22:26:47", "level": "INFO", "where": "live_ai.http", "msg": "request", "method": "GET", "path": "/api/studio/projects/:id", "ms": 3}
-{"ts": "2026-10-31T22:26:50", "level": "INFO", "where": "live_ai.http", "msg": "request", "method": "GET", "path": "/api/studio/projects/:id", "ms": 4}
-{"ts": "2026-10-31T22:26:53", "level": "INFO", "where": "live_ai.http", "msg": "request", "method": "GET", "path": "/api/studio/projects/:id", "ms": 3}
-{"ts": "2026-10-31T22:26:56", "level": "INFO", "where": "live_ai.media", "msg": "media saved", "user": 3, "media": "4449fd8cdc686ddeed6525a6", "kind": "video", "size_mb": 1.5, "seconds": 70.18, "origin": "studio"}
-{"ts": "2026-10-31T22:26:56", "level": "INFO", "where": "live_ai.http", "msg": "request", "method": "GET", "path": "/api/studio/projects/:id", "ms": 2}
-{"ts": "2026-10-31T22:26:59", "level": "INFO", "where": "live_ai.http", "msg": "request", "method": "GET", "path": "/api/studio/projects/:id", "ms": 2}
-{"ts": "2026-10-31T22:27:02", "level": "INFO", "where": "live_ai.http", "msg": "request", "method": "GET", "path": "/api/studio/projects/:id", "ms": 2}
-{"ts": "2026-10-31T22:27:05", "level": "INFO", "where": "live_ai.http", "msg": "request", "method": "GET", "path": "/api/studio/projects/:id", "ms": 2}
-{"ts": "2026-10-31T22:27:06", "level": "INFO", "where": "live_ai.media", "msg": "media saved", "user": 3, "media": "b9b4a569d5cab70e3d36f45a", "kind": "video", "size_mb": 2.0, "seconds": 70.18, "origin": "studio"}
-{"ts": "2026-10-31T22:27:08", "level": "INFO", "where": "live_ai.studio", "msg": "project finished", "project": 1, "complete": true, "seconds": 26.4, "clips": 13, "missing": 0}
-{"ts": "2026-10-31T22:27:08", "level": "INFO", "where": "live_ai.http", "msg": "request", "method": "GET", "path": "/api/studio/projects/:id", "ms": 1}
-{"ts": "2026-10-31T22:27:08", "level": "INFO", "where": "live_ai.http", "msg": "request", "method": "GET", "path": "/api/media/:id/file", "ms": 0}
-{"ts": "2026-10-31T22:27:08", "level": "INFO", "where": "live_ai.http", "msg": "request", "method": "GET", "path": "/api/media/:id/file", "ms": 1}
-{"ts": "2026-10-31T22:27:10", "level": "INFO", "where": "live_ai.http", "msg": "request", "method": "POST", "path": "/api/studio/projects", "ms": 0}
-{"ts": "2026-10-31T22:27:10", "level": "INFO", "where": "live_ai.http", "msg": "request", "method": "PATCH", "path": "/api/studio/projects/:id", "ms": 0}
-{"ts": "2026-10-31T22:27:10", "level": "INFO", "where": "live_ai.media", "msg": "media saved", "user": 3, "media": "fa95cd6075a9f7bb00b2773b", "kind": "video", "size_mb": 0.1, "seconds": 8.9, "origin": "studio"}
-{"ts": "2026-10-31T22:27:10", "level": "INFO", "where": "live_ai.media", "msg": "media saved", "user": 3, "media": "0bee1066392014388860dcd1", "kind": "video", "size_mb": 0.0, "seconds": 4.0, "origin": "studio"}
-{"ts": "2026-10-31T22:27:10", "level": "INFO", "where": "live_ai.media", "msg": "media saved", "user": 3, "media": "86847ed3789d8d13960993a3", "kind": "video", "size_mb": 0.1, "seconds": 9.08, "origin": "studio"}
-{"ts": "2026-10-31T22:27:10", "level": "INFO", "where": "live_ai.media", "msg": "media saved", "user": 3, "media": "0ea4670048bbe0bb866214b2", "kind": "video", "size_mb": 0.0, "seconds": 4.0, "origin": "studio"}
-{"ts": "2026-10-31T22:27:10", "level": "INFO", "where": "live_ai.studio", "msg": "zip added", "project": 2, "added": 4, "skipped": 0}
-{"ts": "2026-10-31T22:27:10", "level": "INFO", "where": "live_ai.http", "msg": "request", "method": "POST", "path": "/api/studio/projects/:id/zip", "ms": 157}
-{"ts": "2026-10-31T22:27:10", "level": "INFO", "where": "live_ai.studio", "msg": "project queued", "project": 2, "clips": 4}
-{"ts": "2026-10-31T22:27:10", "level": "INFO", "where": "live_ai.http", "msg": "request", "method": "POST", "path": "/api/studio/projects/:id/start", "ms": 1}
-{"ts": "2026-10-31T22:27:10", "level": "INFO", "where": "live_ai.http", "msg": "request", "method": "GET", "path": "/api/studio/projects/:id", "ms": 0}
-{"ts": "2026-10-31T22:27:13", "level": "INFO", "where": "live_ai.http", "msg": "request", "method": "GET", "path": "/api/studio/projects/:id", "ms": 1}
-{"ts": "2026-10-31T22:27:16", "level": "INFO", "where": "live_ai.http", "msg": "request", "method": "GET", "path": "/api/studio/projects/:id", "ms": 1}
-{"ts": "2026-10-31T22:27:19", "level": "INFO", "where": "live_ai.http", "msg": "request", "method": "GET", "path": "/api/studio/projects/:id", "ms": 1}
-{"ts": "2026-10-31T22:27:22", "level": "INFO", "where": "live_ai.http", "msg": "request", "method": "GET", "path": "/api/studio/projects/:id", "ms": 1}
-{"ts": "2026-10-31T22:27:25", "level": "INFO", "where": "live_ai.http", "msg": "request", "method": "GET", "path": "/api/studio/projects/:id", "ms": 1}
-{"ts": "2026-10-31T22:27:28", "level": "INFO", "where": "live_ai.http", "msg": "request", "method": "GET", "path": "/api/studio/projects/:id", "ms": 1}
-{"ts": "2026-10-31T22:27:31", "level": "INFO", "where": "live_ai.http", "msg": "request", "method": "GET", "path": "/api/studio/projects/:id", "ms": 2}
-{"ts": "2026-10-31T22:27:34", "level": "INFO", "where": "live_ai.http", "msg": "request", "method": "GET", "path": "/api/studio/projects/:id", "ms": 8}
-{"ts": "2026-10-31T22:27:37", "level": "INFO", "where": "live_ai.http", "msg": "request", "method": "GET", "path": "/api/studio/projects/:id", "ms": 1}
-{"ts": "2026-10-31T22:27:40", "level": "INFO", "where": "live_ai.http", "msg": "request", "method": "GET", "path": "/api/studio/projects/:id", "ms": 1}
-{"ts": "2026-10-31T22:27:43", "level": "INFO", "where": "live_ai.http", "msg": "request", "method": "GET", "path": "/api/studio/projects/:id", "ms": 1}
-{"ts": "2026-10-31T22:27:46", "level": "INFO", "where": "live_ai.http", "msg": "request", "method": "GET", "path": "/api/studio/projects/:id", "ms": 1}
-{"ts": "2026-10-31T22:27:49", "level": "INFO", "where": "live_ai.http", "msg": "request", "method": "GET", "path": "/api/studio/projects/:id", "ms": 1}
-{"ts": "2026-10-31T22:27:52", "level": "INFO", "where": "live_ai.http", "msg": "request", "method": "GET", "path": "/api/studio/projects/:id", "ms": 1}
-{"ts": "2026-10-31T22:27:54", "level": "INFO", "where": "live_ai.studio", "msg": "vision vote", "project": 2, "clip": "0bee1066392014388860dcd1", "choice": 0, "seconds": 19.2}
-{"ts": "2026-10-31T22:27:55", "level": "INFO", "where": "live_ai.http", "msg": "request", "method": "GET", "path": "/api/studio/projects/:id", "ms": 1}
-{"ts": "2026-10-31T22:27:58", "level": "INFO", "where": "live_ai.http", "msg": "request", "method": "GET", "path": "/api/studio/projects/:id", "ms": 2}
-{"ts": "2026-10-31T22:27:59", "level": "INFO", "where": "live_ai.media", "msg": "media saved", "user": 3, "media": "f25e72f6b8073980421c4b78", "kind": "video", "size_mb": 0.5, "seconds": 24.613, "origin": "studio"}
-{"ts": "2026-10-31T22:27:59", "level": "INFO", "where": "live_ai.studio", "msg": "project finished", "project": 2, "complete": true, "seconds": 49.5, "clips": 4, "missing": 0}
-{"ts": "2026-10-31T22:28:01", "level": "INFO", "where": "live_ai.http", "msg": "request", "method": "GET", "path": "/api/studio/projects/:id", "ms": 1}
-{"ts": "2026-10-31T22:28:01", "level": "INFO", "where": "live_ai.http", "msg": "user created", "user": 4}
-{"ts": "2026-10-31T22:28:01", "level": "INFO", "where": "live_ai.http", "msg": "request", "method": "POST", "path": "/api/register", "ms": 0}
-{"ts": "2026-10-31T22:28:01", "level": "INFO", "where": "live_ai.growth", "msg": "page connected", "user": 4, "page": "1001", "followers": 1207}
-{"ts": "2026-10-31T22:28:01", "level": "INFO", "where": "live_ai.http", "msg": "request", "method": "POST", "path": "/api/growth/connect", "ms": 9}
-{"ts": "2026-10-31T22:28:01", "level": "INFO", "where": "live_ai.http", "msg": "request", "method": "PATCH", "path": "/api/growth/settings", "ms": 0}
-{"ts": "2026-10-31T22:28:01", "level": "INFO", "where": "live_ai.http", "msg": "request", "method": "POST", "path": "/api/growth/items", "ms": 0}
-{"ts": "2026-10-31T22:28:01", "level": "INFO", "where": "live_ai.http", "msg": "request", "method": "POST", "path": "/api/growth/items", "ms": 2}
-{"ts": "2026-10-31T22:28:01", "level": "INFO", "where": "live_ai.http", "msg": "request", "method": "POST", "path": "/api/growth/items", "ms": 0}
-{"ts": "2026-10-31T22:28:01", "level": "INFO", "where": "live_ai.http", "msg": "request", "method": "POST", "path": "/api/growth/items", "ms": 0}
-{"ts": "2026-10-31T22:28:01", "level": "INFO", "where": "live_ai.http", "msg": "request", "method": "GET", "path": "/api/growth", "ms": 0}
-{"ts": "2026-10-31T22:28:11", "level": "INFO", "where": "live_ai.http", "msg": "request", "method": "GET", "path": "/api/growth", "ms": 1}
-{"ts": "2026-10-31T22:28:15", "level": "INFO", "where": "live_ai.media", "msg": "media saved", "user": 4, "media": "3852d98c8113bd6257054500", "kind": "image", "size_mb": 0.9, "seconds": 0.0, "origin": "growth"}
-{"ts": "2026-10-31T22:28:15", "level": "INFO", "where": "live_ai.growth", "msg": "post written", "user": 4, "item": 1, "kind": "question"}
-{"ts": "2026-10-31T22:28:21", "level": "INFO", "where": "live_ai.http", "msg": "request", "method": "GET", "path": "/api/growth", "ms": 1}
-{"ts": "2026-10-31T22:28:30", "level": "INFO", "where": "live_ai.media", "msg": "media saved", "user": 4, "media": "6c5c71ce1cec620ff604ca7c", "kind": "image", "size_mb": 0.9, "seconds": 0.0, "origin": "growth"}
-{"ts": "2026-10-31T22:28:30", "level": "INFO", "where": "live_ai.growth", "msg": "post written", "user": 4, "item": 2, "kind": "teaser"}
-{"ts": "2026-10-31T22:28:31", "level": "INFO", "where": "live_ai.http", "msg": "request", "method": "GET", "path": "/api/growth", "ms": 1}
-{"ts": "2026-10-31T22:28:41", "level": "INFO", "where": "live_ai.http", "msg": "request", "method": "GET", "path": "/api/growth", "ms": 1}
-{"ts": "2026-10-31T22:28:43", "level": "INFO", "where": "live_ai.media", "msg": "media saved", "user": 4, "media": "5b094020307030972b41ce8d", "kind": "image", "size_mb": 0.8, "seconds": 0.0, "origin": "growth"}
-{"ts": "2026-10-31T22:28:43", "level": "INFO", "where": "live_ai.growth", "msg": "post written", "user": 4, "item": 3, "kind": "quote"}
-{"ts": "2026-10-31T22:28:51", "level": "INFO", "where": "live_ai.http", "msg": "request", "method": "GET", "path": "/api/growth", "ms": 1}
-{"ts": "2026-10-31T22:28:59", "level": "INFO", "where": "live_ai.media", "msg": "media saved", "user": 4, "media": "72d45b327febec344e565378", "kind": "video", "size_mb": 0.3, "seconds": 12.6, "origin": "growth"}
-{"ts": "2026-10-31T22:28:59", "level": "INFO", "where": "live_ai.growth", "msg": "post written", "user": 4, "item": 4, "kind": "reel_text"}
-{"ts": "2026-10-31T22:29:01", "level": "INFO", "where": "live_ai.http", "msg": "request", "method": "GET", "path": "/api/growth", "ms": 1}
-{"ts": "2026-10-31T22:29:01", "level": "INFO", "where": "live_ai.http", "msg": "request", "method": "GET", "path": "/api/media/:id/file", "ms": 1}
-{"ts": "2026-10-31T22:29:01", "level": "INFO", "where": "live_ai.http", "msg": "request", "method": "GET", "path": "/api/media/:id/file", "ms": 0}
-{"ts": "2026-10-31T22:29:01", "level": "INFO", "where": "live_ai.http", "msg": "request", "method": "GET", "path": "/api/media/:id/file", "ms": 0}
-{"ts": "2026-10-31T22:29:02", "level": "INFO", "where": "live_ai.http", "msg": "request", "method": "GET", "path": "/api/media/:id/file", "ms": 0}
-{"ts": "2026-10-31T22:29:02", "level": "INFO", "where": "live_ai.http", "msg": "request", "method": "POST", "path": "/api/growth/items/:id/post", "ms": 0}
-{"ts": "2026-10-31T22:29:02", "level": "INFO", "where": "live_ai.http", "msg": "request", "method": "POST", "path": "/api/growth/items/:id/post", "ms": 0}
-{"ts": "2026-10-31T22:29:02", "level": "INFO", "where": "live_ai.http", "msg": "request", "method": "POST", "path": "/api/growth/items/:id/post", "ms": 1}
-{"ts": "2026-10-31T22:29:02", "level": "INFO", "where": "live_ai.http", "msg": "request", "method": "POST", "path": "/api/growth/items/:id/post", "ms": 0}
-{"ts": "2026-10-31T22:29:02", "level": "INFO", "where": "live_ai.growth", "msg": "posted", "user": 4, "item": 1, "kind": "question"}
-{"ts": "2026-10-31T22:29:02", "level": "INFO", "where": "live_ai.growth", "msg": "posted", "user": 4, "item": 2, "kind": "teaser"}
-{"ts": "2026-10-31T22:29:02", "level": "INFO", "where": "live_ai.growth", "msg": "posted", "user": 4, "item": 3, "kind": "quote"}
-{"ts": "2026-10-31T22:29:02", "level": "INFO", "where": "live_ai.growth", "msg": "posted", "user": 4, "item": 4, "kind": "reel_text"}
-{"ts": "2026-10-31T22:29:22", "level": "INFO", "where": "live_ai.http", "msg": "request", "method": "GET", "path": "/api/growth", "ms": 1}
-{"ts": "2026-10-31T22:29:22", "level": "INFO", "where": "live_ai.http", "msg": "request", "method": "POST", "path": "/api/growth/refresh", "ms": 11}
-{"ts": "2026-10-31T22:29:22", "level": "INFO", "where": "live_ai.http", "msg": "request", "method": "GET", "path": "/api/growth", "ms": 0}
-{"ts": "2026-10-31T22:30:00", "level": "INFO", "where": "live_ai.http", "msg": "request", "method": "POST", "path": "/api/growth/analyze", "ms": 37971}
-{"ts": "2026-10-31T22:30:00", "level": "INFO", "where": "live_ai.http", "msg": "shutting down"}
+{"ts": "2026-11-01T04:18:37", "level": "INFO", "where": "live_ai.http", "msg": "Live AI listening", "host": "127.0.0.1", "port": 7860, "threads": 2, "ctx": 16384}
+{"ts": "2026-11-01T04:18:38", "level": "INFO", "where": "live_ai.llm", "msg": "model source", "repo": "unsloth/Qwen3.5-2B-GGUF", "file": "Qwen3.5-2B-Q4_K_M.gguf", "sha256": "aaf42c8b7c3cab2bf3d69c355048d4a0ee9973d48f16c731c0520ee914699223"}
+{"ts": "2026-11-01T04:18:38", "level": "INFO", "where": "live_ai.llm", "msg": "model ready", "path": "/home/runner/work/live-ai/live-ai/data/models/Qwen3.5-2B-Q4_K_M.gguf", "size_mb": 1221}
+{"ts": "2026-11-01T04:18:38", "level": "INFO", "where": "live_ai.llm", "msg": "downloading model", "url": "https://huggingface.co/unsloth/Qwen3.5-2B-GGUF/resolve/main/mmproj-F16.gguf", "resume_from": 0}
+{"ts": "2026-11-01T04:18:42", "level": "INFO", "where": "live_ai.llm", "msg": "vision projector ready", "file": "mmproj-F16.gguf", "size_mb": 637}
+{"ts": "2026-11-01T04:18:42", "level": "INFO", "where": "live_ai.llm", "msg": "starting llama-server", "cmd": "/home/runner/work/live-ai/live-ai/llama-bin/llama-server -m /home/runner/work/live-ai/live-ai/data/models/Qwen3.5-2B-Q4_K_M.gguf -c 16384 -t 2 -tb 2 --host 127.0.0.1 --port 8081 --jinja -np 1 --no-webui --mmproj /home/runner/work/live-ai/live-ai/data/models/mmproj-F16.gguf"}
+{"ts": "2026-11-01T04:18:45", "level": "INFO", "where": "live_ai.llm", "msg": "model ready", "load_seconds": 3.0, "threads": 2, "ctx": 16384}
+{"ts": "2026-11-01T04:18:46", "level": "INFO", "where": "live_ai.http", "msg": "user created", "user": 1}
+{"ts": "2026-11-01T04:18:46", "level": "INFO", "where": "live_ai.http", "msg": "request", "method": "POST", "path": "/api/register", "ms": 1}
+{"ts": "2026-11-01T04:18:46", "level": "INFO", "where": "live_ai.http", "msg": "user created", "user": 2}
+{"ts": "2026-11-01T04:18:46", "level": "INFO", "where": "live_ai.http", "msg": "request", "method": "POST", "path": "/api/register", "ms": 0}
+{"ts": "2026-11-01T04:19:04", "level": "INFO", "where": "live_ai.assistant", "msg": "reply", "user": 1, "conversation": 1, "in_chars": 77, "out_chars": 428, "think": false, "seconds": 17.21, "prompt_tokens": 185, "reply_tokens": 132, "tokens_per_second": 11.3, "prompt_tokens_per_second": 32.99, "finish_reason": "stop", "memory": ""}
+{"ts": "2026-11-01T04:19:04", "level": "INFO", "where": "live_ai.http", "msg": "request", "method": "POST", "path": "/api/chat", "ms": 17209}
+{"ts": "2026-11-01T04:19:05", "level": "INFO", "where": "live_ai.assistant", "msg": "reply", "user": 1, "conversation": 2, "in_chars": 47, "out_chars": 22, "think": false, "seconds": 1.63, "prompt_tokens": 22, "reply_tokens": 9, "tokens_per_second": 11.44, "prompt_tokens_per_second": 23.9, "finish_reason": "stop", "memory": ""}
+{"ts": "2026-11-01T04:19:05", "level": "INFO", "where": "live_ai.http", "msg": "request", "method": "POST", "path": "/api/chat", "ms": 1628}
+{"ts": "2026-11-01T04:19:14", "level": "INFO", "where": "live_ai.assistant", "msg": "reply", "user": 1, "conversation": 3, "in_chars": 39, "out_chars": 286, "think": false, "seconds": 8.82, "prompt_tokens": 23, "reply_tokens": 90, "tokens_per_second": 11.31, "prompt_tokens_per_second": 24.39, "finish_reason": "stop", "memory": ""}
+{"ts": "2026-11-01T04:19:14", "level": "INFO", "where": "live_ai.http", "msg": "request", "method": "POST", "path": "/api/chat", "ms": 8818}
+{"ts": "2026-11-01T04:19:25", "level": "INFO", "where": "live_ai.assistant", "msg": "reply", "user": 1, "conversation": 4, "in_chars": 85, "out_chars": 251, "think": false, "seconds": 10.7, "prompt_tokens": 45, "reply_tokens": 105, "tokens_per_second": 11.38, "prompt_tokens_per_second": 28.78, "finish_reason": "stop", "memory": ""}
+{"ts": "2026-11-01T04:19:25", "level": "INFO", "where": "live_ai.http", "msg": "request", "method": "POST", "path": "/api/chat", "ms": 10705}
+{"ts": "2026-11-01T04:20:46", "level": "INFO", "where": "live_ai.assistant", "msg": "reply", "user": 1, "conversation": 5, "in_chars": 61, "out_chars": 294, "think": true, "seconds": 81.38, "prompt_tokens": 36, "reply_tokens": 894, "tokens_per_second": 11.14, "prompt_tokens_per_second": 30.01, "finish_reason": "stop", "memory": ""}
+{"ts": "2026-11-01T04:20:46", "level": "INFO", "where": "live_ai.http", "msg": "request", "method": "POST", "path": "/api/chat", "ms": 81378}
+{"ts": "2026-11-01T04:21:07", "level": "INFO", "where": "live_ai.assistant", "msg": "reply", "user": 1, "conversation": 6, "in_chars": 98, "out_chars": 634, "think": false, "seconds": 20.83, "prompt_tokens": 38, "reply_tokens": 224, "tokens_per_second": 11.48, "prompt_tokens_per_second": 28.02, "finish_reason": "stop", "memory": ""}
+{"ts": "2026-11-01T04:21:07", "level": "INFO", "where": "live_ai.http", "msg": "request", "method": "POST", "path": "/api/chat", "ms": 20829}
+{"ts": "2026-11-01T04:21:24", "level": "INFO", "where": "live_ai.assistant", "msg": "reply", "user": 1, "conversation": 7, "in_chars": 120, "out_chars": 670, "think": false, "seconds": 16.67, "prompt_tokens": 42, "reply_tokens": 175, "tokens_per_second": 11.48, "prompt_tokens_per_second": 28.62, "finish_reason": "stop", "memory": ""}
+{"ts": "2026-11-01T04:21:24", "level": "INFO", "where": "live_ai.http", "msg": "request", "method": "POST", "path": "/api/chat", "ms": 16667}
+{"ts": "2026-11-01T04:22:45", "level": "INFO", "where": "live_ai.assistant", "msg": "reply", "user": 1, "conversation": 8, "in_chars": 120, "out_chars": 536, "think": true, "seconds": 81.82, "prompt_tokens": 2, "reply_tokens": 922, "tokens_per_second": 11.28, "prompt_tokens_per_second": 13.77, "finish_reason": "stop", "memory": ""}
+{"ts": "2026-11-01T04:22:45", "level": "INFO", "where": "live_ai.http", "msg": "request", "method": "POST", "path": "/api/chat", "ms": 81823}
+{"ts": "2026-11-01T04:23:13", "level": "INFO", "where": "live_ai.assistant", "msg": "reply", "user": 1, "conversation": 9, "in_chars": 189, "out_chars": 830, "think": false, "seconds": 27.96, "prompt_tokens": 76, "reply_tokens": 291, "tokens_per_second": 11.37, "prompt_tokens_per_second": 31.41, "finish_reason": "stop", "memory": ""}
+{"ts": "2026-11-01T04:23:13", "level": "INFO", "where": "live_ai.http", "msg": "request", "method": "POST", "path": "/api/chat", "ms": 27961}
+{"ts": "2026-11-01T04:24:35", "level": "INFO", "where": "live_ai.assistant", "msg": "reply", "user": 1, "conversation": 10, "in_chars": 59, "out_chars": 2627, "think": false, "seconds": 81.55, "prompt_tokens": 29, "reply_tokens": 919, "tokens_per_second": 11.42, "prompt_tokens_per_second": 26.25, "finish_reason": "stop", "memory": ""}
+{"ts": "2026-11-01T04:24:35", "level": "INFO", "where": "live_ai.http", "msg": "request", "method": "POST", "path": "/api/chat", "ms": 81553}
+{"ts": "2026-11-01T04:24:42", "level": "INFO", "where": "live_ai.assistant", "msg": "reply", "user": 1, "conversation": 11, "in_chars": 34, "out_chars": 251, "think": false, "seconds": 7.17, "prompt_tokens": 25, "reply_tokens": 73, "tokens_per_second": 11.72, "prompt_tokens_per_second": 25.54, "finish_reason": "stop", "memory": ""}
+{"ts": "2026-11-01T04:24:42", "level": "INFO", "where": "live_ai.http", "msg": "request", "method": "POST", "path": "/api/chat", "ms": 7167}
+{"ts": "2026-11-01T04:24:49", "level": "INFO", "where": "live_ai.assistant", "msg": "reply", "user": 1, "conversation": 11, "in_chars": 25, "out_chars": 125, "think": false, "seconds": 6.37, "prompt_tokens": 93, "reply_tokens": 39, "tokens_per_second": 11.54, "prompt_tokens_per_second": 30.26, "finish_reason": "stop", "memory": ""}
+{"ts": "2026-11-01T04:24:49", "level": "INFO", "where": "live_ai.http", "msg": "request", "method": "POST", "path": "/api/chat", "ms": 6373}
+{"ts": "2026-11-01T04:24:57", "level": "INFO", "where": "live_ai.assistant", "msg": "reply", "user": 1, "conversation": 12, "in_chars": 27, "out_chars": 119, "think": false, "seconds": 8.58, "prompt_tokens": 198, "reply_tokens": 32, "tokens_per_second": 11.69, "prompt_tokens_per_second": 33.75, "finish_reason": "stop", "memory": "remembered"}
+{"ts": "2026-11-01T04:24:57", "level": "INFO", "where": "live_ai.http", "msg": "request", "method": "POST", "path": "/api/chat", "ms": 8576}
+{"ts": "2026-11-01T04:24:57", "level": "INFO", "where": "live_ai.http", "msg": "request", "method": "GET", "path": "/api/memories", "ms": 0}
+{"ts": "2026-11-01T04:24:59", "level": "INFO", "where": "live_ai.assistant", "msg": "reply", "user": 1, "conversation": 13, "in_chars": 17, "out_chars": 28, "think": false, "seconds": 1.41, "prompt_tokens": 16, "reply_tokens": 9, "tokens_per_second": 11.89, "prompt_tokens_per_second": 21.81, "finish_reason": "stop", "memory": ""}
+{"ts": "2026-11-01T04:24:59", "level": "INFO", "where": "live_ai.http", "msg": "request", "method": "POST", "path": "/api/chat", "ms": 1412}
+{"ts": "2026-11-01T04:25:09", "level": "INFO", "where": "live_ai.assistant", "msg": "reply", "user": 2, "conversation": 14, "in_chars": 17, "out_chars": 264, "think": false, "seconds": 10.12, "prompt_tokens": 172, "reply_tokens": 59, "tokens_per_second": 11.7, "prompt_tokens_per_second": 33.34, "finish_reason": "stop", "memory": ""}
+{"ts": "2026-11-01T04:25:09", "level": "INFO", "where": "live_ai.http", "msg": "request", "method": "POST", "path": "/api/chat", "ms": 10122}
+{"ts": "2026-11-01T04:25:09", "level": "INFO", "where": "live_ai.http", "msg": "request", "method": "GET", "path": "/api/conversations/:id/messages", "ms": 0}
+{"ts": "2026-11-01T04:25:39", "level": "INFO", "where": "live_ai.assistant", "msg": "reply", "user": 1, "conversation": 15, "in_chars": 63, "out_chars": 883, "think": false, "seconds": 29.84, "prompt_tokens": 205, "reply_tokens": 276, "tokens_per_second": 11.58, "prompt_tokens_per_second": 33.71, "finish_reason": "stop", "memory": ""}
+{"ts": "2026-11-01T04:25:39", "level": "INFO", "where": "live_ai.http", "msg": "request", "method": "POST", "path": "/api/chat", "ms": 29844}
+{"ts": "2026-11-01T04:25:57", "level": "INFO", "where": "live_ai.assistant", "msg": "reply", "user": 1, "conversation": 15, "in_chars": 19, "out_chars": 349, "think": false, "seconds": 18.94, "prompt_tokens": 295, "reply_tokens": 117, "tokens_per_second": 11.4, "prompt_tokens_per_second": 33.78, "finish_reason": "stop", "memory": ""}
+{"ts": "2026-11-01T04:25:57", "level": "INFO", "where": "live_ai.http", "msg": "request", "method": "POST", "path": "/api/chat", "ms": 18941}
+{"ts": "2026-11-01T04:26:20", "level": "INFO", "where": "live_ai.assistant", "msg": "reply", "user": 1, "conversation": 15, "in_chars": 14, "out_chars": 611, "think": false, "seconds": 22.17, "prompt_tokens": 136, "reply_tokens": 205, "tokens_per_second": 11.42, "prompt_tokens_per_second": 31.64, "finish_reason": "stop", "memory": ""}
+{"ts": "2026-11-01T04:26:20", "level": "INFO", "where": "live_ai.http", "msg": "request", "method": "POST", "path": "/api/chat", "ms": 22166}
+{"ts": "2026-11-01T04:26:54", "level": "INFO", "where": "live_ai.assistant", "msg": "reply", "user": 1, "conversation": 15, "in_chars": 17, "out_chars": 935, "think": false, "seconds": 34.35, "prompt_tokens": 223, "reply_tokens": 311, "tokens_per_second": 11.26, "prompt_tokens_per_second": 32.74, "finish_reason": "stop", "memory": ""}
+{"ts": "2026-11-01T04:26:54", "level": "INFO", "where": "live_ai.http", "msg": "request", "method": "POST", "path": "/api/chat", "ms": 34349}
+{"ts": "2026-11-01T04:27:20", "level": "INFO", "where": "live_ai.assistant", "msg": "reply", "user": 1, "conversation": 15, "in_chars": 20, "out_chars": 557, "think": false, "seconds": 26.26, "prompt_tokens": 328, "reply_tokens": 183, "tokens_per_second": 11.13, "prompt_tokens_per_second": 33.18, "finish_reason": "stop", "memory": ""}
+{"ts": "2026-11-01T04:27:20", "level": "INFO", "where": "live_ai.http", "msg": "request", "method": "POST", "path": "/api/chat", "ms": 26257}
+{"ts": "2026-11-01T04:28:02", "level": "INFO", "where": "live_ai.assistant", "msg": "reply", "user": 1, "conversation": 15, "in_chars": 13, "out_chars": 1046, "think": false, "seconds": 42.25, "prompt_tokens": 199, "reply_tokens": 395, "tokens_per_second": 10.94, "prompt_tokens_per_second": 32.01, "finish_reason": "stop", "memory": ""}
+{"ts": "2026-11-01T04:28:02", "level": "INFO", "where": "live_ai.http", "msg": "request", "method": "POST", "path": "/api/chat", "ms": 42250}
+{"ts": "2026-11-01T04:28:44", "level": "INFO", "where": "live_ai.assistant", "msg": "reply", "user": 1, "conversation": 15, "in_chars": 16, "out_chars": 939, "think": false, "seconds": 41.68, "prompt_tokens": 415, "reply_tokens": 307, "tokens_per_second": 10.63, "prompt_tokens_per_second": 32.21, "finish_reason": "stop", "memory": ""}
+{"ts": "2026-11-01T04:28:44", "level": "INFO", "where": "live_ai.http", "msg": "request", "method": "POST", "path": "/api/chat", "ms": 41682}
+{"ts": "2026-11-01T04:29:08", "level": "INFO", "where": "live_ai.assistant", "msg": "reply", "user": 1, "conversation": 15, "in_chars": 19, "out_chars": 440, "think": false, "seconds": 23.37, "prompt_tokens": 324, "reply_tokens": 141, "tokens_per_second": 10.6, "prompt_tokens_per_second": 31.96, "finish_reason": "stop", "memory": ""}
+{"ts": "2026-11-01T04:29:08", "level": "INFO", "where": "live_ai.http", "msg": "request", "method": "POST", "path": "/api/chat", "ms": 23367}
+{"ts": "2026-11-01T04:29:55", "level": "INFO", "where": "live_ai.assistant", "msg": "reply", "user": 1, "conversation": 15, "in_chars": 28, "out_chars": 1240, "think": false, "seconds": 47.92, "prompt_tokens": 162, "reply_tokens": 447, "tokens_per_second": 10.48, "prompt_tokens_per_second": 30.31, "finish_reason": "stop", "memory": ""}
+{"ts": "2026-11-01T04:29:55", "level": "INFO", "where": "live_ai.http", "msg": "request", "method": "POST", "path": "/api/chat", "ms": 47925}
+{"ts": "2026-11-01T04:30:14", "level": "INFO", "where": "live_ai.assistant", "msg": "reply", "user": 1, "conversation": 15, "in_chars": 10, "out_chars": 169, "think": false, "seconds": 18.91, "prompt_tokens": 461, "reply_tokens": 49, "tokens_per_second": 10.57, "prompt_tokens_per_second": 32.14, "finish_reason": "stop", "memory": ""}
+{"ts": "2026-11-01T04:30:14", "level": "INFO", "where": "live_ai.http", "msg": "request", "method": "POST", "path": "/api/chat", "ms": 18908}
+{"ts": "2026-11-01T04:30:15", "level": "WARNING", "where": "live_ai.assistant", "msg": "model unreachable, waiting for recovery"}
+{"ts": "2026-11-01T04:30:15", "level": "ERROR", "where": "live_ai.llm", "msg": "model stopped, restarting", "exit_code": -9, "failed_health_checks": 0}
+{"ts": "2026-11-01T04:30:17", "level": "INFO", "where": "live_ai.llm", "msg": "starting llama-server", "cmd": "/home/runner/work/live-ai/live-ai/llama-bin/llama-server -m /home/runner/work/live-ai/live-ai/data/models/Qwen3.5-2B-Q4_K_M.gguf -c 16384 -t 2 -tb 2 --host 127.0.0.1 --port 8081 --jinja -np 1 --no-webui --mmproj /home/runner/work/live-ai/live-ai/data/models/mmproj-F16.gguf"}
+{"ts": "2026-11-01T04:30:20", "level": "INFO", "where": "live_ai.llm", "msg": "model ready", "load_seconds": 3.0, "threads": 2, "ctx": 16384}
+{"ts": "2026-11-01T04:30:20", "level": "INFO", "where": "live_ai.llm", "msg": "model recovered", "restarts": 1}
+{"ts": "2026-11-01T04:30:37", "level": "INFO", "where": "live_ai.assistant", "msg": "reply", "user": 1, "conversation": 16, "in_chars": 36, "out_chars": 343, "think": false, "seconds": 22.2, "prompt_tokens": 204, "reply_tokens": 122, "tokens_per_second": 11.62, "prompt_tokens_per_second": 33.71, "finish_reason": "stop", "memory": ""}
+{"ts": "2026-11-01T04:30:37", "level": "INFO", "where": "live_ai.http", "msg": "request", "method": "POST", "path": "/api/chat", "ms": 22202}
+{"ts": "2026-11-01T04:30:47", "level": "INFO", "where": "live_ai.http", "msg": "user created", "user": 3}
+{"ts": "2026-11-01T04:30:47", "level": "INFO", "where": "live_ai.http", "msg": "request", "method": "POST", "path": "/api/register", "ms": 0}
+{"ts": "2026-11-01T04:30:47", "level": "INFO", "where": "live_ai.http", "msg": "request", "method": "POST", "path": "/api/studio/projects", "ms": 0}
+{"ts": "2026-11-01T04:30:47", "level": "INFO", "where": "live_ai.http", "msg": "request", "method": "PATCH", "path": "/api/studio/projects/:id", "ms": 2}
+{"ts": "2026-11-01T04:30:47", "level": "INFO", "where": "live_ai.media", "msg": "media saved", "user": 3, "media": "bbae1fafcb449d96c53a63cc", "kind": "video", "size_mb": 0.2, "seconds": 8.067, "origin": "studio"}
+{"ts": "2026-11-01T04:30:47", "level": "INFO", "where": "live_ai.media", "msg": "media saved", "user": 3, "media": "b80287bfb7f2b05c09823cbb", "kind": "video", "size_mb": 0.1, "seconds": 4.0, "origin": "studio"}
+{"ts": "2026-11-01T04:30:47", "level": "INFO", "where": "live_ai.media", "msg": "media saved", "user": 3, "media": "e1a0365f618a4968fa86e76f", "kind": "video", "size_mb": 0.2, "seconds": 6.74, "origin": "studio"}
+{"ts": "2026-11-01T04:30:47", "level": "INFO", "where": "live_ai.media", "msg": "media saved", "user": 3, "media": "b67b7c7c2353374163757bea", "kind": "video", "size_mb": 0.2, "seconds": 8.9, "origin": "studio"}
+{"ts": "2026-11-01T04:30:47", "level": "INFO", "where": "live_ai.media", "msg": "media saved", "user": 3, "media": "95f9e5d3bae950f4e114c2ec", "kind": "video", "size_mb": 0.1, "seconds": 4.0, "origin": "studio"}
+{"ts": "2026-11-01T04:30:47", "level": "INFO", "where": "live_ai.media", "msg": "media saved", "user": 3, "media": "f1a488ea1fa9adae0d5cea67", "kind": "video", "size_mb": 0.2, "seconds": 9.08, "origin": "studio"}
+{"ts": "2026-11-01T04:30:47", "level": "INFO", "where": "live_ai.media", "msg": "media saved", "user": 3, "media": "ba6ad4e0959f4f3da7b9a1f1", "kind": "video", "size_mb": 0.2, "seconds": 7.167, "origin": "studio"}
+{"ts": "2026-11-01T04:30:47", "level": "INFO", "where": "live_ai.media", "msg": "media saved", "user": 3, "media": "02306eab69e46a945f7dfd60", "kind": "video", "size_mb": 0.2, "seconds": 7.34, "origin": "studio"}
+{"ts": "2026-11-01T04:30:47", "level": "INFO", "where": "live_ai.media", "msg": "media saved", "user": 3, "media": "ebeb637048ee3e9d254685cd", "kind": "video", "size_mb": 0.1, "seconds": 8.24, "origin": "studio"}
+{"ts": "2026-11-01T04:30:47", "level": "INFO", "where": "live_ai.media", "msg": "media saved", "user": 3, "media": "fbb47e271ae4ca174194a0ec", "kind": "video", "size_mb": 0.2, "seconds": 9.08, "origin": "studio"}
+{"ts": "2026-11-01T04:30:47", "level": "INFO", "where": "live_ai.media", "msg": "media saved", "user": 3, "media": "92fbee6edb5e7ba1f5790c00", "kind": "video", "size_mb": 0.2, "seconds": 6.933, "origin": "studio"}
+{"ts": "2026-11-01T04:30:47", "level": "INFO", "where": "live_ai.media", "msg": "media saved", "user": 3, "media": "de5fc067af36c795baaeca9b", "kind": "video", "size_mb": 0.2, "seconds": 6.933, "origin": "studio"}
+{"ts": "2026-11-01T04:30:47", "level": "INFO", "where": "live_ai.studio", "msg": "zip added", "project": 1, "added": 12, "skipped": 0}
+{"ts": "2026-11-01T04:30:47", "level": "INFO", "where": "live_ai.http", "msg": "request", "method": "POST", "path": "/api/studio/projects/:id/zip", "ms": 604}
+{"ts": "2026-11-01T04:30:47", "level": "INFO", "where": "live_ai.studio", "msg": "project queued", "project": 1, "clips": 12}
+{"ts": "2026-11-01T04:30:47", "level": "INFO", "where": "live_ai.http", "msg": "request", "method": "POST", "path": "/api/studio/projects/:id/start", "ms": 1}
+{"ts": "2026-11-01T04:30:47", "level": "INFO", "where": "live_ai.http", "msg": "request", "method": "GET", "path": "/api/studio/projects/:id", "ms": 1}
+{"ts": "2026-11-01T04:30:50", "level": "INFO", "where": "live_ai.http", "msg": "request", "method": "GET", "path": "/api/studio/projects/:id", "ms": 2}
+{"ts": "2026-11-01T04:30:53", "level": "INFO", "where": "live_ai.http", "msg": "request", "method": "GET", "path": "/api/studio/projects/:id", "ms": 1}
+{"ts": "2026-11-01T04:30:56", "level": "INFO", "where": "live_ai.http", "msg": "request", "method": "GET", "path": "/api/studio/projects/:id", "ms": 2}
+{"ts": "2026-11-01T04:30:59", "level": "INFO", "where": "live_ai.asr", "msg": "downloading whisper model", "file": "ggml-small-q5_1.bin"}
+{"ts": "2026-11-01T04:30:59", "level": "INFO", "where": "live_ai.http", "msg": "request", "method": "GET", "path": "/api/studio/projects/:id", "ms": 1}
+{"ts": "2026-11-01T04:31:02", "level": "INFO", "where": "live_ai.http", "msg": "request", "method": "GET", "path": "/api/studio/projects/:id", "ms": 4}
+{"ts": "2026-11-01T04:31:05", "level": "INFO", "where": "live_ai.http", "msg": "request", "method": "GET", "path": "/api/studio/projects/:id", "ms": 3}
+{"ts": "2026-11-01T04:31:08", "level": "INFO", "where": "live_ai.http", "msg": "request", "method": "GET", "path": "/api/studio/projects/:id", "ms": 4}
+{"ts": "2026-11-01T04:31:11", "level": "INFO", "where": "live_ai.http", "msg": "request", "method": "GET", "path": "/api/studio/projects/:id", "ms": 4}
+{"ts": "2026-11-01T04:31:14", "level": "INFO", "where": "live_ai.http", "msg": "request", "method": "GET", "path": "/api/studio/projects/:id", "ms": 3}
+{"ts": "2026-11-01T04:31:17", "level": "INFO", "where": "live_ai.http", "msg": "request", "method": "GET", "path": "/api/studio/projects/:id", "ms": 4}
+{"ts": "2026-11-01T04:31:20", "level": "INFO", "where": "live_ai.http", "msg": "request", "method": "GET", "path": "/api/studio/projects/:id", "ms": 4}
+{"ts": "2026-11-01T04:31:23", "level": "INFO", "where": "live_ai.http", "msg": "request", "method": "GET", "path": "/api/studio/projects/:id", "ms": 4}
+{"ts": "2026-11-01T04:31:26", "level": "INFO", "where": "live_ai.http", "msg": "request", "method": "GET", "path": "/api/studio/projects/:id", "ms": 4}
+{"ts": "2026-11-01T04:31:29", "level": "INFO", "where": "live_ai.http", "msg": "request", "method": "GET", "path": "/api/studio/projects/:id", "ms": 4}
+{"ts": "2026-11-01T04:31:32", "level": "INFO", "where": "live_ai.http", "msg": "request", "method": "GET", "path": "/api/studio/projects/:id", "ms": 4}
+{"ts": "2026-11-01T04:31:35", "level": "INFO", "where": "live_ai.http", "msg": "request", "method": "GET", "path": "/api/studio/projects/:id", "ms": 4}
+{"ts": "2026-11-01T04:31:38", "level": "INFO", "where": "live_ai.http", "msg": "request", "method": "GET", "path": "/api/studio/projects/:id", "ms": 5}
+{"ts": "2026-11-01T04:31:41", "level": "INFO", "where": "live_ai.http", "msg": "request", "method": "GET", "path": "/api/studio/projects/:id", "ms": 4}
+{"ts": "2026-11-01T04:31:44", "level": "INFO", "where": "live_ai.http", "msg": "request", "method": "GET", "path": "/api/studio/projects/:id", "ms": 5}
+{"ts": "2026-11-01T04:31:47", "level": "INFO", "where": "live_ai.http", "msg": "request", "method": "GET", "path": "/api/studio/projects/:id", "ms": 4}
+{"ts": "2026-11-01T04:31:50", "level": "INFO", "where": "live_ai.http", "msg": "request", "method": "GET", "path": "/api/studio/projects/:id", "ms": 4}
+{"ts": "2026-11-01T04:31:53", "level": "INFO", "where": "live_ai.http", "msg": "request", "method": "GET", "path": "/api/studio/projects/:id", "ms": 4}
+{"ts": "2026-11-01T04:31:56", "level": "INFO", "where": "live_ai.http", "msg": "request", "method": "GET", "path": "/api/studio/projects/:id", "ms": 4}
+{"ts": "2026-11-01T04:31:59", "level": "INFO", "where": "live_ai.http", "msg": "request", "method": "GET", "path": "/api/studio/projects/:id", "ms": 4}
+{"ts": "2026-11-01T04:32:02", "level": "INFO", "where": "live_ai.http", "msg": "request", "method": "GET", "path": "/api/studio/projects/:id", "ms": 4}
+{"ts": "2026-11-01T04:32:05", "level": "INFO", "where": "live_ai.http", "msg": "request", "method": "GET", "path": "/api/studio/projects/:id", "ms": 4}
+{"ts": "2026-11-01T04:32:08", "level": "INFO", "where": "live_ai.http", "msg": "request", "method": "GET", "path": "/api/studio/projects/:id", "ms": 4}
+{"ts": "2026-11-01T04:32:11", "level": "INFO", "where": "live_ai.http", "msg": "request", "method": "GET", "path": "/api/studio/projects/:id", "ms": 4}
+{"ts": "2026-11-01T04:32:14", "level": "INFO", "where": "live_ai.http", "msg": "request", "method": "GET", "path": "/api/studio/projects/:id", "ms": 4}
+{"ts": "2026-11-01T04:32:17", "level": "INFO", "where": "live_ai.http", "msg": "request", "method": "GET", "path": "/api/studio/projects/:id", "ms": 4}
+{"ts": "2026-11-01T04:32:20", "level": "INFO", "where": "live_ai.http", "msg": "request", "method": "GET", "path": "/api/studio/projects/:id", "ms": 4}
+{"ts": "2026-11-01T04:32:23", "level": "INFO", "where": "live_ai.http", "msg": "request", "method": "GET", "path": "/api/studio/projects/:id", "ms": 4}
+{"ts": "2026-11-01T04:32:26", "level": "INFO", "where": "live_ai.http", "msg": "request", "method": "GET", "path": "/api/studio/projects/:id", "ms": 4}
+{"ts": "2026-11-01T04:32:29", "level": "INFO", "where": "live_ai.http", "msg": "request", "method": "GET", "path": "/api/studio/projects/:id", "ms": 4}
+{"ts": "2026-11-01T04:32:32", "level": "INFO", "where": "live_ai.http", "msg": "request", "method": "GET", "path": "/api/studio/projects/:id", "ms": 6}
+{"ts": "2026-11-01T04:32:34", "level": "INFO", "where": "live_ai.asr", "msg": "speech recovered on second pass", "file": "ba6ad4e0959f4f3da7b9a1f1.mp4"}
+{"ts": "2026-11-01T04:32:35", "level": "INFO", "where": "live_ai.http", "msg": "request", "method": "GET", "path": "/api/studio/projects/:id", "ms": 4}
+{"ts": "2026-11-01T04:32:38", "level": "INFO", "where": "live_ai.http", "msg": "request", "method": "GET", "path": "/api/studio/projects/:id", "ms": 4}
+{"ts": "2026-11-01T04:32:42", "level": "INFO", "where": "live_ai.http", "msg": "request", "method": "GET", "path": "/api/studio/projects/:id", "ms": 4}
+{"ts": "2026-11-01T04:32:45", "level": "INFO", "where": "live_ai.http", "msg": "request", "method": "GET", "path": "/api/studio/projects/:id", "ms": 4}
+{"ts": "2026-11-01T04:32:48", "level": "INFO", "where": "live_ai.http", "msg": "request", "method": "GET", "path": "/api/studio/projects/:id", "ms": 4}
+{"ts": "2026-11-01T04:32:51", "level": "INFO", "where": "live_ai.http", "msg": "request", "method": "GET", "path": "/api/studio/projects/:id", "ms": 4}
+{"ts": "2026-11-01T04:32:54", "level": "INFO", "where": "live_ai.http", "msg": "request", "method": "GET", "path": "/api/studio/projects/:id", "ms": 4}
+{"ts": "2026-11-01T04:32:57", "level": "INFO", "where": "live_ai.http", "msg": "request", "method": "GET", "path": "/api/studio/projects/:id", "ms": 4}
+{"ts": "2026-11-01T04:33:00", "level": "INFO", "where": "live_ai.http", "msg": "request", "method": "GET", "path": "/api/studio/projects/:id", "ms": 4}
+{"ts": "2026-11-01T04:33:03", "level": "INFO", "where": "live_ai.http", "msg": "request", "method": "GET", "path": "/api/studio/projects/:id", "ms": 4}
+{"ts": "2026-11-01T04:33:06", "level": "INFO", "where": "live_ai.http", "msg": "request", "method": "GET", "path": "/api/studio/projects/:id", "ms": 4}
+{"ts": "2026-11-01T04:33:09", "level": "INFO", "where": "live_ai.http", "msg": "request", "method": "GET", "path": "/api/studio/projects/:id", "ms": 4}
+{"ts": "2026-11-01T04:33:12", "level": "INFO", "where": "live_ai.http", "msg": "request", "method": "GET", "path": "/api/studio/projects/:id", "ms": 4}
+{"ts": "2026-11-01T04:33:15", "level": "INFO", "where": "live_ai.http", "msg": "request", "method": "GET", "path": "/api/studio/projects/:id", "ms": 4}
+{"ts": "2026-11-01T04:33:18", "level": "INFO", "where": "live_ai.http", "msg": "request", "method": "GET", "path": "/api/studio/projects/:id", "ms": 4}
+{"ts": "2026-11-01T04:33:21", "level": "INFO", "where": "live_ai.http", "msg": "request", "method": "GET", "path": "/api/studio/projects/:id", "ms": 5}
+{"ts": "2026-11-01T04:33:24", "level": "INFO", "where": "live_ai.http", "msg": "request", "method": "GET", "path": "/api/studio/projects/:id", "ms": 4}
+{"ts": "2026-11-01T04:33:27", "level": "INFO", "where": "live_ai.http", "msg": "request", "method": "GET", "path": "/api/studio/projects/:id", "ms": 4}
+{"ts": "2026-11-01T04:33:30", "level": "INFO", "where": "live_ai.http", "msg": "request", "method": "GET", "path": "/api/studio/projects/:id", "ms": 4}
+{"ts": "2026-11-01T04:33:33", "level": "INFO", "where": "live_ai.http", "msg": "request", "method": "GET", "path": "/api/studio/projects/:id", "ms": 4}
+{"ts": "2026-11-01T04:33:36", "level": "INFO", "where": "live_ai.http", "msg": "request", "method": "GET", "path": "/api/studio/projects/:id", "ms": 4}
+{"ts": "2026-11-01T04:33:39", "level": "INFO", "where": "live_ai.http", "msg": "request", "method": "GET", "path": "/api/studio/projects/:id", "ms": 4}
+{"ts": "2026-11-01T04:33:42", "level": "INFO", "where": "live_ai.http", "msg": "request", "method": "GET", "path": "/api/studio/projects/:id", "ms": 4}
+{"ts": "2026-11-01T04:33:45", "level": "INFO", "where": "live_ai.http", "msg": "request", "method": "GET", "path": "/api/studio/projects/:id", "ms": 4}
+{"ts": "2026-11-01T04:33:48", "level": "INFO", "where": "live_ai.http", "msg": "request", "method": "GET", "path": "/api/studio/projects/:id", "ms": 4}
+{"ts": "2026-11-01T04:33:48", "level": "INFO", "where": "live_ai.studio", "msg": "speech denoiser", "engine": "RNNoise"}
+{"ts": "2026-11-01T04:33:51", "level": "INFO", "where": "live_ai.http", "msg": "request", "method": "GET", "path": "/api/studio/projects/:id", "ms": 3}
+{"ts": "2026-11-01T04:33:54", "level": "INFO", "where": "live_ai.http", "msg": "request", "method": "GET", "path": "/api/studio/projects/:id", "ms": 4}
+{"ts": "2026-11-01T04:33:57", "level": "INFO", "where": "live_ai.http", "msg": "request", "method": "GET", "path": "/api/studio/projects/:id", "ms": 3}
+{"ts": "2026-11-01T04:34:00", "level": "INFO", "where": "live_ai.http", "msg": "request", "method": "GET", "path": "/api/studio/projects/:id", "ms": 2}
+{"ts": "2026-11-01T04:34:03", "level": "INFO", "where": "live_ai.http", "msg": "request", "method": "GET", "path": "/api/studio/projects/:id", "ms": 2}
+{"ts": "2026-11-01T04:34:06", "level": "INFO", "where": "live_ai.http", "msg": "request", "method": "GET", "path": "/api/studio/projects/:id", "ms": 2}
+{"ts": "2026-11-01T04:34:07", "level": "INFO", "where": "live_ai.media", "msg": "media saved", "user": 3, "media": "b5f872b39395545942f5e0bc", "kind": "video", "size_mb": 1.4, "seconds": 65.883, "origin": "studio"}
+{"ts": "2026-11-01T04:34:09", "level": "INFO", "where": "live_ai.http", "msg": "request", "method": "GET", "path": "/api/studio/projects/:id", "ms": 2}
+{"ts": "2026-11-01T04:34:12", "level": "INFO", "where": "live_ai.http", "msg": "request", "method": "GET", "path": "/api/studio/projects/:id", "ms": 2}
+{"ts": "2026-11-01T04:34:15", "level": "INFO", "where": "live_ai.http", "msg": "request", "method": "GET", "path": "/api/studio/projects/:id", "ms": 2}
+{"ts": "2026-11-01T04:34:18", "level": "INFO", "where": "live_ai.http", "msg": "request", "method": "GET", "path": "/api/studio/projects/:id", "ms": 2}
+{"ts": "2026-11-01T04:34:19", "level": "INFO", "where": "live_ai.media", "msg": "media saved", "user": 3, "media": "fbc1b7227fefd6e7ff135071", "kind": "video", "size_mb": 1.8, "seconds": 65.883, "origin": "studio"}
+{"ts": "2026-11-01T04:34:20", "level": "INFO", "where": "live_ai.studio", "msg": "project finished", "project": 1, "complete": false, "seconds": 213.1, "clips": 12, "missing": 1}
+{"ts": "2026-11-01T04:34:21", "level": "INFO", "where": "live_ai.http", "msg": "request", "method": "GET", "path": "/api/studio/projects/:id", "ms": 2}
+{"ts": "2026-11-01T04:34:21", "level": "INFO", "where": "live_ai.media", "msg": "media saved", "user": 3, "media": "9f72010b03855e742046941c", "kind": "video", "size_mb": 0.2, "seconds": 5.667, "origin": "upload"}
+{"ts": "2026-11-01T04:34:21", "level": "INFO", "where": "live_ai.http", "msg": "request", "method": "POST", "path": "/api/media", "ms": 48}
+{"ts": "2026-11-01T04:34:21", "level": "INFO", "where": "live_ai.http", "msg": "request", "method": "POST", "path": "/api/studio/projects/:id/clips", "ms": 2}
+{"ts": "2026-11-01T04:34:21", "level": "INFO", "where": "live_ai.studio", "msg": "project queued", "project": 1, "clips": 13}
+{"ts": "2026-11-01T04:34:21", "level": "INFO", "where": "live_ai.http", "msg": "request", "method": "POST", "path": "/api/studio/projects/:id/start", "ms": 4}
+{"ts": "2026-11-01T04:34:21", "level": "INFO", "where": "live_ai.http", "msg": "request", "method": "GET", "path": "/api/studio/projects/:id", "ms": 4}
+{"ts": "2026-11-01T04:34:24", "level": "INFO", "where": "live_ai.http", "msg": "request", "method": "GET", "path": "/api/studio/projects/:id", "ms": 7}
+{"ts": "2026-11-01T04:34:27", "level": "INFO", "where": "live_ai.http", "msg": "request", "method": "GET", "path": "/api/studio/projects/:id", "ms": 5}
+{"ts": "2026-11-01T04:34:30", "level": "INFO", "where": "live_ai.http", "msg": "request", "method": "GET", "path": "/api/studio/projects/:id", "ms": 5}
+{"ts": "2026-11-01T04:34:33", "level": "INFO", "where": "live_ai.http", "msg": "request", "method": "GET", "path": "/api/studio/projects/:id", "ms": 8}
+{"ts": "2026-11-01T04:34:36", "level": "INFO", "where": "live_ai.http", "msg": "request", "method": "GET", "path": "/api/studio/projects/:id", "ms": 3}
+{"ts": "2026-11-01T04:34:39", "level": "INFO", "where": "live_ai.http", "msg": "request", "method": "GET", "path": "/api/studio/projects/:id", "ms": 7}
+{"ts": "2026-11-01T04:34:40", "level": "INFO", "where": "live_ai.media", "msg": "media saved", "user": 3, "media": "107dcef264a1f660ed0587c1", "kind": "video", "size_mb": 1.5, "seconds": 70.18, "origin": "studio"}
+{"ts": "2026-11-01T04:34:42", "level": "INFO", "where": "live_ai.http", "msg": "request", "method": "GET", "path": "/api/studio/projects/:id", "ms": 6}
+{"ts": "2026-11-01T04:34:45", "level": "INFO", "where": "live_ai.http", "msg": "request", "method": "GET", "path": "/api/studio/projects/:id", "ms": 3}
+{"ts": "2026-11-01T04:34:48", "level": "INFO", "where": "live_ai.http", "msg": "request", "method": "GET", "path": "/api/studio/projects/:id", "ms": 3}
+{"ts": "2026-11-01T04:34:51", "level": "INFO", "where": "live_ai.http", "msg": "request", "method": "GET", "path": "/api/studio/projects/:id", "ms": 4}
+{"ts": "2026-11-01T04:34:53", "level": "INFO", "where": "live_ai.media", "msg": "media saved", "user": 3, "media": "f496074ae4d4a34c515d50a5", "kind": "video", "size_mb": 2.0, "seconds": 70.18, "origin": "studio"}
+{"ts": "2026-11-01T04:34:54", "level": "INFO", "where": "live_ai.http", "msg": "request", "method": "GET", "path": "/api/studio/projects/:id", "ms": 3}
+{"ts": "2026-11-01T04:34:55", "level": "INFO", "where": "live_ai.studio", "msg": "project finished", "project": 1, "complete": true, "seconds": 34.1, "clips": 13, "missing": 0}
+{"ts": "2026-11-01T04:34:57", "level": "INFO", "where": "live_ai.http", "msg": "request", "method": "GET", "path": "/api/studio/projects/:id", "ms": 2}
+{"ts": "2026-11-01T04:34:57", "level": "INFO", "where": "live_ai.http", "msg": "request", "method": "GET", "path": "/api/media/:id/file", "ms": 0}
+{"ts": "2026-11-01T04:34:57", "level": "INFO", "where": "live_ai.http", "msg": "request", "method": "GET", "path": "/api/media/:id/file", "ms": 2}
+{"ts": "2026-11-01T04:34:58", "level": "INFO", "where": "live_ai.http", "msg": "request", "method": "POST", "path": "/api/studio/projects", "ms": 0}
+{"ts": "2026-11-01T04:34:58", "level": "INFO", "where": "live_ai.http", "msg": "request", "method": "PATCH", "path": "/api/studio/projects/:id", "ms": 1}
+{"ts": "2026-11-01T04:34:58", "level": "INFO", "where": "live_ai.media", "msg": "media saved", "user": 3, "media": "36b71a48dbddb0c56e2d4645", "kind": "video", "size_mb": 0.1, "seconds": 8.9, "origin": "studio"}
+{"ts": "2026-11-01T04:34:58", "level": "INFO", "where": "live_ai.media", "msg": "media saved", "user": 3, "media": "b123d2a06f55f85c375f82e2", "kind": "video", "size_mb": 0.0, "seconds": 4.0, "origin": "studio"}
+{"ts": "2026-11-01T04:34:58", "level": "INFO", "where": "live_ai.media", "msg": "media saved", "user": 3, "media": "92daa33191a2d11cd0940130", "kind": "video", "size_mb": 0.1, "seconds": 9.08, "origin": "studio"}
+{"ts": "2026-11-01T04:34:58", "level": "INFO", "where": "live_ai.media", "msg": "media saved", "user": 3, "media": "95fa340b78bc3bd53b4db950", "kind": "video", "size_mb": 0.0, "seconds": 4.0, "origin": "studio"}
+{"ts": "2026-11-01T04:34:58", "level": "INFO", "where": "live_ai.studio", "msg": "zip added", "project": 2, "added": 4, "skipped": 0}
+{"ts": "2026-11-01T04:34:58", "level": "INFO", "where": "live_ai.http", "msg": "request", "method": "POST", "path": "/api/studio/projects/:id/zip", "ms": 192}
+{"ts": "2026-11-01T04:34:58", "level": "INFO", "where": "live_ai.studio", "msg": "project queued", "project": 2, "clips": 4}
+{"ts": "2026-11-01T04:34:58", "level": "INFO", "where": "live_ai.http", "msg": "request", "method": "POST", "path": "/api/studio/projects/:id/start", "ms": 1}
+{"ts": "2026-11-01T04:34:58", "level": "INFO", "where": "live_ai.http", "msg": "request", "method": "GET", "path": "/api/studio/projects/:id", "ms": 1}
+{"ts": "2026-11-01T04:35:01", "level": "INFO", "where": "live_ai.http", "msg": "request", "method": "GET", "path": "/api/studio/projects/:id", "ms": 2}
+{"ts": "2026-11-01T04:35:04", "level": "INFO", "where": "live_ai.http", "msg": "request", "method": "GET", "path": "/api/studio/projects/:id", "ms": 1}
+{"ts": "2026-11-01T04:35:07", "level": "INFO", "where": "live_ai.http", "msg": "request", "method": "GET", "path": "/api/studio/projects/:id", "ms": 1}
+{"ts": "2026-11-01T04:35:11", "level": "INFO", "where": "live_ai.http", "msg": "request", "method": "GET", "path": "/api/studio/projects/:id", "ms": 1}
+{"ts": "2026-11-01T04:35:14", "level": "INFO", "where": "live_ai.http", "msg": "request", "method": "GET", "path": "/api/studio/projects/:id", "ms": 3}
+{"ts": "2026-11-01T04:35:17", "level": "INFO", "where": "live_ai.http", "msg": "request", "method": "GET", "path": "/api/studio/projects/:id", "ms": 1}
+{"ts": "2026-11-01T04:35:20", "level": "INFO", "where": "live_ai.http", "msg": "request", "method": "GET", "path": "/api/studio/projects/:id", "ms": 1}
+{"ts": "2026-11-01T04:35:23", "level": "INFO", "where": "live_ai.http", "msg": "request", "method": "GET", "path": "/api/studio/projects/:id", "ms": 5}
+{"ts": "2026-11-01T04:35:26", "level": "INFO", "where": "live_ai.http", "msg": "request", "method": "GET", "path": "/api/studio/projects/:id", "ms": 1}
+{"ts": "2026-11-01T04:35:29", "level": "INFO", "where": "live_ai.http", "msg": "request", "method": "GET", "path": "/api/studio/projects/:id", "ms": 3}
+{"ts": "2026-11-01T04:35:32", "level": "INFO", "where": "live_ai.http", "msg": "request", "method": "GET", "path": "/api/studio/projects/:id", "ms": 1}
+{"ts": "2026-11-01T04:35:35", "level": "INFO", "where": "live_ai.http", "msg": "request", "method": "GET", "path": "/api/studio/projects/:id", "ms": 3}
+{"ts": "2026-11-01T04:35:38", "level": "INFO", "where": "live_ai.http", "msg": "request", "method": "GET", "path": "/api/studio/projects/:id", "ms": 3}
+{"ts": "2026-11-01T04:35:41", "level": "INFO", "where": "live_ai.http", "msg": "request", "method": "GET", "path": "/api/studio/projects/:id", "ms": 1}
+{"ts": "2026-11-01T04:35:44", "level": "INFO", "where": "live_ai.http", "msg": "request", "method": "GET", "path": "/api/studio/projects/:id", "ms": 1}
+{"ts": "2026-11-01T04:35:47", "level": "INFO", "where": "live_ai.http", "msg": "request", "method": "GET", "path": "/api/studio/projects/:id", "ms": 1}
+{"ts": "2026-11-01T04:35:50", "level": "INFO", "where": "live_ai.http", "msg": "request", "method": "GET", "path": "/api/studio/projects/:id", "ms": 1}
+{"ts": "2026-11-01T04:35:53", "level": "INFO", "where": "live_ai.http", "msg": "request", "method": "GET", "path": "/api/studio/projects/:id", "ms": 1}
+{"ts": "2026-11-01T04:35:56", "level": "INFO", "where": "live_ai.http", "msg": "request", "method": "GET", "path": "/api/studio/projects/:id", "ms": 1}
+{"ts": "2026-11-01T04:35:59", "level": "INFO", "where": "live_ai.http", "msg": "request", "method": "GET", "path": "/api/studio/projects/:id", "ms": 3}
+{"ts": "2026-11-01T04:35:59", "level": "INFO", "where": "live_ai.studio", "msg": "vision vote", "project": 2, "clip": "b123d2a06f55f85c375f82e2", "choice": 0, "seconds": 26.0}
+{"ts": "2026-11-01T04:36:02", "level": "INFO", "where": "live_ai.http", "msg": "request", "method": "GET", "path": "/api/studio/projects/:id", "ms": 4}
+{"ts": "2026-11-01T04:36:05", "level": "INFO", "where": "live_ai.media", "msg": "media saved", "user": 3, "media": "96cf1439b6fb4818f7656b40", "kind": "video", "size_mb": 0.5, "seconds": 24.613, "origin": "studio"}
+{"ts": "2026-11-01T04:36:05", "level": "INFO", "where": "live_ai.http", "msg": "request", "method": "GET", "path": "/api/studio/projects/:id", "ms": 1}
+{"ts": "2026-11-01T04:36:05", "level": "INFO", "where": "live_ai.studio", "msg": "project finished", "project": 2, "complete": true, "seconds": 66.8, "clips": 4, "missing": 0}
+{"ts": "2026-11-01T04:36:08", "level": "INFO", "where": "live_ai.http", "msg": "request", "method": "GET", "path": "/api/studio/projects/:id", "ms": 1}
+{"ts": "2026-11-01T04:36:08", "level": "INFO", "where": "live_ai.http", "msg": "user created", "user": 4}
+{"ts": "2026-11-01T04:36:08", "level": "INFO", "where": "live_ai.http", "msg": "request", "method": "POST", "path": "/api/register", "ms": 0}
+{"ts": "2026-11-01T04:36:08", "level": "INFO", "where": "live_ai.growth", "msg": "page connected", "user": 4, "page": "1001", "followers": 1207}
+{"ts": "2026-11-01T04:36:08", "level": "INFO", "where": "live_ai.http", "msg": "request", "method": "POST", "path": "/api/growth/connect", "ms": 13}
+{"ts": "2026-11-01T04:36:08", "level": "INFO", "where": "live_ai.http", "msg": "request", "method": "PATCH", "path": "/api/growth/settings", "ms": 0}
+{"ts": "2026-11-01T04:36:08", "level": "INFO", "where": "live_ai.http", "msg": "request", "method": "POST", "path": "/api/growth/items", "ms": 0}
+{"ts": "2026-11-01T04:36:08", "level": "INFO", "where": "live_ai.http", "msg": "request", "method": "POST", "path": "/api/growth/items", "ms": 3}
+{"ts": "2026-11-01T04:36:08", "level": "INFO", "where": "live_ai.http", "msg": "request", "method": "POST", "path": "/api/growth/items", "ms": 0}
+{"ts": "2026-11-01T04:36:08", "level": "INFO", "where": "live_ai.http", "msg": "request", "method": "POST", "path": "/api/growth/items", "ms": 0}
+{"ts": "2026-11-01T04:36:08", "level": "INFO", "where": "live_ai.http", "msg": "request", "method": "GET", "path": "/api/growth", "ms": 1}
+{"ts": "2026-11-01T04:36:18", "level": "INFO", "where": "live_ai.http", "msg": "request", "method": "GET", "path": "/api/growth", "ms": 3}
+{"ts": "2026-11-01T04:36:26", "level": "INFO", "where": "live_ai.media", "msg": "media saved", "user": 4, "media": "42bb8b03487f275cf8e422a6", "kind": "image", "size_mb": 0.9, "seconds": 0.0, "origin": "growth"}
+{"ts": "2026-11-01T04:36:26", "level": "INFO", "where": "live_ai.growth", "msg": "post written", "user": 4, "item": 1, "kind": "question"}
+{"ts": "2026-11-01T04:36:28", "level": "INFO", "where": "live_ai.http", "msg": "request", "method": "GET", "path": "/api/growth", "ms": 3}
+{"ts": "2026-11-01T04:36:38", "level": "INFO", "where": "live_ai.http", "msg": "request", "method": "GET", "path": "/api/growth", "ms": 4}
+{"ts": "2026-11-01T04:36:42", "level": "INFO", "where": "live_ai.media", "msg": "media saved", "user": 4, "media": "137368af2625ec7b79a41833", "kind": "image", "size_mb": 0.9, "seconds": 0.0, "origin": "growth"}
+{"ts": "2026-11-01T04:36:42", "level": "INFO", "where": "live_ai.growth", "msg": "post written", "user": 4, "item": 2, "kind": "teaser"}
+{"ts": "2026-11-01T04:36:48", "level": "INFO", "where": "live_ai.http", "msg": "request", "method": "GET", "path": "/api/growth", "ms": 3}
+{"ts": "2026-11-01T04:36:58", "level": "INFO", "where": "live_ai.http", "msg": "request", "method": "GET", "path": "/api/growth", "ms": 3}
+{"ts": "2026-11-01T04:36:59", "level": "INFO", "where": "live_ai.media", "msg": "media saved", "user": 4, "media": "560cd952217e610006b08a32", "kind": "image", "size_mb": 0.8, "seconds": 0.0, "origin": "growth"}
+{"ts": "2026-11-01T04:36:59", "level": "INFO", "where": "live_ai.growth", "msg": "post written", "user": 4, "item": 3, "kind": "quote"}
+{"ts": "2026-11-01T04:37:08", "level": "INFO", "where": "live_ai.http", "msg": "request", "method": "GET", "path": "/api/growth", "ms": 3}
+{"ts": "2026-11-01T04:37:18", "level": "INFO", "where": "live_ai.http", "msg": "request", "method": "GET", "path": "/api/growth", "ms": 1}
+{"ts": "2026-11-01T04:37:22", "level": "INFO", "where": "live_ai.media", "msg": "media saved", "user": 4, "media": "9c820b76f0e4241b150b0261", "kind": "video", "size_mb": 0.3, "seconds": 15.8, "origin": "growth"}
+{"ts": "2026-11-01T04:37:22", "level": "INFO", "where": "live_ai.growth", "msg": "post written", "user": 4, "item": 4, "kind": "reel_text"}
+{"ts": "2026-11-01T04:37:28", "level": "INFO", "where": "live_ai.http", "msg": "request", "method": "GET", "path": "/api/growth", "ms": 1}
+{"ts": "2026-11-01T04:37:28", "level": "INFO", "where": "live_ai.http", "msg": "request", "method": "GET", "path": "/api/media/:id/file", "ms": 1}
+{"ts": "2026-11-01T04:37:28", "level": "INFO", "where": "live_ai.http", "msg": "request", "method": "GET", "path": "/api/media/:id/file", "ms": 1}
+{"ts": "2026-11-01T04:37:28", "level": "INFO", "where": "live_ai.http", "msg": "request", "method": "GET", "path": "/api/media/:id/file", "ms": 1}
+{"ts": "2026-11-01T04:37:28", "level": "INFO", "where": "live_ai.http", "msg": "request", "method": "GET", "path": "/api/media/:id/file", "ms": 0}
+{"ts": "2026-11-01T04:37:29", "level": "INFO", "where": "live_ai.http", "msg": "request", "method": "POST", "path": "/api/growth/items/:id/post", "ms": 0}
+{"ts": "2026-11-01T04:37:29", "level": "INFO", "where": "live_ai.http", "msg": "request", "method": "POST", "path": "/api/growth/items/:id/post", "ms": 5}
+{"ts": "2026-11-01T04:37:29", "level": "INFO", "where": "live_ai.http", "msg": "request", "method": "POST", "path": "/api/growth/items/:id/post", "ms": 0}
+{"ts": "2026-11-01T04:37:29", "level": "INFO", "where": "live_ai.growth", "msg": "posted", "user": 4, "item": 1, "kind": "question"}
+{"ts": "2026-11-01T04:37:29", "level": "INFO", "where": "live_ai.http", "msg": "request", "method": "POST", "path": "/api/growth/items/:id/post", "ms": 1}
+{"ts": "2026-11-01T04:37:29", "level": "INFO", "where": "live_ai.growth", "msg": "posted", "user": 4, "item": 2, "kind": "teaser"}
+{"ts": "2026-11-01T04:37:29", "level": "INFO", "where": "live_ai.growth", "msg": "posted", "user": 4, "item": 3, "kind": "quote"}
+{"ts": "2026-11-01T04:37:29", "level": "INFO", "where": "live_ai.growth", "msg": "posted", "user": 4, "item": 4, "kind": "reel_text"}
+{"ts": "2026-11-01T04:37:49", "level": "INFO", "where": "live_ai.http", "msg": "request", "method": "GET", "path": "/api/growth", "ms": 1}
+{"ts": "2026-11-01T04:37:49", "level": "INFO", "where": "live_ai.http", "msg": "request", "method": "POST", "path": "/api/growth/refresh", "ms": 13}
+{"ts": "2026-11-01T04:37:49", "level": "INFO", "where": "live_ai.http", "msg": "request", "method": "GET", "path": "/api/growth", "ms": 1}
+{"ts": "2026-11-01T04:38:43", "level": "INFO", "where": "live_ai.http", "msg": "request", "method": "POST", "path": "/api/growth/analyze", "ms": 54234}
+{"ts": "2026-11-01T04:38:43", "level": "INFO", "where": "live_ai.http", "msg": "shutting down"}
