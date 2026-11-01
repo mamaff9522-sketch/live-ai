@@ -1,1 +1,1 @@
-{"conversation_id": 49, "stats": {"seconds": 2.63, "prompt_tokens": 18, "reply_tokens": 28, "tokens_per_second": 12.65, "prompt_tokens_per_second": 36.67, "finish_reason": "stop", "memory": ""}, "reply": "สีโปรดของคุณคือ **สีเขียว** ครับ\n\nตามที่คุณบอกไว้แล้ว วันนี้คือ 2026-11-01"}
+{"conversation_id": 54, "stats": {"seconds": 1.25, "prompt_tokens": 18, "reply_tokens": 13, "tokens_per_second": 15.18, "prompt_tokens_per_second": 39.59, "finish_reason": "stop", "memory": ""}, "reply": "สีโปรดของคุณคือสีเขียวครับ (ตามข้อมูลที่จำไว้)"}
