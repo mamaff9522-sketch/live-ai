@@ -98,7 +98,13 @@ def file_order(names: list[str]) -> dict[str, tuple]:
     stamps = {n: RE_STAMP.search(n) for n in names}
     if names and all(stamps.values()):
         return {n: (0, "".join(stamps[n].groups()), natural_key(n)) for n in names}
-    return {n: (1, "", natural_key(n)) for n in names}
+    # numbered names ("คลิป 2", "scene_10"): the numbers give the order. Names that differ in more than
+    # their numbers (random ids) say nothing about the order: then the upload order decides.
+    shapes = [re.sub(r"\d+", "#", n) for n in names]
+    if names and all(re.search(r"\d", n) for n in names) \
+            and (len(names) == 1 or 2 <= max(shapes.count(x) for x in shapes) >= len(names) / 2):
+        return {n: (1, "", natural_key(n)) for n in names}
+    return {n: (2, "", []) for n in names}
 
 
 def match(script: dict, clips: list[dict], visual: dict | None = None, vl_votes: dict | None = None,

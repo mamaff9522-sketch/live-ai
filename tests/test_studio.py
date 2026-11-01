@@ -410,6 +410,16 @@ class ClipOrderAndUnscripted(unittest.TestCase):
         self.assertEqual(sorted(names, key=made.get), [names[1], names[3], names[0], names[2]])
         self.assertEqual(sorted(["คลิป 10.mp4", "คลิป 2.mp4"], key=M.file_order(["คลิป 10.mp4", "คลิป 2.mp4"]).get),
                          ["คลิป 2.mp4", "คลิป 10.mp4"])
+        # a long name is shortened in the middle, so the date-time at the end still orders the clips
+        long = "Meta_AI_" + "AQMHZM4UmKvtbC9v5hQazrF603L2iDSL6uB8iHNhBR2uyeHXQO9y4PN_VKoh16eOQdynjpTOv9ES7CBn0Rdg" + "_20261101_171319.mp4"
+        from live_ai.media import display_name
+        short = display_name(long)
+        self.assertEqual(len(short), 80)
+        self.assertTrue(short.startswith("Meta_AI_") and short.endswith("_20261101_171319.mp4"))
+        self.assertEqual(M.file_order([short, display_name(long.replace("171319", "171141"))])[short][0], 0)
+        # random ids without a date-time: upload order decides (equal keys)
+        keys = list(M.file_order(["Meta_AI_AQx9.mp4", "Meta_AI_BQz1.mp4"]).values())
+        self.assertEqual(keys[0], keys[1])
         from live_ai.studio.script import parse
         script = parse("ชัย: (ยื่นซอง) เอ้า! นี่เบี้ยเลี้ยงรอบพิเศษของสัปดาห์นี้\nตง: (ไหว้) ขอบคุณมากครับเฮียชัย ผมจะไม่ลืมพระคุณ")
         talk = {names[0]: "เอ้า นี่เบี้ยเลี้ยงรอบพิเศษของสัปดาห์นี้", names[2]: "ขอบคุณมากครับเฮียชัย ผมจะไม่ลืมพระคุณ",

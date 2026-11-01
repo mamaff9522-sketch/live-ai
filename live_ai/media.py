@@ -51,6 +51,14 @@ EXT_BY_TYPE = {
 }
 
 
+def display_name(name: str | None) -> str:
+    """File name as stored: printable, at most 80 characters. A long name keeps its start and its end:
+    phones and AI apps put the date-time (the order clips were made) and the extension last, e.g.
+    "Meta_AI_<long random id>_20261101_171141.mp4"."""
+    n = "".join(ch for ch in (name or "file") if ch.isprintable() and ch not in '/\\"') or "file"
+    return n if len(n) <= 80 else n[:40] + "…" + n[-39:]
+
+
 class MediaError(ValueError):
     pass
 
@@ -150,7 +158,7 @@ class MediaStore:
         return self._record(user_id, path.stem, info, name, path, origin)
 
     def _record(self, user_id, mid, info, name, path: Path, origin) -> dict:
-        safe_name = "".join(ch for ch in (name or "file") if ch.isprintable() and ch not in '/\\"')[:80] or "file"
+        safe_name = display_name(name)
         with self.store.conn() as c:
             c.execute("INSERT INTO media(id,user_id,kind,name,path,size,duration,width,height,has_audio,origin,created) "
                       "VALUES (?,?,?,?,?,?,?,?,?,?,?,?)",
