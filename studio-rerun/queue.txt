@@ -1,2 +1,2 @@
-project 3 was failed | clips 6 | script chars 222 | parsed {'shots': 2, 'dialogue_lines': 2, 'silent_shots': 0, 'narration_lines': 0, 'expected_seconds': 0}
+project 3 was needs_attention | clips 36 | script chars 5081 | parsed {'shots': 28, 'dialogue_lines': 27, 'silent_shots': 1, 'narration_lines': 0, 'expected_seconds': 0}
 QUEUED 3

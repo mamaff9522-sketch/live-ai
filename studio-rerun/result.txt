@@ -1,17 +1,40 @@
-status: done
-message: เสร็จสมบูรณ์ ผ่าน QA (53.4 วินาที, ใช้เวลา 43 วินาที) — มี 4 คลิปที่พูดนอกบท ใส่ตามลำดับที่สร้างคลิปและไม่มีซับ (วางบทให้ครบทั้งเรื่องแล้วกด Start ใหม่ จะได้ซับครบ)
-timeline: uploaded # 0 | shots [0] | kept 0.0 - 9.4 s | unscripted ต่ำ
-timeline: uploaded # 1 | shots [0] | kept 0.0 - 8.4 s | unscripted ต่ำ
-timeline: uploaded # 2 | shots [0] | kept 0.0 - 10.24 s | unscripted ต่ำ
-timeline: uploaded # 3 | shots [0] | kept 0.0 - 9.4 s | unscripted ต่ำ
-timeline: uploaded # 4 | shots [0] | kept 0.0 - 9.4 s | dialogue สูง
-timeline: uploaded # 5 | shots [1] | kept 0.0 - 6.5 s | dialogue สูง
+status: needs_attention
+message: ยังไม่สมบูรณ์: คลิปที่จับคู่ความมั่นใจต่ำ 3 คลิป (ต้องให้คนตรวจ)
+timeline: uploaded # 0 | shots [0] | kept 0.0 - 9.4 s | dialogue สูง
+timeline: uploaded # 6 | shots [1] | kept 0.0 - 4.78 s | dialogue สูง
+timeline: uploaded # 7 | shots [2] | kept 0.0 - 8.08 s | dialogue สูง
+timeline: uploaded # 1 | shots [3] | kept 0.0 - 8.4 s | dialogue สูง
+timeline: uploaded # 2 | shots [4] | kept 0.0 - 10.24 s | dialogue สูง
+timeline: uploaded # 3 | shots [5] | kept 0.0 - 9.4 s | dialogue สูง
+timeline: uploaded # 4 | shots [6] | kept 0.0 - 9.4 s | dialogue สูง
+timeline: uploaded # 5 | shots [7] | kept 0.0 - 4.4 s | dialogue สูง
+timeline: uploaded # 10 | shots [8] | kept 4.83 - 10.24 s | dialogue สูง
+timeline: uploaded # 11 | shots [9] | kept 0.73 - 7.03 s | dialogue กลาง
+timeline: uploaded # 19 | shots [10] | kept 0.0 - 9.6 s | dialogue ต่ำ
+timeline: uploaded # 30 | shots [11] | kept 0.0 - 10.24 s | dialogue สูง
+timeline: uploaded # 32 | shots [12] | kept 0.68 - 10.24 s | dialogue สูง
+timeline: uploaded # 28 | shots [13] | kept 2.55 - 10.24 s | dialogue สูง
+timeline: uploaded # 27 | shots [14] | kept 0.19 - 10.24 s | dialogue สูง
+timeline: uploaded # 26 | shots [15] | kept 1.15 - 10.24 s | dialogue สูง
+timeline: uploaded # 21 | shots [16] | kept 0.0 - 10.24 s | dialogue สูง
+timeline: uploaded # 35 | shots [17] | kept 0.85 - 9.6 s | dialogue สูง
+timeline: uploaded # 20 | shots [18] | kept 0.0 - 10.24 s | dialogue ต่ำ
+timeline: uploaded # 29 | shots [19] | kept 1.77 - 12.04 s | dialogue สูง
+timeline: uploaded # 25 | shots [20] | kept 0.0 - 12.04 s | dialogue สูง
+timeline: uploaded # 34 | shots [21] | kept 0.0 - 3.73 s | dialogue สูง
+timeline: uploaded # 13 | shots [22] | kept 0.0 - 10.24 s | dialogue ต่ำ
+timeline: uploaded # 18 | shots [22] | kept 0.0 - 10.24 s | dialogue กลาง
+timeline: uploaded # 16 | shots [23] | kept 1.31 - 8.93 s | dialogue กลาง
+timeline: uploaded # 15 | shots [24] | kept 0.02 - 10.24 s | dialogue สูง
+timeline: uploaded # 12 | shots [25] | kept 0.5 - 10.24 s | dialogue สูง
+timeline: uploaded # 14 | shots [26] | kept 0.0 - 4.6 s | dialogue สูง
+timeline: uploaded # 9 | shots [27] | kept 0.0 - 5.0 s | silent-visual กลาง
 missing shots: 0
-issues by type: {'unscripted': 4, 'continuity': 4, 'clip': 16}
+issues by type: {'uncertain': 3, 'alternate': 2, 'check_silent': 1, 'duplicate': 5, 'continuity': 15, 'light': 1, 'clip': 70}
 qa: OK  ไฟล์ MP4 เปิดและถอดรหัสได้ครบทั้งไฟล์
-qa: OK  ความยาวรวม 53.39 วิ ตรงกับ Timeline 53.34 วิ
+qa: OK  ความยาวรวม 245.14 วิ ตรงกับ Timeline 244.97 วิ
 qa: OK  มีทั้งภาพและเสียง
-qa: OK  ภาพและเสียงยาวเท่ากัน (ต่างกัน 0.05 วิ)
+qa: OK  ภาพและเสียงยาวเท่ากัน (ต่างกัน 0.07 วิ)
 qa: OK  ไม่มีคลิปซ้ำใน Timeline
 qa: OK  ครบทุกช็อตตามบท (ขาด 0)
 qa: OK  บทพูดไม่ซ้ำ
@@ -19,5 +42,5 @@ qa: OK  ลำดับเนื้อเรื่องเดินหน้า
 qa: OK  ซับตรงตามบททุกตัวอักษร
 qa: OK  เวลาซับอยู่ในวิดีโอ ไม่ทับกัน
 qa: OK  ไม่ตัดคำพูดทิ้ง
-qa: OK  คลิปที่จับคู่ความมั่นใจต่ำ 0 คลิป (ต้องให้คนตรวจ)
-video: True | review copy: False | subtitles file: True | burned subs: False
+qa: NO  คลิปที่จับคู่ความมั่นใจต่ำ 3 คลิป (ต้องให้คนตรวจ)
+video: False | review copy: True | subtitles file: True | burned subs: False
