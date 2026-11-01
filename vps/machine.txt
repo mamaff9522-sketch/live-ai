@@ -6,4 +6,4 @@ Ubuntu 22.04.5 LTS
 == ram_mb
 3911
 == disk_free_gb
-60
+59
