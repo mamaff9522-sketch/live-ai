@@ -1,3 +1,4 @@
+reg_closed.json 403
 reg_a.json 201
 reg_b.json 201
 hello.json 200
