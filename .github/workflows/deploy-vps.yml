@@ -16,6 +16,10 @@ on:
         description: "Only test the running Live AI (no install)"
         type: boolean
         default: false
+      private:
+        description: "Owner-only: close sign-up of new users (LIVEAI_OPEN_REGISTRATION=0)"
+        type: boolean
+        default: true
 
 permissions:
   contents: write
@@ -76,7 +80,8 @@ jobs:
           . ./ssh.sh
           ssh 'cat > /tmp/live-ai-install.sh' < scripts/install.sh
           set -o pipefail
-          timeout 2400 bash -c ". ./ssh.sh; ssh 'bash /tmp/live-ai-install.sh' < /dev/null" 2>&1 | tee vps/install.log || echo "installer did not finish by itself - checking the machine"
+          REG=$([ "${{ inputs.private }}" = "false" ] && echo 1 || echo 0)
+          timeout 2400 bash -c ". ./ssh.sh; ssh 'LIVEAI_OPEN_REGISTRATION=$REG bash /tmp/live-ai-install.sh' < /dev/null" 2>&1 | tee vps/install.log || echo "installer did not finish by itself - checking the machine"
           set +o pipefail
           URL=$(grep -o 'https://[a-z0-9-]*\.trycloudflare\.com' vps/install.log | head -1)
           [ -n "$URL" ] || URL=$(ssh 'docker logs live-ai-link 2>&1' < /dev/null | grep -o 'https://[a-z0-9-]*\.trycloudflare\.com' | tail -1)
@@ -99,8 +104,12 @@ jobs:
           cat vps/health.json; echo
           # every request records its HTTP status, so a failure shows exactly what the server answered
           call() { local out=$1; shift; local code; code=$(curl -sS -o "vps/$out" -w "%{http_code}" "$@"); echo "$out HTTP $code: $(head -c 400 "vps/$out")"; echo "$out $code" >> vps/status.txt; }
-          call reg_a.json -X POST "$URL/api/register" -H 'Content-Type: application/json' -d '{"name":"ทดสอบ A"}'
-          call reg_b.json -X POST "$URL/api/register" -H 'Content-Type: application/json' -d '{"name":"ทดสอบ B"}'
+          # test users are created with the admin key, so the test also works when sign-up is closed
+          AK=$(ssh 'cat ~/.live-ai-admin-key 2>/dev/null' < /dev/null); [ -n "$AK" ] && echo "::add-mask::$AK"
+          call reg_closed.json -X POST "$URL/api/register" -H 'Content-Type: application/json' -d '{"name":"คนนอก"}'
+          echo "::notice::model=$(jq -r 'if (.model|type)=="object" then .model.model else .model end // empty' vps/health.json) signup_without_key=$(tail -1 vps/status.txt)"
+          call reg_a.json -X POST "$URL/api/register" -H 'Content-Type: application/json' -H "X-Admin-Key: $AK" -d '{"name":"ทดสอบ A"}'
+          call reg_b.json -X POST "$URL/api/register" -H 'Content-Type: application/json' -H "X-Admin-Key: $AK" -d '{"name":"ทดสอบ B"}'
           A=$(jq -r .token vps/reg_a.json); B=$(jq -r .token vps/reg_b.json)
           ask() { call "$1" -X POST "$URL/api/chat" -H "Authorization: Bearer $2" -H 'Content-Type: application/json' -d "{\"message\":\"$3\",\"stream\":false}"; }
           s=$(date +%s.%N); ask hello.json "$A" "สวัสดีครับ แนะนำตัวสั้น ๆ"
