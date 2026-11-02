@@ -463,7 +463,7 @@ class Studio:
                   "timeline": timeline,
                   "complete": complete}
         unused = [c["name"] for c in clips if c["id"] in {i["clip"] for i in plan["issues"] if i.get("type") == "extra"}]
-        outside = [i["name"] for i in timeline["video"] if i.get("unscripted")]
+        outside = [i["name"] for i in timeline["video"] if i.get("unscripted") and not i.get("confirmed")]
         if complete:
             msg = f"เสร็จสมบูรณ์ ผ่าน QA ({out['duration']:.1f} วินาที, ใช้เวลา {secs:.0f} วินาที)"
             if outside:
