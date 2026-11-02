@@ -1,16 +1,16 @@
 ffmpeg version 8.0.1-3ubuntu2 Copyright (c) 2000-2025 the FFmpeg developers
 Ubuntu 26.04.1 LTS
 4
-plain rc=0 secs=.317226501 
-apad_bare rc=0 secs=.324423835 
-arnndn rc=124 secs=15.113074672 
-arnndn_mono_first rc=0 secs=.321641785 
-afftdn rc=124 secs=15.104984117 
-volume_expr rc=0 secs=.304625988 
-full rc=124 secs=15.113239424 
-highpass_only rc=0 secs=.306211279 
-used_now rc=124 secs=15.118593450 
-pad_first_rnn rc=124 secs=15.112386282 
-pad_first_fft rc=124 secs=15.104376583 
-afftdn_now rc=124 secs=15.107332866 
-two_pass rc1=0 rc2=0 secs=.402923391
+plain rc=0 secs=.281091651 
+apad_bare rc=0 secs=.284033882 
+arnndn rc=124 secs=15.094976912 
+arnndn_mono_first rc=0 secs=.265129758 
+afftdn rc=124 secs=15.087793826 
+volume_expr rc=0 secs=.258649214 
+full rc=124 secs=15.093572968 
+highpass_only rc=0 secs=.258483063 
+used_now rc=124 secs=15.095814270 
+pad_first_rnn rc=124 secs=15.094635565 
+pad_first_fft rc=124 secs=15.092435059 
+afftdn_now rc=124 secs=15.093491155 
+two_pass rc1=0 rc2=0 secs=.382360316
