@@ -5,61 +5,61 @@ latest: Pulling from mamaff9522-sketch/live-ai
 0922d1fc1a5f: Pulling fs layer
 b41621e272b0: Pulling fs layer
 64074ecd150a: Pulling fs layer
-014c5979f1e4: Pulling fs layer
-9a7d5d60b657: Pulling fs layer
-b27ffadf0438: Pulling fs layer
-530e9b1caa0f: Pulling fs layer
-36bcf4fe7d35: Pulling fs layer
-451e1ed8c6c9: Pulling fs layer
-c7782ae48154: Pulling fs layer
+f80f5f1b3468: Pulling fs layer
+736231428c46: Pulling fs layer
+14649960fc6e: Pulling fs layer
+f79667652508: Pulling fs layer
+ece64b9d6db1: Pulling fs layer
+729ab3fcbf03: Pulling fs layer
+625c767af29b: Pulling fs layer
+f80f5f1b3468: Waiting
+ece64b9d6db1: Waiting
+736231428c46: Waiting
+729ab3fcbf03: Waiting
+14649960fc6e: Waiting
+625c767af29b: Waiting
+f79667652508: Waiting
 64074ecd150a: Waiting
-014c5979f1e4: Waiting
-9a7d5d60b657: Waiting
-b27ffadf0438: Waiting
-530e9b1caa0f: Waiting
-36bcf4fe7d35: Waiting
-451e1ed8c6c9: Waiting
-c7782ae48154: Waiting
+b41621e272b0: Verifying Checksum
+b41621e272b0: Download complete
 0922d1fc1a5f: Verifying Checksum
 0922d1fc1a5f: Download complete
 64074ecd150a: Verifying Checksum
 64074ecd150a: Download complete
-b41621e272b0: Verifying Checksum
-b41621e272b0: Download complete
 042034c376f6: Verifying Checksum
 042034c376f6: Download complete
-9a7d5d60b657: Download complete
-530e9b1caa0f: Verifying Checksum
-530e9b1caa0f: Download complete
-b27ffadf0438: Verifying Checksum
-b27ffadf0438: Download complete
-36bcf4fe7d35: Verifying Checksum
-36bcf4fe7d35: Download complete
-451e1ed8c6c9: Verifying Checksum
-451e1ed8c6c9: Download complete
-c7782ae48154: Verifying Checksum
-c7782ae48154: Download complete
+736231428c46: Verifying Checksum
+736231428c46: Download complete
+14649960fc6e: Verifying Checksum
+14649960fc6e: Download complete
+f79667652508: Download complete
+ece64b9d6db1: Verifying Checksum
+ece64b9d6db1: Download complete
+729ab3fcbf03: Verifying Checksum
+729ab3fcbf03: Download complete
+625c767af29b: Verifying Checksum
+625c767af29b: Download complete
 042034c376f6: Pull complete
-014c5979f1e4: Verifying Checksum
-014c5979f1e4: Download complete
+f80f5f1b3468: Verifying Checksum
+f80f5f1b3468: Download complete
 0922d1fc1a5f: Pull complete
 b41621e272b0: Pull complete
 64074ecd150a: Pull complete
-014c5979f1e4: Pull complete
-9a7d5d60b657: Pull complete
-b27ffadf0438: Pull complete
-530e9b1caa0f: Pull complete
-36bcf4fe7d35: Pull complete
-451e1ed8c6c9: Pull complete
-c7782ae48154: Pull complete
-Digest: sha256:7e4c4c4016c27923ee3fb582c3e590c8f58722464af636c202362fe4ab37d35c
+f80f5f1b3468: Pull complete
+736231428c46: Pull complete
+14649960fc6e: Pull complete
+f79667652508: Pull complete
+ece64b9d6db1: Pull complete
+729ab3fcbf03: Pull complete
+625c767af29b: Pull complete
+Digest: sha256:42e5ea8819c40616cfd135484977a0a1d187c215ed4914716b4c664e34a01385
 Status: Downloaded newer image for ghcr.io/mamaff9522-sketch/live-ai:latest
 ghcr.io/mamaff9522-sketch/live-ai:latest
 
 [1mเริ่มระบบ…[0m
 
 [1mรอโมเดลโหลด (ครั้งแรกต้องดาวน์โหลด ~1.3 GB อาจใช้ 2–10 นาที)…[0m
-{"ok": true, "model": {"state": "ready", "restarts": 0, "error": "", "vision": true, "model": "Qwen3.5-2B-Q4_K_M.gguf", "pid": 49}, "uptime_s": 24, "threads": 4, "ctx": 16384, "ram_mb": {"model": 3387.7, "app": 40.4, "total": 15941, "available": 12542}, "cpu_percent": {"model": null, "cores": 4}, "disk_free_mb": 106557}
+{"ok": true, "model": {"state": "ready", "restarts": 0, "error": "", "vision": true, "model": "Qwen3.5-2B-Q4_K_M.gguf", "pid": 22}, "uptime_s": 14, "threads": 4, "ctx": 16384, "ram_mb": {"model": 3387.7, "app": 39.8, "total": 15941, "available": 12510}, "cpu_percent": {"model": null, "cores": 4}, "disk_free_mb": 106557}
 
 [1mเปิดลิงก์ HTTPS ฟรี…[0m
 Unable to find image 'cloudflare/cloudflared:latest' locally
@@ -82,7 +82,6 @@ ebddc55facdc: Pulling fs layer
 52b2cf548ae5: Pulling fs layer
 8072b5a0f795: Pulling fs layer
 162cafc536ad: Pulling fs layer
-f6069939f718: Waiting
 d6b1b89eccac: Waiting
 2780920e5dbf: Waiting
 7c12895b777b: Waiting
@@ -94,42 +93,40 @@ ebddc55facdc: Waiting
 27c9677c4831: Waiting
 2ee8cec66b40: Waiting
 9e203bbce348: Waiting
-162cafc536ad: Waiting
+f6069939f718: Waiting
 52b2cf548ae5: Waiting
 8072b5a0f795: Waiting
+162cafc536ad: Waiting
 c172f21841df: Verifying Checksum
 c172f21841df: Download complete
-401d177fd1e8: Verifying Checksum
-401d177fd1e8: Download complete
-218cf840d0d9: Verifying Checksum
 218cf840d0d9: Download complete
+401d177fd1e8: Download complete
 401d177fd1e8: Pull complete
 d6b1b89eccac: Verifying Checksum
 d6b1b89eccac: Download complete
-f6069939f718: Verifying Checksum
 f6069939f718: Download complete
 2780920e5dbf: Verifying Checksum
 2780920e5dbf: Download complete
-7c12895b777b: Download complete
+7c12895b777b: Verifying Checksum
 3214acf345c0: Verifying Checksum
 3214acf345c0: Download complete
 52630fc75a18: Verifying Checksum
 52630fc75a18: Download complete
 dd64bf2dd177: Verifying Checksum
 dd64bf2dd177: Download complete
+b839dfae01f6: Verifying Checksum
 b839dfae01f6: Download complete
 ebddc55facdc: Verifying Checksum
 ebddc55facdc: Download complete
 27c9677c4831: Verifying Checksum
 27c9677c4831: Download complete
-9e203bbce348: Verifying Checksum
-9e203bbce348: Download complete
 2ee8cec66b40: Verifying Checksum
 2ee8cec66b40: Download complete
-8072b5a0f795: Verifying Checksum
-8072b5a0f795: Download complete
+9e203bbce348: Verifying Checksum
+9e203bbce348: Download complete
 52b2cf548ae5: Verifying Checksum
 52b2cf548ae5: Download complete
+8072b5a0f795: Download complete
 162cafc536ad: Verifying Checksum
 162cafc536ad: Download complete
 c172f21841df: Pull complete
@@ -155,7 +152,7 @@ Status: Downloaded newer image for cloudflare/cloudflared:latest
 (ข้ามลิงก์ถาวร: LIVEAI_HTTPS=0)
 
 [1mเสร็จแล้ว[0m
-ลิงก์ใช้งาน:  https://sarah-mtv-sized-engines.trycloudflare.com
-สตูดิโอตัดต่อ: https://sarah-mtv-sized-engines.trycloudflare.com/studio
+ลิงก์ใช้งาน:  https://highly-predicted-applicants-blocked.trycloudflare.com
+สตูดิโอตัดต่อ: https://highly-predicted-applicants-blocked.trycloudflare.com/studio
 รหัสผู้ดูแล (สำรองข้อมูล): เก็บไว้ที่ /home/runner/.live-ai-admin-key
 หมายเหตุ: ลิงก์ trycloudflare จะเปลี่ยนเมื่อเครื่องรีสตาร์ต — ดูลิงก์ใหม่ด้วย: sudo docker logs live-ai-link 2>&1 | grep trycloudflare
