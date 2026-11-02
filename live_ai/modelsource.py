@@ -1,4 +1,4 @@
-"""Finds the Qwen3.5-2B Q4_K_M GGUF file on Hugging Face.
+"""Finds the Qwen3.5-2B Q4_K_M GGUF file on Hugging Face (unlocked variant by default, see VARIANT).
 
 Trusted publishers are tried in order (the Qwen team first). For the file found,
 Hugging Face's API gives its SHA-256, which the download is checked against.
@@ -13,12 +13,21 @@ import re
 import sys
 import urllib.request
 
-TRUSTED_REPOS = [
+STANDARD_REPOS = [
     "Qwen/Qwen3.5-2B-GGUF",                 # official Qwen team
     "unsloth/Qwen3.5-2B-GGUF",              # Unsloth (well-known quantizer)
     "bartowski/Qwen_Qwen3.5-2B-GGUF",
     "lmstudio-community/Qwen3.5-2B-GGUF",
 ]
+# Unlocked ("abliterated") Qwen3.5-2B by huihui-ai (Apache-2.0): the same model with its trained-in refusals
+# removed, chosen by the owner for private use. GGUF quantization by mradermacher.
+UNCENSORED_REPOS = [
+    "mradermacher/Huihui-Qwen3.5-2B-abliterated-GGUF",
+]
+# LIVEAI_MODEL_VARIANT=uncensored (default) | standard (the original Qwen with its refusals)
+VARIANT = os.environ.get("LIVEAI_MODEL_VARIANT", "uncensored").strip().lower()
+# if the unlocked file cannot be found, the original Qwen is used so Live AI keeps working
+TRUSTED_REPOS = (UNCENSORED_REPOS + STANDARD_REPOS) if VARIANT != "standard" else list(STANDARD_REPOS)
 QUANT = os.environ.get("LIVEAI_QUANT", "Q4_K_M")
 
 

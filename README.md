@@ -100,3 +100,11 @@ LIVEAI_LLAMA_SERVER=/path/to/llama-server python -m live_ai     # เปิด h
 # หรือ
 docker build -t live-ai . && docker run -p 7860:7860 -v live-ai-data:/data live-ai
 ```
+
+## โมเดล
+
+ค่าเริ่มต้นใช้ **Huihui-Qwen3.5-2B-abliterated** (Qwen3.5-2B รุ่นปลดล็อก ไม่มีการปฏิเสธที่ฝึกมาจากโรงงาน, Apache-2.0)
+จาก `mradermacher/Huihui-Qwen3.5-2B-abliterated-GGUF` ไฟล์ Q4_K_M ~1.4 GB — ถ้าหาไฟล์ไม่เจอจะใช้ Qwen ตัวเดิมแทนอัตโนมัติ
+
+- กลับไปใช้ Qwen ตัวเดิม: ตั้ง `LIVEAI_MODEL_VARIANT=standard` แล้วติดตั้งซ้ำ
+- ใช้คนเดียว: ปิดการสมัครสมาชิกด้วย `LIVEAI_OPEN_REGISTRATION=0`

@@ -9,6 +9,7 @@
 #   2. starts Live AI in a container that restarts by itself (data kept in the Docker volume "liveai-data")
 #   3. opens a free HTTPS link through a Cloudflare quick tunnel (no account, no open ports needed)
 # Run it again to update to the newest version; your users, chats and projects are kept.
+# Model: unlocked Qwen3.5-2B by default; original Qwen with: LIVEAI_MODEL_VARIANT=standard bash install.sh
 # Undo: docker rm -f live-ai live-ai-link   (add: docker volume rm liveai-data  — only if you want the data gone)
 set -euo pipefail
 
@@ -53,6 +54,8 @@ $DOCKER volume create liveai-data >/dev/null
 $DOCKER run -d --name live-ai --restart unless-stopped \
   -p "127.0.0.1:${PORT}:7860" -v liveai-data:/data \
   -e LIVEAI_ADMIN_KEY="$(cat "$ADMIN_FILE")" \
+  ${LIVEAI_MODEL_VARIANT:+-e LIVEAI_MODEL_VARIANT="$LIVEAI_MODEL_VARIANT"} \
+  ${LIVEAI_OPEN_REGISTRATION:+-e LIVEAI_OPEN_REGISTRATION="$LIVEAI_OPEN_REGISTRATION"} \
   "$IMAGE" >/dev/null
 
 say "รอโมเดลโหลด (ครั้งแรกต้องดาวน์โหลด ~1.3 GB อาจใช้ 2–10 นาที)…"
