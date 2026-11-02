@@ -1,7 +1,7 @@
 {
-  "repo": "unsloth/Qwen3.5-2B-GGUF",
-  "file": "Qwen3.5-2B-Q4_K_M.gguf",
-  "size": 1280835840,
-  "sha256": "aaf42c8b7c3cab2bf3d69c355048d4a0ee9973d48f16c731c0520ee914699223",
-  "url": "https://huggingface.co/unsloth/Qwen3.5-2B-GGUF/resolve/main/Qwen3.5-2B-Q4_K_M.gguf"
+  "repo": "mradermacher/Huihui-Qwen3.5-2B-abliterated-GGUF",
+  "file": "Huihui-Qwen3.5-2B-abliterated.Q4_K_M.gguf",
+  "size": 1270809024,
+  "sha256": "aa25eea787afe56a097268f7ed3460cb623e1901d2e89cd2b654cabb42f80636",
+  "url": "https://huggingface.co/mradermacher/Huihui-Qwen3.5-2B-abliterated-GGUF/resolve/main/Huihui-Qwen3.5-2B-abliterated.Q4_K_M.gguf"
 }
