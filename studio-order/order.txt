@@ -1,37 +1,37 @@
 project 3 clips 36 | names with a date-time: 0
-up# 0 made-rank None | 10.24s 4842KB head-hash feca1f | timeline pos  0 | 
-up# 1 made-rank None | 10.24s 5146KB head-hash 110786 | timeline pos  3 | 
-up# 2 made-rank None | 10.24s 4598KB head-hash 3880a0 | timeline pos  4 | 
-up# 3 made-rank None | 10.24s 3444KB head-hash f33abf | timeline pos  5 | 
-up# 4 made-rank None | 10.24s 3313KB head-hash d1b034 | timeline pos  6 | 
-up# 5 made-rank None | 10.24s 3805KB head-hash 3e9a0a | timeline pos  7 | 
-up# 6 made-rank None | 10.24s 5792KB head-hash 3c9430 | timeline pos  1 | 
-up# 7 made-rank None | 10.24s 3493KB head-hash 2ff5bd | timeline pos  2 | 
-up# 8 made-rank None | 10.24s 4842KB head-hash feca1f | timeline pos  - | duplicate of up#0
-up# 9 made-rank None | 10.24s 4395KB head-hash ae9b73 | timeline pos 28 | 
-up#10 made-rank None | 10.24s 6266KB head-hash 553ced | timeline pos  8 | 
-up#11 made-rank None | 10.24s 4096KB head-hash ed0c1a | timeline pos  9 | 
-up#12 made-rank None | 10.24s 2490KB head-hash bd59fd | timeline pos 26 | 
-up#13 made-rank None | 10.24s 2309KB head-hash bf2d80 | timeline pos 22 | 
-up#14 made-rank None | 10.24s 3271KB head-hash 1e6c29 | timeline pos 27 | 
-up#15 made-rank None | 10.24s 3099KB head-hash 6855f7 | timeline pos 25 | 
-up#16 made-rank None | 10.24s 3037KB head-hash 77ab30 | timeline pos 24 | 
-up#17 made-rank None | 10.24s 2336KB head-hash 1e972c | timeline pos  - | alternate of up#5
-up#18 made-rank None | 10.24s 3099KB head-hash 498f21 | timeline pos 23 | 
-up#19 made-rank None | 10.24s 2783KB head-hash ef2660 | timeline pos 10 | 
-up#20 made-rank None | 10.24s 2846KB head-hash 6ecf0f | timeline pos 18 | 
-up#21 made-rank None | 10.24s 2598KB head-hash 42445f | timeline pos 16 | 
-up#22 made-rank None | 10.24s 3805KB head-hash 3e9a0a | timeline pos  - | duplicate of up#5
-up#23 made-rank None | 10.24s 3313KB head-hash d1b034 | timeline pos  - | duplicate of up#4
-up#24 made-rank None | 10.24s 3805KB head-hash 3e9a0a | timeline pos  - | duplicate of up#5
-up#25 made-rank None | 12.04s 6074KB head-hash c52048 | timeline pos 20 | 
-up#26 made-rank None | 10.24s 6686KB head-hash 2a48ae | timeline pos 15 | 
-up#27 made-rank None | 10.24s 4253KB head-hash a89fd1 | timeline pos 14 | 
-up#28 made-rank None | 10.24s 5123KB head-hash eb4314 | timeline pos 13 | 
-up#29 made-rank None | 12.04s 4226KB head-hash d0dc25 | timeline pos 19 | 
-up#30 made-rank None | 10.24s 6080KB head-hash 8cb315 | timeline pos 11 | 
-up#31 made-rank None | 5.21s 11210KB head-hash d0f7ac | timeline pos  - | alternate of up#30
-up#32 made-rank None | 10.24s 5600KB head-hash 7f77df | timeline pos 12 | 
-up#33 made-rank None | 10.24s 5792KB head-hash 3c9430 | timeline pos  - | duplicate of up#6
-up#34 made-rank None | 12.04s 4948KB head-hash bbc497 | timeline pos 21 | 
-up#35 made-rank None | 10.24s 4785KB head-hash b0c67b | timeline pos 17 | 
+up# 0 made-rank None number-rank  0 shape '#.mp#' | 10.24s 4842KB head-hash feca1f | timeline pos  0 | 
+up# 1 made-rank None number-rank  1 shape '#.mp#' | 10.24s 5146KB head-hash 110786 | timeline pos  3 | 
+up# 2 made-rank None number-rank  2 shape '#.mp#' | 10.24s 4598KB head-hash 3880a0 | timeline pos  4 | 
+up# 3 made-rank None number-rank  3 shape '#.mp#' | 10.24s 3444KB head-hash f33abf | timeline pos  5 | 
+up# 4 made-rank None number-rank  4 shape '#.mp#' | 10.24s 3313KB head-hash d1b034 | timeline pos  6 | 
+up# 5 made-rank None number-rank  5 shape '#.mp#' | 10.24s 3805KB head-hash 3e9a0a | timeline pos  7 | 
+up# 6 made-rank None number-rank 23 shape '#.mp#' | 10.24s 5792KB head-hash 3c9430 | timeline pos  1 | 
+up# 7 made-rank None number-rank 21 shape '#.mp#' | 10.24s 3493KB head-hash 2ff5bd | timeline pos  2 | 
+up# 8 made-rank None number-rank 22 shape '#.mp#' | 10.24s 4842KB head-hash feca1f | timeline pos  - | duplicate of up#0
+up# 9 made-rank None number-rank 20 shape '#.mp#' | 10.24s 4395KB head-hash ae9b73 | timeline pos 28 | 
+up#10 made-rank None number-rank 19 shape '#.mp#' | 10.24s 6266KB head-hash 553ced | timeline pos  8 | 
+up#11 made-rank None number-rank 18 shape '#.mp#' | 10.24s 4096KB head-hash ed0c1a | timeline pos  9 | 
+up#12 made-rank None number-rank 17 shape '#.mp#' | 10.24s 2490KB head-hash bd59fd | timeline pos 26 | 
+up#13 made-rank None number-rank 16 shape '#.mp#' | 10.24s 2309KB head-hash bf2d80 | timeline pos 22 | 
+up#14 made-rank None number-rank 15 shape '#.mp#' | 10.24s 3271KB head-hash 1e6c29 | timeline pos 27 | 
+up#15 made-rank None number-rank 13 shape '#.mp#' | 10.24s 3099KB head-hash 6855f7 | timeline pos 25 | 
+up#16 made-rank None number-rank 14 shape '#.mp#' | 10.24s 3037KB head-hash 77ab30 | timeline pos 24 | 
+up#17 made-rank None number-rank 12 shape '#.mp#' | 10.24s 2336KB head-hash 1e972c | timeline pos  - | alternate of up#5
+up#18 made-rank None number-rank 11 shape '#.mp#' | 10.24s 3099KB head-hash 498f21 | timeline pos 23 | 
+up#19 made-rank None number-rank  9 shape '#.mp#' | 10.24s 2783KB head-hash ef2660 | timeline pos 10 | 
+up#20 made-rank None number-rank 10 shape '#.mp#' | 10.24s 2846KB head-hash 6ecf0f | timeline pos 18 | 
+up#21 made-rank None number-rank  8 shape '#.mp#' | 10.24s 2598KB head-hash 42445f | timeline pos 16 | 
+up#22 made-rank None number-rank  7 shape '#.mp#' | 10.24s 3805KB head-hash 3e9a0a | timeline pos  - | duplicate of up#5
+up#23 made-rank None number-rank  6 shape '#.mp#' | 10.24s 3313KB head-hash d1b034 | timeline pos  - | duplicate of up#4
+up#24 made-rank None number-rank  5 shape '#.mp#' | 10.24s 3805KB head-hash 3e9a0a | timeline pos  - | duplicate of up#5
+up#25 made-rank None number-rank 31 shape '#.mp#' | 12.04s 6074KB head-hash c52048 | timeline pos 20 | 
+up#26 made-rank None number-rank 30 shape '#.mp#' | 10.24s 6686KB head-hash 2a48ae | timeline pos 15 | 
+up#27 made-rank None number-rank 29 shape '#.mp#' | 10.24s 4253KB head-hash a89fd1 | timeline pos 14 | 
+up#28 made-rank None number-rank 28 shape '#.mp#' | 10.24s 5123KB head-hash eb4314 | timeline pos 13 | 
+up#29 made-rank None number-rank 27 shape '#.mp#' | 12.04s 4226KB head-hash d0dc25 | timeline pos 19 | 
+up#30 made-rank None number-rank 26 shape '#.mp#' | 10.24s 6080KB head-hash 8cb315 | timeline pos 11 | 
+up#31 made-rank None number-rank 25 shape '#.mp#' | 5.21s 11210KB head-hash d0f7ac | timeline pos  - | alternate of up#30
+up#32 made-rank None number-rank 24 shape '#.mp#' | 10.24s 5600KB head-hash 7f77df | timeline pos 12 | 
+up#33 made-rank None number-rank 23 shape '#.mp#' | 10.24s 5792KB head-hash 3c9430 | timeline pos  - | duplicate of up#6
+up#34 made-rank None number-rank 32 shape '#.mp#' | 12.04s 4948KB head-hash bbc497 | timeline pos 21 | 
+up#35 made-rank None number-rank 33 shape '#.mp#' | 10.24s 4785KB head-hash b0c67b | timeline pos 17 | 
