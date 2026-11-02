@@ -132,7 +132,8 @@ class Studio(unittest.TestCase):
         code, p = self.call("POST", "/api/studio/projects", {"name": "ไฟแค้นซ่อนรัก ตอนทดสอบ"}, t)
         self.assertEqual(code, 201)
         code, p = self.call("PATCH", f"/api/studio/projects/{p['id']}", {"script_text": SCRIPT, "settings": {
-            "aspect": "9:16", "range_from": rng[0], "range_to": rng[1]}}, t)
+            # the synthetic clips squeeze each line into 2.4 s: speed checks are a test of their own
+            "aspect": "9:16", "range_from": rng[0], "range_to": rng[1], "speech_speed": "original"}}, t)
         self.assertEqual(code, 200, p)
         code, r = self.call("POST", f"/api/studio/projects/{p['id']}/zip", token=t, raw=self.zip_of(names), ctype="application/zip")
         self.assertEqual(code, 200, r)
@@ -527,6 +528,39 @@ class WrongPlace(unittest.TestCase):
         r = M.match(script, clips + [e], {**visual, "e": vis(night)}, unscripted=False)
         self.assertNotIn("d", r["timeline"])
         self.assertTrue(any(i["type"] == "wrong_place" for i in r["issues"]))
+
+
+class RushedSpeech(unittest.TestCase):
+    def test_rushed_line_is_slowed_a_little_and_normal_speech_is_not(self):
+        from live_ai.studio import cutter
+        clip = lambda a, b: {"asr": {"segments": [{"start": a, "end": b}]}}
+        line = "หน้ามืด? เมื่อคืนแกได้นอนกี่ชั่วโมงกันแน่? เลิกงานที่นี่ 5 โมงเย็น แกก็วิ่งไปขับไรเดอร์ส่งของต่อถึงตีสอง ทุกวันแบบนี้ ร่างกายมันจะไปไหวได้ยังไง!"
+        fast = cutter.speech_rate(clip(0.0, 9.9), line)           # measured on the owner's clip: 13.6 a second
+        self.assertGreater(fast, cutter.FAST_RATE)
+        self.assertTrue(1.1 <= cutter.slow_factor(fast) <= cutter.MAX_SLOW)
+        normal = cutter.speech_rate(clip(0.0, 9.0), "เอ้า! นี่เบี้ยเลี้ยงวิ่งส่งของรอบพิเศษของสัปดาห์นี้ ถือว่าข้าช่วย ลาหยุดพักสักครึ่งวันไปนอนซะบ้างไป")
+        self.assertEqual(cutter.slow_factor(normal), 1.0)
+        self.assertEqual(cutter.slow_factor(30.0), cutter.MAX_SLOW)
+        # a slowed clip lasts longer in the timeline
+        items = [{"clip": "c", "lines": [0], "slow": 1.2}]
+        c = {"id": "c", "name": "c", "duration": 10.0, "asr": {"segments": [{"start": 0.0, "end": 9.5}]}, "inspect": {}}
+        tl = {"video": items}
+        cutter.plan_cuts(tl, {"c": c}, lambda it: "ปกติ", "original")
+        self.assertAlmostEqual(tl["duration"], 12.0, places=2)
+
+    def test_slowed_segment_renders_at_the_longer_length_with_sound(self):
+        import tempfile
+        from live_ai.studio.pipeline import normalize_segment, av_info
+        with tempfile.TemporaryDirectory() as d:
+            src = Path(d) / "src.mp4"
+            subprocess.run(["ffmpeg", "-loglevel", "error", "-y", "-f", "lavfi", "-i", "testsrc=s=320x240:d=4:r=30", "-f", "lavfi",
+                            "-i", "sine=f=300:d=4", "-shortest", "-c:v", "libx264", "-c:a", "aac", str(src)], check=True)
+            seg = Path(d) / "seg.mp4"
+            normalize_segment({"path": str(src), "duration": 4.0, "has_audio": True, "name": "src"}, seg, 180, 320, 30,
+                              cut=(0.5, 3.5), speed=1.2)
+            info = av_info(str(seg))
+            self.assertAlmostEqual(info["duration"], 3.6, delta=0.1)
+            self.assertLessEqual(info["av_diff"], 0.1)
 
 
 class ClipChecks(unittest.TestCase):

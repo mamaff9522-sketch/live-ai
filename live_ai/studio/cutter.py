@@ -32,6 +32,26 @@ def say_seconds(text: str) -> float:
     return round(n / CHARS_PER_SECOND + 0.3, 2) if n else 0.0
 
 
+FAST_RATE = 12.5        # Thai characters a second above which speech sounds rushed
+NORMAL_RATE = 11.0      # what a rushed line is slowed towards
+MAX_SLOW = 1.25         # never slower than this (picture slows too; more looks like slow motion)
+
+
+def speech_rate(c: dict, text: str) -> float:
+    """Characters a second while the words are spoken (0 when unknown)."""
+    n = len("".join(ch for ch in str(text or "") if not ch.isspace() and ch not in "\"“”'‘’.,!?…~-—–:;()"))
+    segs = [s for s in (c.get("asr") or {}).get("segments") or [] if float(s["end"]) > float(s["start"])]
+    if not n or not segs:
+        return 0.0
+    dur = float(segs[-1]["end"]) - float(segs[0]["start"])
+    return round(n / dur, 1) if dur >= 1.0 else 0.0
+
+
+def slow_factor(rate: float) -> float:
+    """How much slower to play a clip whose speech is rushed (1.0 = as it is)."""
+    return round(min(MAX_SLOW, rate / NORMAL_RATE), 3) if rate > FAST_RATE else 1.0
+
+
 def trusted_jumps(c: dict) -> list[tuple]:
     """Picture jumps the cuts may act on. The inspector's measured jumps are big picture changes, which
     is also what a gesture or a camera move looks like (seen on Meta AI clips: most clips "jumped"
@@ -149,7 +169,7 @@ def plan_cuts(timeline: dict, clips_by_id: dict, mood_of_item, pacing: str = "au
     t = 0.0
     for it in items:
         it["start"] = round(t, 3)
-        t += it["out"] - it["in"]
+        t += (it["out"] - it["in"]) * float(it.get("slow") or 1.0)
     timeline["duration"] = round(t, 3)
     return notes
 
@@ -194,7 +214,7 @@ def apply_plan(timeline: dict, clips_by_id: dict, plan: dict) -> list[str]:
     t = 0.0
     for it in timeline["video"]:
         it["start"] = round(t, 3)
-        t += it["out"] - it["in"]
+        t += (it["out"] - it["in"]) * float(it.get("slow") or 1.0)
     timeline["duration"] = round(t, 3)
     return notes
 

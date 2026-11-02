@@ -179,14 +179,47 @@ function tIssues() {
     r.qa ? $('div', { class: 'card' }, $('h2', {}, 'ผล QA'), $('ul', { class: 'qa' }, r.qa.checks.map(c => $('li', {}, (c.ok ? '✅ ' : '❌ ') + c.name)))) : null);
 }
 
+let DRAFT = null;   // {pid, ids}: the clip order being arranged in the Timeline tab
 function tTimeline() {
-  const tl = P.result?.timeline; if (!tl) return $('div', { class: 'card muted' }, 'ยังไม่มี Timeline');
+  const tl = P.result?.timeline;
   const sh = P.script?.shots || [];
-  return $('div', { class: 'card' }, $('h2', {}, `Timeline · ${tl.video.length} คลิป · ${tl.duration.toFixed(1)} วินาที`),
-    $('p', { class: 'muted' }, 'แทร็กภาพและเสียงพูดมาจากคลิปเดียวกัน · แทร็กซับมาจากบท · เพลง/เอฟเฟกต์: ปิด (ค่าเริ่มต้น)'),
-    $('div', { class: 'list' }, tl.video.map((v, i) => $('div', { class: 'item' }, $('b', { style: 'width:36px' }, i + 1), $('div', { class: 't' },
-      $('div', {}, v.shots.map(s => { const x = sh[s]; return x ? (x.number ? `คลิป ${String(x.number).padStart(3, '0')}` : `ช็อต ${(x.pos ?? x.index) + 1}`) : s; }).join(', '), ' ', $('span', { class: 'muted' }, `${v.start.toFixed(1)}–${(v.start + v.out).toFixed(1)} วิ`)),
-      $('div', { class: 'muted' }, v.name)), $('span', { class: 'pill s-' + (v.confidence === 'สูง' ? 'done' : v.confidence === 'กลาง' ? 'warning' : 'failed') }, 'มั่นใจ' + v.confidence)))));
+  const busy = ['queued', 'running'].includes(P.status);
+  const byId = Object.fromEntries(P.clips.map(c => [c.id, c]));
+  const inTl = Object.fromEntries((tl?.video || []).map(v => [v.clip, v]));
+  if (!DRAFT || DRAFT.pid !== P.id) DRAFT = { pid: P.id, ids: (P.settings.order || (tl?.video || []).map(v => v.clip)).filter(id => byId[id]), dirty: false };
+  const ids = DRAFT.ids;
+  const move = (i, d) => { const j = i + d; if (j < 0 || j >= ids.length) return; [ids[i], ids[j]] = [ids[j], ids[i]]; DRAFT.dirty = true; render(); };
+  const drop = i => { ids.splice(i, 1); DRAFT.dirty = true; render(); };
+  const add = id => { ids.push(id); DRAFT.dirty = true; render(); };
+  const shotLabel = v => (v?.shots || []).map(s => { const x = sh[s]; return x ? (x.number ? `คลิป ${String(x.number).padStart(3, '0')}` : `ช็อต ${(x.pos ?? x.index) + 1}`) : ''; }).join(', ');
+  const thumb = c => $('img', { src: c.thumb, loading: 'lazy', style: 'width:54px;height:96px;object-fit:cover;border-radius:6px;background:#222;flex:none' });
+  const words = c => (c.asr?.text || '').slice(0, 70);
+  const row = (id, i) => {
+    const c = byId[id], v = inTl[id];
+    const pill = v ? (v.confirmed ? ['done', 'จัดเอง'] : [v.confidence === 'สูง' ? 'done' : v.confidence === 'กลาง' ? 'warning' : 'failed', 'มั่นใจ' + v.confidence]) : ['warning', 'เพิ่มเอง'];
+    return $('div', { class: 'item', style: 'gap:8px' }, $('b', { style: 'width:26px' }, i + 1), thumb(c),
+      $('div', { class: 't' }, $('div', {}, shotLabel(v) || '—', ' ', $('span', { class: 'pill s-' + pill[0] }, pill[1])),
+        words(c) ? $('div', { class: 'muted', style: 'font-size:13px' }, '🗣 ' + words(c)) : null,
+        v ? $('div', { class: 'muted', style: 'font-size:12px' }, `ใช้ ${v.in.toFixed(1)}–${v.out.toFixed(1)} วิ ของคลิป`) : null),
+      busy ? null : $('div', { style: 'display:flex;flex-direction:column;gap:4px' },
+        $('button', { class: 'btn2', onclick: () => move(i, -1), disabled: i === 0 }, '↑'),
+        $('button', { class: 'btn2', onclick: () => move(i, 1), disabled: i === ids.length - 1 }, '↓'),
+        $('button', { class: 'btn2', title: 'เอาออกจากวิดีโอ', onclick: () => drop(i) }, '✕')));
+  };
+  const rest = P.clips.filter(c => !ids.includes(c.id));
+  const saveOrder = async (order, run) => { try { P = await api('/api/studio/projects/' + P.id, { method: 'PATCH', body: JSON.stringify({ settings: { order } }) }); DRAFT = null; if (run) await act('start'); else render(); } catch (e) { alert(e.message); } };
+  return $('div', {},
+    $('div', { class: 'card' }, $('h2', {}, tl ? `Timeline · ${tl.video.length} คลิป · ${tl.duration.toFixed(1)} วินาที` : 'Timeline'),
+      $('p', { class: 'muted' }, P.settings.order ? '✋ ใช้ลำดับที่คุณจัดเอง (บทใช้ทำซับและจังหวะตัดต่อ)' : 'ลำดับตามบท — ถ้าเรื่องจริงไม่ได้เรียงตามบท กด ↑ ↓ จัดเองได้ แล้วกด "ตัดต่อใหม่ตามลำดับนี้"'),
+      busy ? $('p', { class: 'muted' }, 'กำลังทำงาน — จัดลำดับได้เมื่อเสร็จ') : $('div', { class: 'row' },
+        $('button', { class: 'btn', disabled: !ids.length, onclick: () => saveOrder(ids.slice(), true) }, '▶ ตัดต่อใหม่ตามลำดับนี้'),
+        P.settings.order || DRAFT.dirty ? $('button', { class: 'btn2', onclick: () => saveOrder(null, false) }, '↺ กลับไปเรียงตามบท') : null),
+      ids.length ? $('div', { class: 'list' }, ids.map(row)) : $('p', { class: 'muted' }, 'ยังไม่มี Timeline — กด Start ก่อน')),
+    rest.length && !busy ? $('div', { class: 'card' }, $('h2', {}, `คลิปที่ไม่ได้อยู่ในวิดีโอ (${rest.length})`),
+      $('p', { class: 'muted' }, 'เทคซ้ำ ไฟล์ซ้ำ หรือคลิปที่ AI ไม่แน่ใจ — กด ➕ เพื่อใส่ต่อท้าย แล้วเลื่อนไปวางตรงที่ต้องการ'),
+      $('div', { class: 'list' }, rest.map(c => $('div', { class: 'item', style: 'gap:8px' }, thumb(c),
+        $('div', { class: 't' }, $('div', { class: 'muted', style: 'font-size:13px' }, words(c) ? '🗣 ' + words(c) : '(ไม่มีเสียงพูด)')),
+        $('button', { class: 'btn2', onclick: () => add(c.id) }, '➕'))))) : null);
 }
 
 function tExport() {

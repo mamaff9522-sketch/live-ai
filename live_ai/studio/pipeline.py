@@ -76,7 +76,7 @@ AGENTS = [
 ]
 NOT_YET: dict[int, str] = {}
 DEFAULT_SETTINGS = {"aspect": "9:16", "height": 720, "fps": 30, "subtitles": "file", "audio": "dialogue_only", "match_light": False,
-                    "pacing": "auto", "ai_editor": True, "unscripted": True,
+                    "pacing": "auto", "ai_editor": True, "unscripted": True, "speech_speed": "auto",
                     "speaker_in_subs": False, "range_from": None, "range_to": None}
 VIDEO_EXT = {".mp4", ".mov", ".m4v", ".webm", ".mkv", ".3gp"}
 RNNOISE_MODEL = Path(__file__).resolve().parent.parent / "assets" / "rnnoise-std.rnnn"
@@ -222,6 +222,7 @@ class Studio:
             except NotFound:
                 continue
             clips.append({"id": m["id"], "name": m["name"], "duration": m["duration"], "width": m["width"], "height": m["height"],
+                          "thumb": self.media.sign(m["id"]).replace("/file?", "/thumb?"),
                           "inspect": json.loads(r["inspect"]) if r["inspect"] else None,
                           "asr": json.loads(r["asr"]) if r["asr"] else None})
         out["clips"] = clips
@@ -251,8 +252,12 @@ class Studio:
                     cur[k] = int(v)
                 elif k == "subtitles" and v in ("none", "file", "burn"):
                     cur[k] = v
+                elif k == "speech_speed" and v in ("auto", "original"):
+                    cur[k] = v
                 elif k == "pacing" and v in ("auto", "original"):
                     cur[k] = v
+                elif k == "order" and (v is None or (isinstance(v, list) and len(v) <= 2000 and all(isinstance(x, str) and len(x) <= 40 for x in v))):
+                    cur[k] = v or None          # the owner's own clip order (None = by the script)
                 elif k in ("ai_editor", "unscripted") and isinstance(v, bool):
                     cur[k] = v
                 elif k == "audio" and v in ("original", "dialogue_only"):
@@ -432,6 +437,7 @@ class Studio:
             clips = self._step(pid, 4, self._visual, clips)
             clips = self._step(pid, 5, self._dialogue, uid, clips, script)
             plan = self._step(pid, 6, self._match, script, clips)
+            plan = self._manual_order(pid, script, clips, plan)
             timeline = self._step(pid, 7, self._sequence, script, clips, plan)
             self._step(pid, 9, self._continuity, script, clips, timeline)
             self._step(pid, 10, self._emotion, script)
@@ -805,11 +811,36 @@ class Studio:
             m["regen"] = M.regen_prompt(script["shots"][m["shot"]], script)
         return r
 
+    def _manual_order(self, pid, script, clips, plan) -> dict:
+        """The owner arranged the clips (Timeline tab): exactly those clips in exactly that order. The
+        script still gives each clip its lines (subtitles) and its scene (pacing, transitions)."""
+        st = json.loads(self.store.conn().execute("SELECT settings FROM projects WHERE id=?", (pid,)).fetchone()["settings"])
+        order = [cid for cid in (st.get("order") or []) if cid in {c["id"] for c in clips}]
+        if not order:
+            return plan
+        assign, last_shot = plan["assign"], 0
+        for cid in order:
+            a = assign.get(cid)
+            if a and a["shots"]:
+                last_shot = a["shots"][-1]
+            else:                     # a clip the matching had left out: the owner wants it here
+                assign[cid] = {"lines": [], "shots": [last_shot], "score": 0.0, "margin": 0.0, "how": "manual", "confidence": "สูง"}
+            assign[cid]["confirmed"] = True
+        for cid in [k for k in assign if k not in order]:
+            del assign[cid]
+        plan["timeline"] = list(dict.fromkeys(order))
+        plan["manual"] = True
+        plan["issues"] = [i for i in plan["issues"] if i.get("clip") not in order or i.get("type") not in ("uncertain", "alternate", "duplicate", "wrong_place", "extra", "unmatched")]
+        self._agent(pid, 6, "done", f"ใช้ลำดับที่คุณจัดเอง {len(order)} คลิป (บทใช้ทำซับและจังหวะตัดต่อ)")
+        return plan
+
     def _sequence(self, pid, script, clips, plan) -> dict:
         by_id = {c["id"]: c for c in clips}
         lines = M.dialogue_lines(script["shots"])
+        st = json.loads(self.store.conn().execute("SELECT settings FROM projects WHERE id=?", (pid,)).fetchone()["settings"])
         items, t = [], 0.0
         issues = []
+        slowed = 0
         for cid in plan["timeline"]:
             c, a = by_id[cid], plan["assign"][cid]
             shot = script["shots"][a["shots"][0]]
@@ -821,10 +852,20 @@ class Studio:
                           # how long its words take to say: the cuts never keep less than that
                           "say_seconds": round(sum(cutter.say_seconds(lines[li]["text"]) for li in a["lines"]) if a["lines"]
                                                else cutter.say_seconds(c.get("transcript") or ""), 2),
-                          **({"unscripted": True} if a.get("unscripted") else {})})
-            t += c["duration"]
+                          **({"unscripted": True} if a.get("unscripted") else {}),
+                          **({"confirmed": True} if a.get("confirmed") else {})})
+            if st.get("speech_speed", "auto") == "auto" and (a["lines"] or a.get("unscripted")):
+                # words said too fast (AI voices sometimes rush a long line): play the clip a little slower
+                text = "".join(lines[li]["text"] for li in a["lines"]) if a["lines"] else c.get("transcript") or ""
+                rate = cutter.speech_rate(c, text)
+                f = cutter.slow_factor(rate)
+                if f > 1.0:
+                    items[-1].update(slow=f, rate=rate)
+                    slowed += 1
+            t += c["duration"] * float(items[-1].get("slow") or 1.0)
         tl = {"video": items, "duration": round(t, 3), "issues": issues}
-        self._agent(pid, 7, "done", f"เรียง {len(items)} คลิปตามเนื้อเรื่อง ยาวรวม {t:.1f} วินาที (ใช้ความยาวคลิปตามจริง ไม่ยืดให้เท่ากัน)")
+        self._agent(pid, 7, "done", f"เรียง {len(items)} คลิป ยาวรวม {t:.1f} วินาที"
+                    + (f" — คลิปที่พูดเร็วเกินไป {slowed} คลิป เล่นช้าลงให้ฟังเป็นปกติ (ไม่เกิน 25%)" if slowed else ""))
         return tl
 
     def _render(self, pid, uid, clips, timeline) -> dict:
@@ -846,13 +887,15 @@ class Studio:
             bright = item.get("brightness", 0.0)
             cut = (item.get("in", 0.0), item.get("out", c["duration"]))
             fades = (item.get("fade_in", 0.0), item.get("fade_out", 0.0))
-            key = hashlib.sha1(f"{W}x{H}@{fps}|{dialogue_only}|{bright}|{cut}|{fades}".encode()).hexdigest()[:8]
+            speed = float(item.get("slow") or 1.0)
+            key = hashlib.sha1(f"{W}x{H}@{fps}|{dialogue_only}|{bright}|{cut}|{fades}|{speed}".encode()).hexdigest()[:8]
             seg = cache / f"{c['id']}-{key}.mp4"
             if not seg.exists():    # render checkpoint: finished segments are reused
                 # where people speak: the recogniser's segments are more reliable than loudness in noisy clips
                 spoken = [(x["start"], x["end"]) for x in (c.get("asr") or {}).get("segments") or []]
                 normalize_segment(c, seg, W, H, fps, dialogue_only=dialogue_only, brightness=bright,
-                                  regions=spoken or (c.get("inspect") or {}).get("speech_regions") or [], cut=cut, fades=fades)
+                                  regions=spoken or (c.get("inspect") or {}).get("speech_regions") or [], cut=cut, fades=fades,
+                                  speed=speed)
             segs.append(seg)
             self._agent(pid, 11, "running", f"เตรียมคลิป {i + 1}/{len(timeline['video'])} ({W}x{H} {fps}fps)")
         out_dir = self.media.root / str(uid)
@@ -886,7 +929,8 @@ class Studio:
             segs = (c.get("asr") or {}).get("segments") or []
             spans = align_lines(ls, segs, c["duration"])
             t_in, keep = item.get("in", 0.0), item.get("out", c["duration"]) - item.get("in", 0.0)
-            spans = [(min(max(0.0, a - t_in), keep), min(max(0.0, b - t_in), keep)) for a, b in spans]
+            f = float(item.get("slow") or 1.0)
+            spans = [(min(max(0.0, a - t_in), keep) * f, min(max(0.0, b - t_in), keep) * f) for a, b in spans]
             for l, (a, b) in zip(ls, spans):
                 if cues and any(c["li"] == l["li"] for c in cues):
                     prev = next(c for c in cues if c["li"] == l["li"])      # line continues from the previous clip
@@ -945,12 +989,14 @@ class Studio:
         checks.append((f"ภาพและเสียงยาวเท่ากัน (ต่างกัน {info['av_diff']:.2f} วิ)", info["av_diff"] <= 0.2))
         used = [i["clip"] for i in timeline["video"]]
         checks.append(("ไม่มีคลิปซ้ำใน Timeline", len(used) == len(set(used))))
-        checks.append((f"ครบทุกช็อตตามบท (ขาด {len(plan['missing'])})", not plan["missing"]))
+        manual = plan.get("manual")
+        checks.append((f"ครบทุกช็อตตามบท (ขาด {len(plan['missing'])})" + (" — คุณจัดลำดับเอง" if manual and plan["missing"] else ""),
+                       manual or not plan["missing"]))
         lines = M.dialogue_lines(script["shots"])
         cue_lines = [c["li"] for c in (subs or {}).get("cues") or []]
         checks.append(("บทพูดไม่ซ้ำ", len(cue_lines) == len(set(cue_lines))))
         order_ok = all(timeline["video"][k]["shots"][0] <= timeline["video"][k + 1]["shots"][0] for k in range(len(timeline["video"]) - 1))
-        checks.append(("ลำดับเนื้อเรื่องเดินหน้าตามบท", order_ok))
+        checks.append(("ลำดับตามที่คุณจัด" if manual else "ลำดับเนื้อเรื่องเดินหน้าตามบท", manual or order_ok))
         if subs and subs.get("cues"):
             texts_ok = all(c["text"].endswith(lines[c["li"]]["text"]) for c in subs["cues"])
             checks.append(("ซับตรงตามบททุกตัวอักษร", texts_ok))
@@ -960,14 +1006,14 @@ class Studio:
         cut_words = [i["name"] for i in timeline["video"] if i.get("lines") and any(
             a < i.get("in", 0) - 0.05 or b > i.get("out", 1e9) + 0.05 for a, b in cutter.speech_spans(by_id[i["clip"]]))]
         checks.append(("ไม่ตัดคำพูดทิ้ง" + (f" (ตัดโดน: {', '.join(cut_words[:3])})" if cut_words else ""), not cut_words))
-        low = [i for i in timeline["video"] if i["confidence"] == "ต่ำ" and not i.get("unscripted")]
+        low = [i for i in timeline["video"] if i["confidence"] == "ต่ำ" and not i.get("unscripted") and not manual]
         checks.append((f"คลิปที่จับคู่ความมั่นใจต่ำ {len(low)} คลิป (ต้องให้คนตรวจ)", not low))
         for name, ok in checks:
             if not ok:
                 problems.append(name)
         qa = {"passed": not problems, "checks": [{"name": n, "ok": bool(o)} for n, o in checks], "problems": problems,
               "output": info}
-        if plan["missing"]:
+        if plan["missing"] and not plan.get("manual"):
             problems.insert(0, "พบคลิปที่ขาด " + str(len(plan["missing"])) + " ช็อต ได้แก่ " + ", ".join(m["label"] for m in plan["missing"][:8]))
         self._agent(pid, 15, "done" if qa["passed"] else "warning",
                     "ผ่านทุกข้อ" if qa["passed"] else f"ไม่ผ่าน {len(problems)} ข้อ: " + "; ".join(problems[:3]))
@@ -1079,28 +1125,32 @@ def integrated_lufs(path: str) -> float | None:
 
 def normalize_segment(c: dict, seg: Path, W: int, H: int, fps: int, dialogue_only: bool = False,
                       brightness: float = 0.0, regions: list | None = None, cut: tuple | None = None,
-                      fades: tuple = (0.0, 0.0)) -> None:
+                      fades: tuple = (0.0, 0.0), speed: float = 1.0) -> None:
     """Same size/fps/codec for every clip, picture kept whole (padded, never cropped).
     cut = (in, out) seconds kept from the clip; fades = (in, out) dip-to-black seconds.
+    speed > 1 plays the clip that much slower (speech too fast): picture and sound together, the voice
+    keeps its pitch (atempo), so the lips still match.
     dialogue_only: RNNoise speech denoiser + gaps between spoken lines lowered by 20 dB."""
     t0, t1 = cut or (0.0, c["duration"])
     t0, t1 = max(0.0, float(t0)), min(float(c["duration"]), float(t1))
     D = round(t1 - t0, 3)
+    speed = max(1.0, min(1.3, float(speed or 1.0)))
+    O = round(D * speed, 3)                       # length of the finished segment
     ss = ["-ss", f"{t0:.3f}"] if t0 > 0 else []
     regions = [(max(0.0, a - t0), min(D, b - t0)) for a, b in (regions or []) if b > t0 and a < t1]
     tmp = seg.with_suffix(".part.mp4")
     vf = (f"scale={W}:{H}:force_original_aspect_ratio=decrease:force_divisible_by=2,pad={W}:{H}:(ow-iw)/2:(oh-ih)/2:black,"
-          f"setsar=1,fps={fps},format=yuv420p,tpad=stop_mode=clone:stop_duration={D:.3f}")
+          f"setsar=1,{f'setpts=PTS*{speed:.4f},' if speed > 1 else ''}fps={fps},format=yuv420p,tpad=stop_mode=clone:stop_duration={O:.3f}")
     if brightness:
         vf += f",eq=brightness={brightness:.3f}"
-    af = f"aresample=48000,apad=whole_dur={D:.3f},aformat=channel_layouts=stereo"
-    fi, fo = (round(min(float(x), D / 3), 2) for x in fades)
+    af = f"aresample=48000,{f'atempo={1 / speed:.4f},' if speed > 1 else ''}apad=whole_dur={O:.3f},aformat=channel_layouts=stereo"
+    fi, fo = (round(min(float(x), O / 3), 2) for x in fades)
     if fi > 0:
         vf += f",fade=t=in:st=0:d={fi}"
         af += f",afade=t=in:st=0:d={fi}"
     if fo > 0:
-        vf += f",fade=t=out:st={D - fo:.3f}:d={fo}"
-        af += f",afade=t=out:st={D - fo:.3f}:d={fo}"
+        vf += f",fade=t=out:st={O - fo:.3f}:d={fo}"
+        af += f",afade=t=out:st={O - fo:.3f}:d={fo}"
     audio_src = None
     if dialogue_only and c["has_audio"]:
         # pass 1, audio only: denoise + lower the gaps between lines. Kept separate from the video job
@@ -1130,7 +1180,7 @@ def normalize_segment(c: dict, seg: Path, W: int, H: int, fps: int, dialogue_onl
     else:
         amap = "0:a:0"
     args += ["-map", "0:v:0", "-map", amap, "-vf", vf,
-             "-af", af, "-t", f"{D:.3f}",
+             "-af", af, "-t", f"{O:.3f}",
              "-c:v", "libx264", "-preset", "veryfast", "-crf", "20", "-g", str(fps * 2), "-c:a", "aac", "-b:a", "160k", "-ar", "48000",
              "-video_track_timescale", "90000", "-movflags", "+faststart", "-threads", os.environ.get("LIVEAI_FFMPEG_THREADS", "2"), str(tmp)]
     r = subprocess.run(args, capture_output=True, text=True, timeout=max(300, int(c["duration"] * 30)))

@@ -363,6 +363,22 @@ class Handler(BaseHTTPRequestHandler):
                  ".webp": "image/webp", ".jpg": "image/jpeg", ".srt": "application/x-subrip; charset=utf-8"}.get(ext, ctype)
         self._send_file(Path(m["path"]), ctype, download=m["name"] if "download" in qs else None)
 
+    @route("GET", r"/api/media/([a-f0-9]{24})/thumb")
+    def media_thumb(self, mid):
+        """A small still from the middle of a video (same signed link as the file), for the studio lists."""
+        qs = parse_qs(urlparse(self.path).query)
+        m = self.app.media.verify(mid, (qs.get("exp") or [""])[0], (qs.get("sig") or [""])[0])
+        if not m or m["kind"] != "video" or not Path(m["path"]).is_file():
+            return self._err(404, "ไม่พบไฟล์หรือลิงก์หมดอายุ")
+        thumb = Path(m["path"] + ".thumb.jpg")
+        if not thumb.is_file():
+            from .studio.visual import keyframe_jpeg
+            data = keyframe_jpeg(m["path"], float(m["duration"] or 0), 240)
+            if not data:
+                return self._err(404, "ทำภาพตัวอย่างไม่ได้")
+            thumb.write_bytes(data)
+        self._send_file(thumb, "image/jpeg")
+
     def _send_file(self, path: Path, ctype: str, download: str | None = None):
         size = path.stat().st_size
         start, end, code = 0, size - 1, 200

@@ -244,6 +244,17 @@ def match(script: dict, clips: list[dict], visual: dict | None = None, vl_votes:
     # clips whose words are not in the script (the script was pasted incomplete, or the clip says it
     # differently): an editor would still use them, in the order they were made, next to the clip made
     # just before them. Their words get no subtitles (subtitles are copied from the script only).
+    # Only when the script is clearly incomplete (copied without its beginning, or most clips say
+    # things it does not have). With a complete script a clip that says something else is an extra
+    # clip (another story, a wrong take) and is cut out, as an editor would.
+    incomplete = any("ไม่ครบ" in w for w in script.get("warnings", [])) \
+        or len(talking) >= max(2, 0.3 * len([c for c in speaking]))
+    if talking and not incomplete:
+        for c in talking:
+            issues.append({"type": "extra", "clip": c["id"],
+                           "message": f"คลิป “{c['name']}” พูดว่า “{c['transcript'][:50]}” ซึ่งไม่อยู่ในบท — ตัดออก (บทครบแล้ว) "
+                                      "ถ้าต้องการใช้ ให้กด ➕ ในแท็บ Timeline"})
+        talking = []
     for c in talking:
         before = [cid for cid in timeline if rank[cid] < rank[c["id"]]]
         at = timeline.index(max(before, key=lambda cid: rank[cid])) + 1 if before else 0
