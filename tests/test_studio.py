@@ -187,6 +187,29 @@ class Studio(unittest.TestCase):
         with urllib.request.urlopen(urllib.request.Request(self.base + res["video"]["url"], headers={"Range": "bytes=0-9"})) as f:
             self.assertEqual(f.status, 206)
 
+    def test_11_owner_order(self):
+        """The owner arranges the clips (Timeline tab): exactly that order, a left-out clip put back in,
+        subtitles still from the script, checks pass; the thumbnails load."""
+        t = self.user()
+        names = list(self.truth)
+        pid, _ = self.project(t, names)
+        self.call("POST", f"/api/studio/projects/{pid}/start", {}, t)
+        p = self.wait(t, pid)
+        ids = [v["clip"] for v in p["result"]["timeline"]["video"]]
+        mine = [ids[2], ids[0], ids[1]] + ids[3:]
+        code, p = self.call("PATCH", f"/api/studio/projects/{pid}", {"settings": {"order": mine}}, t)
+        self.assertEqual(code, 200, p)
+        self.call("POST", f"/api/studio/projects/{pid}/start", {}, t)
+        p = self.wait(t, pid)
+        res = p["result"]
+        self.assertEqual([v["clip"] for v in res["timeline"]["video"]], mine)
+        self.assertTrue(res["complete"], res["qa"])
+        self.assertTrue(all(v.get("confirmed") for v in res["timeline"]["video"]))
+        with urllib.request.urlopen(self.base + p["clips"][0]["thumb"]) as f:
+            self.assertEqual(f.read(3), b"\xff\xd8\xff")           # a JPEG still
+        code, p = self.call("PATCH", f"/api/studio/projects/{pid}", {"settings": {"order": None}}, t)
+        self.assertIsNone(p["settings"]["order"])
+
     def test_3_missing_shot_and_duplicate(self):
         t = self.user()
         names = [n for n, i in self.truth.items() if i != 5] + ["copy_of_clip.mp4"]   # shot 6 missing, one duplicate

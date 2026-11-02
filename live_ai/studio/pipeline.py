@@ -824,7 +824,10 @@ class Studio:
             if a and a["shots"]:
                 last_shot = a["shots"][-1]
             else:                     # a clip the matching had left out: the owner wants it here
-                assign[cid] = {"lines": [], "shots": [last_shot], "score": 0.0, "margin": 0.0, "how": "manual", "confidence": "สูง"}
+                c = next(x for x in clips if x["id"] == cid)
+                assign[cid] = {"lines": [], "shots": [last_shot], "score": 0.0, "margin": 0.0, "how": "manual", "confidence": "สูง",
+                               # it speaks: its words are kept whole like any spoken clip (no subtitles: not matched to a line)
+                               **({"unscripted": True} if c.get("speech") and c.get("transcript") else {})}
             assign[cid]["confirmed"] = True
         for cid in [k for k in assign if k not in order]:
             del assign[cid]
