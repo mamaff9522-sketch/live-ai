@@ -1,24 +1,23 @@
-0.00.000.952 I srv  llama_server: initializing ...
-0.00.009.009 I cmn  common_param: common_params_print_info: verbosity = 3 (adjust with the `-lv N` CLI arg)
-0.00.009.090 I srv  init_listene: The UI is disabled
-0.00.009.094 I srv  init_listene: Use --ui/--no-ui (or deprecated --webui/--no-webui) to enable/disable
-0.00.009.170 W srv  server_setup: security: no API key is set and CORS allows all origins (see https://github.com/ggml-org/llama.cpp/pull/25655)
-0.00.010.970 I srv    load_model: loading model '/data/models/Qwen3.5-2B-Q4_K_M.gguf'
-0.01.318.619 I cmn          init: llama threadpool init, n_threads = 2
-0.01.420.483 W load_hparams: Qwen-VL models require at minimum 1024 image tokens to function correctly on grounding tasks
-0.01.420.494 W load_hparams: if you encounter problems with accuracy, try adding --image-min-tokens 1024
-0.01.420.494 W load_hparams: more info: https://github.com/ggml-org/llama.cpp/issues/16842
+0.00.001.018 I srv  llama_server: initializing ...
+0.00.007.441 I cmn  common_param: common_params_print_info: verbosity = 3 (adjust with the `-lv N` CLI arg)
+0.00.007.536 I srv  init_listene: The UI is disabled
+0.00.007.541 I srv  init_listene: Use --ui/--no-ui (or deprecated --webui/--no-webui) to enable/disable
+0.00.007.641 W srv  server_setup: security: no API key is set and CORS allows all origins (see https://github.com/ggml-org/llama.cpp/pull/25655)
+0.00.009.490 I srv    load_model: loading model '/data/models/Qwen3.5-2B-Q4_K_M.gguf'
+0.01.456.733 I cmn          init: llama threadpool init, n_threads = 2
+0.01.596.247 W load_hparams: Qwen-VL models require at minimum 1024 image tokens to function correctly on grounding tasks
+0.01.596.258 W load_hparams: if you encounter problems with accuracy, try adding --image-min-tokens 1024
+0.01.596.258 W load_hparams: more info: https://github.com/ggml-org/llama.cpp/issues/16842
 
-0.01.813.974 I srv    load_model: loaded multimodal model, '/data/models/mmproj-F16.gguf'
-0.01.923.146 I srv    load_model: initializing, n_slots = 1, n_ctx_slot = 16384, kv_unified = 'false'
-0.01.927.304 I srv  server_run_i: model loaded
-0.01.927.317 I srv  server_on_li: listening on http://127.0.0.1:8081
-0.02.970.557 I slot get_availabl: id  0 | task -1 | selected slot by LRU, n_tokens = 0, t_last = -1
-0.02.970.622 I slot launch_slot_: id  0 | task 0 | processing task, is_child = 0
-0.06.334.365 I slot print_timing: id  0 | task 0 | prompt processing, n_tokens =    171, progress = 0.98, t =   3.36 s / 50.84 tokens per second
-0.08.601.519 I slot print_timing: id  0 | task 0 | prompt eval time =    3512.19 ms /   175 tokens (   20.07 ms per token,    49.83 tokens per second)
-0.08.601.529 I slot print_timing: id  0 | task 0 |        eval time =    2118.66 ms /    39 tokens (   55.75 ms per token,    17.94 tokens per second)
-0.08.601.530 I slot print_timing: id  0 | task 0 |       total time =    5630.85 ms /   214 tokens
-0.08.601.536 I slot print_timing: id  0 | task 0 |    graphs reused =         38
-0.08.601.537 I slot print_timing: id  0 | task 0 |   graph reallocs =          0    /     0        (same size) / (changed size)
-0.08.601.586 I slot      release: id  0 | task 0 | stop processing: n_tokens = 213, truncated = 0
+0.01.977.904 I srv    load_model: loaded multimodal model, '/data/models/mmproj-F16.gguf'
+0.02.114.872 I srv    load_model: initializing, n_slots = 1, n_ctx_slot = 16384, kv_unified = 'false'
+0.02.119.474 I srv  server_run_i: model loaded
+0.02.119.491 I srv  server_on_li: listening on http://127.0.0.1:8081
+0.07.585.462 I slot get_availabl: id  0 | task -1 | selected slot by LRU, n_tokens = 0, t_last = -1
+0.07.585.574 I slot launch_slot_: id  0 | task 0 | processing task, is_child = 0
+0.14.025.854 I slot print_timing: id  0 | task 0 | prompt eval time =    2184.49 ms /   175 tokens (   12.48 ms per token,    80.11 tokens per second)
+0.14.025.866 I slot print_timing: id  0 | task 0 |        eval time =    4255.71 ms /    48 tokens (   90.55 ms per token,    11.04 tokens per second)
+0.14.025.868 I slot print_timing: id  0 | task 0 |       total time =    6440.20 ms /   223 tokens
+0.14.025.875 I slot print_timing: id  0 | task 0 |    graphs reused =         47
+0.14.025.876 I slot print_timing: id  0 | task 0 |   graph reallocs =          0    /     0        (same size) / (changed size)
+0.14.025.931 I slot      release: id  0 | task 0 | stop processing: n_tokens = 222, truncated = 0
