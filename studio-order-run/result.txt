@@ -1,5 +1,5 @@
 status: done
-message: เสร็จสมบูรณ์ ผ่าน QA (241.8 วินาที, ใช้เวลา 222 วินาที)
+message: เสร็จสมบูรณ์ ผ่าน QA (248.2 วินาที, ใช้เวลา 125 วินาที) — มี 1 คลิปที่พูดนอกบท ใส่ตามลำดับที่สร้างคลิปและไม่มีซับ (วางบทให้ครบทั้งเรื่องแล้วกด Start ใหม่ จะได้ซับครบ)
 timeline: uploaded # 0 | shots [0] | kept 0.0 - 9.4 s | dialogue สูง
 timeline: uploaded # 6 | shots [1] | kept 0.0 - 4.78 s | dialogue สูง
 timeline: uploaded # 7 | shots [2] | kept 0.0 - 8.08 s | dialogue สูง
@@ -16,7 +16,7 @@ timeline: uploaded # 27 | shots [14] | kept 0.19 - 10.24 s | dialogue สูง
 timeline: uploaded # 26 | shots [15] | kept 1.15 - 10.24 s | dialogue สูง
 timeline: uploaded # 4 | shots [6] | kept 0.0 - 9.4 s | dialogue สูง
 timeline: uploaded # 5 | shots [7] | kept 0.0 - 4.4 s | dialogue สูง
-timeline: uploaded # 19 | shots [7] | kept 0.0 - 2.0 s | manual สูง
+timeline: uploaded # 19 | shots [7] | kept 0.0 - 8.4 s | manual สูง
 timeline: uploaded # 20 | shots [18] | kept 0.0 - 10.24 s | dialogue ต่ำ
 timeline: uploaded # 18 | shots [22] | kept 0.0 - 10.24 s | dialogue กลาง
 timeline: uploaded # 16 | shots [23] | kept 1.31 - 8.93 s | dialogue กลาง
@@ -29,7 +29,7 @@ timeline: uploaded # 14 | shots [26] | kept 0.0 - 6.2 s | dialogue สูง
 missing shots: 1
 issues by type: {'alternate': 2, 'check_silent': 1, 'duplicate': 5, 'continuity': 14, 'light': 1, 'clip': 70}
 qa: OK  ไฟล์ MP4 เปิดและถอดรหัสได้ครบทั้งไฟล์
-qa: OK  ความยาวรวม 241.78 วิ ตรงกับ Timeline 241.61 วิ
+qa: OK  ความยาวรวม 248.18 วิ ตรงกับ Timeline 248.01 วิ
 qa: OK  มีทั้งภาพและเสียง
 qa: OK  ภาพและเสียงยาวเท่ากัน (ต่างกัน 0.06 วิ)
 qa: OK  ไม่มีคลิปซ้ำใน Timeline
