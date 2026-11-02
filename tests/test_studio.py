@@ -503,6 +503,32 @@ class HumanLikeCuts(unittest.TestCase):
         self.assertEqual(r["missing"], [])
 
 
+class WrongPlace(unittest.TestCase):
+    def test_night_clip_matched_on_a_few_words_leaves_the_day_scene(self):
+        """Seen in the owner's video: a night hospital clip in the middle of the daytime shop scene."""
+        from live_ai.studio import match as M
+        from live_ai.studio.script import parse
+        script = parse("ฉากที่ 1: หน้าร้าน / กลางวัน\nชัย: \"ตงยกทีวีไปขึ้นรถตู้เดี๋ยวนี้เลยนะ\"\nตง: \"ครับเฮียเดี๋ยวผมจัดการให้ครับ\"\n"
+                       "ฉากที่ 2: โรงพยาบาล / กลางคืน\nหมอ: \"ผ่าตัดเรียบร้อยดีครับคุณแม่ปลอดภัยแล้ว\"\nตง: \"ขอบคุณครับหมอ ขอบคุณมากครับ\"")
+        day, night = ("c8a070" * 576), ("101828" * 576)
+        vis = lambda h: {"first": h, "mid": h, "last": h}
+        T = {"a": "ตงยกทีวีไปขึ้นรถตู้เดี๋ยวนี้เลยนะ", "c": "ผ่าตัดเรียบร้อยดีครับคุณแม่ปลอดภัยแล้ว",
+             # a night clip heard badly: its few words fit the shop line better than the hospital one
+             "d": "ครับเฮียเดี๋ยว ขอบคุณครับหมอ"}
+        clips = [{"id": k, "name": k, "order": (i,), "duration": 10.0, "speech": True, "transcript": v} for i, (k, v) in enumerate(T.items())]
+        visual = {"a": vis(day), "c": vis(night), "d": vis(night)}
+        self.assertEqual(M.best_window(T["d"], M.dialogue_lines(script["shots"]))["lines"], [1])
+        r = M.match(script, clips, visual)
+        self.assertEqual(r["assign"]["d"]["shots"], [3], r["issues"])
+        self.assertEqual(r["timeline"], ["a", "c", "d"])
+        self.assertTrue(any(i["type"] == "moved" for i in r["issues"]))
+        # nothing free in the scene it looks like: left out (not put in the day scene)
+        e = {"id": "e", "name": "e", "order": (3,), "duration": 10.0, "speech": True, "transcript": "ขอบคุณครับหมอ ขอบคุณมากครับ"}
+        r = M.match(script, clips + [e], {**visual, "e": vis(night)}, unscripted=False)
+        self.assertNotIn("d", r["timeline"])
+        self.assertTrue(any(i["type"] == "wrong_place" for i in r["issues"]))
+
+
 class ClipChecks(unittest.TestCase):
     """Inspector notices sudden picture jumps inside an AI clip and very quiet audio."""
 

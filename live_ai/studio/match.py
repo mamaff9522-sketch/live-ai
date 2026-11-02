@@ -194,6 +194,7 @@ def match(script: dict, clips: list[dict], visual: dict | None = None, vl_votes:
             issues.append({"type": "uncertain", "clip": cid,
                            "message": f"คลิป “{clip_by_id[cid]['name']}” เสียงพูดตรงกับบทเพียง {int(a['score'] * 100)}% — กรุณาตรวจว่าเป็นช็อต "
                                       f"{', '.join(label(shots[s]) for s in a['shots'])} จริงหรือไม่"})
+    wrong_place(assign, clip_by_id, shots, lines, visual or {}, issues)
     used_shots = {s for a in assign.values() for s in a["shots"]}
     silent_shots = [s["index"] for s in shots if not s["dialogue"] and s["index"] not in used_shots]
     rest = [c for c in clips if c["id"] not in assign and not c.get("duplicate_of")]
@@ -279,6 +280,62 @@ def match(script: dict, clips: list[dict], visual: dict | None = None, vl_votes:
 
 def label(shot: dict) -> str:
     return f"คลิป {shot['number']:03d}" if shot.get("number") else f"ช็อต {shot.get('pos', shot['index']) + 1}"
+
+
+PLACE_MARGIN = 0.08     # how much more a clip must look like another scene than its own to be moved
+
+
+def wrong_place(assign: dict, clip_by_id: dict, shots: list[dict], lines: list[dict], visual: dict, issues: list) -> None:
+    """A clip matched by its words only weakly, whose picture looks like another scene (seen: a night
+    hospital clip in the middle of the daytime shop scene, matched on a few shared words), is moved to
+    a free line of the scene it looks like, or left out when there is none. Clips matched with high
+    confidence are the scenes' reference pictures and are never moved."""
+    from .visual import similarity
+    if not visual:
+        return
+    scene_of = {s["index"]: s.get("scene") for s in shots}
+    refs: dict = {}
+    for cid, a in assign.items():
+        if a.get("confidence") == "สูง" and a["shots"] and visual.get(cid):
+            refs.setdefault(scene_of[a["shots"][0]], []).append(cid)
+    if len(refs) < 2:
+        return
+
+    def look(cid, scene):
+        v = visual.get(cid) or {}
+        return max((similarity(v.get(k), (visual.get(r) or {}).get(k2)) for r in refs.get(scene, []) if r != cid
+                    for k in ("first", "mid", "last") for k2 in ("first", "mid", "last")), default=0.0)
+
+    taken = {li for a in assign.values() for li in a["lines"]}
+    for cid in list(assign):
+        a = assign[cid]
+        if a.get("confidence") == "สูง" or not a["shots"] or not visual.get(cid):
+            continue
+        own = scene_of[a["shots"][0]]
+        scores = {sc: look(cid, sc) for sc in refs}
+        best = max(scores, key=scores.get)
+        if best == own or scores[best] < scores.get(own, 0.0) + PLACE_MARGIN:
+            continue
+        c = clip_by_id[cid]
+        here = [l for l in lines if scene_of[l["shot"]] == best and l["li"] not in taken]
+        w = best_window(c.get("transcript") or "", here and lines, exclude={l["li"] for l in lines} - {l["li"] for l in here}) if here else None
+        mine = set(a["lines"])
+        if w and w["lines"] and w["score"] >= 0.12:
+            taken -= mine
+            taken |= set(w["lines"])
+            a.update(lines=w["lines"], shots=sorted({lines[li]["shot"] for li in w["lines"]}), score=w["score"],
+                     margin=w.get("margin", 0.0), confidence="ต่ำ", how="dialogue+picture")
+            issues.append({"type": "moved", "clip": cid,
+                           "message": f"คลิป “{c['name']}” ภาพดูเป็นอีกฉาก จึงย้ายไปช็อต {', '.join(label(shots[s]) for s in a['shots'])} "
+                                      "ที่ยังไม่มีคลิป — กรุณาตรวจ"})
+        else:
+            taken -= mine
+            del assign[cid]
+            issues.append({"type": "wrong_place", "clip": cid,
+                           "message": f"คลิป “{c['name']}” เสียงพูดตรงบทแค่บางคำ และภาพดูเป็นอีกฉาก (คนละสถานที่/เวลา) จึงไม่ใส่ "
+                                      "— ถ้าเป็นคลิปของเรื่องนี้จริง ให้ตรวจว่าพูดตรงบทไหม"})
+        for i in [i for i in issues if i.get("clip") == cid and i["type"] == "uncertain"]:
+            issues.remove(i)
 
 
 def regen_prompt(shot: dict, script: dict) -> str:
